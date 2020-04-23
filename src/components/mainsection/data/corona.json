@@ -1,0 +1,181 @@
+{
+    "data":[
+        {
+            "Date": "21.04.20",
+            "Country":"SYSTEM INIATED",
+            "Country2":"",
+            "Type":"",
+            "Location": "",
+            "Message":"UNDISCLOSED LOCATION",
+            "Add":"'ABSALOM' BUILD 0.08",
+            "initial":true
+        },
+        {
+            "Date": "01.12.19",
+            "Country":"CHINA WUHAN" ,
+            "Country2":"",
+            "Type":"",
+            "Location": "",
+            "Message":"Patient Zero",
+            "Add":"Huanan Seafood Market",
+            "initial":true
+        },
+        {
+            "Date": "21.12.19",
+            "Country":"China" ,
+            "Country2":"",
+            "Type":"",
+            "Location": "",
+            "Message":"Cluster of patients",
+            "Add":"'Pneumonia of an unknown cause'",
+            "initial":false
+        }
+        ,
+        {
+            "Date": "01.01.20",
+            "Country":"South China Morning Post",
+            "Type":"",
+            "Location": "",
+            "Message":"266 infected before the beginning of 2020",
+            "Add":"",
+            "initial":false
+        },
+        {
+            "Date": "22.01.20",
+            "Country":"Wuhan",
+            "Type":"",
+            "Location": "",
+            "Message":"Quarantine until further notice",
+            "Add":"",
+            "initial":false
+        }
+        ,
+        {
+            "Date": "24.01.20",
+            "Country":"Vietnam",
+            "Type":"",
+            "Location": "",
+            "Message":"First human-to-human transmission outside of China",
+            "Add":"",
+            "initial":false
+        },
+        {
+            "Date": "06.02.20",
+            "Country":"Hong Kong",
+            "Type":"",
+            "Location": "",
+            "Message":"Panic buying  of consumer goods",
+            "Add":"Rumors of an impending quarantine",
+            "initial":false
+        },
+        {
+            "Date": "15.02.20",
+            "Country":"Cruise ship Diamond Princess",
+            "Type":"",
+            "Location": "",
+            "Message":"United States announces evacuation",
+            "Add":"",
+            "initial":false
+        },
+        {
+            "Date": "02.03.20",
+            "Country":"European Centre for Disease Prevention and Control",
+            "Type":"",
+            "Location": "",
+            "Message":"Risk level increased from moderate to high",
+            "Add":"",
+            "initial":false
+        },
+        {
+            "Date": "06.03.20",
+            "Country":"Global",
+            "Type":"",
+            "Location": "",
+            "Message":"Total cases reach 100 000",
+            "Add":"",
+            "initial":false
+        },
+        {
+            "Date": "09.03.20",
+            "Country":"Italy",
+            "Type":"",
+            "Location": "",
+            "Message":"Country-wide Quarantine",
+            "Add":"",
+            "initial":false
+        },
+        {
+            "Date": "12.03.20",
+            "Country":"The World Health Organization",
+            "Type":"",
+            "Location": "",
+            "Message":"Global pandemic declared",
+            "Add":"",
+            "initial":false
+        },
+        {
+            "Date": "12.03.20",
+            "Country":"Stock Market",
+            "Type":"",
+            "Location": "",
+            "Message":"Greatest single-day fall since the 1987 crash",
+            "Add":"",
+            "initial":false
+        },
+        {
+            "Date": "12.03.20",
+            "Country":"Washington, D.C",
+            "Type":"",
+            "Location": "",
+            "Message":"Federal Reserve slashes interest rates to zero",
+            "Add":"",
+            "initial":false
+        },
+        {
+            "Date": "26.03.20",
+            "Country":"United States Senate",
+            "Type":"",
+            "Location": "",
+            "Message":"$2.2 trillion emergency relief package",
+            "Add":"",
+            "initial":false
+        },
+        {
+            "Date": "02.04.20",
+            "Country":"Global",
+            "Type":"",
+            "Location": "",
+            "Message":"Corona virus cases reach 1 million",
+            "Add":"",
+            "initial":false
+        },
+        {
+            "Date": "10.04.20",
+            "Country":"US Government",
+            "Type":"",
+            "Location": "",
+            "Message":"16.8 million Americans have lost their jobs",
+            "Add":"",
+            "initial":false
+        }
+        ,
+        {
+            "Date": "21.04.20",
+            "Country":"United States",
+            "Type":"",
+            "Location": "",
+            "Message":"WTI oil futures crashes below negative",
+            "Add":"First time in history",
+            "initial":false
+        },
+        {
+            "Date": "23.04.20",
+            "Country":"Global",
+            "Type":"",
+            "Location": "",
+            "Message":"Coronavirus Cases 2 655 361",
+            "Add":"",
+            "initial":false
+        }
+    ]
+}
