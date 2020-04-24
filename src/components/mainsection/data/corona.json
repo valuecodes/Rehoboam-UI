@@ -1,16 +1,6 @@
 {
     "data":[
         {
-            "Date": "21.04.20",
-            "Country":"SYSTEM INIATED",
-            "Country2":"",
-            "Type":"",
-            "Location": "",
-            "Message":"UNDISCLOSED LOCATION",
-            "Add":"'ABSALOM' BUILD 0.08",
-            "initial":true
-        },
-        {
             "Date": "01.12.19",
             "Country":"CHINA WUHAN" ,
             "Country2":"",

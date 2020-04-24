@@ -1,8 +1,7 @@
 import React, { Component } from 'react'
-import Animation2 from './animation2'
+import Animation from './animation/animation'
 import Divergency from './divergency/divergengy'
 import { MainSVG } from './divergency/mainSVG';
-// import MainSVG from
 
 export class Reheboam extends Component {
 
@@ -73,16 +72,11 @@ export class Reheboam extends Component {
             }
         }
 
-
         if(data.initial===true){
             positiony=offset.height/2-60;
             positionx=offset.width/2-200;
             initial=false;
         }
-        // data.Date=data.Date.split('T')[0].split('-')[2]+'.'+data.Date.split('-')[1]+'.'+
-        // data.Date.split('-')[0];
-
-        // data.Date='18.04.20'
 
         this.setState({
             positions:{
@@ -100,15 +94,19 @@ export class Reheboam extends Component {
     render() {
 
         return (
-            <div  id='homePageContent'>               
+            <div  id='homePageContent'> 
+
+                    <Animation active={this.active.bind(this)}/>
+                   
                     <MainSVG 
                         positions={this.state.positions}
                     />
+                    
                     <Divergency 
                         positions={this.state.positions}
                         initial={this.state.initial}
                     />
-                    <Animation2 active={this.active.bind(this)}/>
+                    
             </div>
         )
     }

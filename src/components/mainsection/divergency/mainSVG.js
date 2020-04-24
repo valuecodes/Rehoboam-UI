@@ -15,7 +15,6 @@ export class MainSVG extends Component {
     }
 
     componentDidUpdate() {
-        
         if(JSON.stringify(this.props.positions)!==JSON.stringify(this.state.positions)){
             this.changeOpen(this);
             this.setState({
