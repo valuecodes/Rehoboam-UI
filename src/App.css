@@ -410,7 +410,7 @@ html, body {
   z-index: 0;
 }
 
-@media only screen and (max-width: 1000px) {
+@media only screen and (max-width: 1050px) {
   
   #root{
     zoom: 40%;
@@ -430,8 +430,19 @@ html, body {
     position: fixed; 
   }
   .navBar{
-    right: 10%;
+    right: 5%;
     width: 300px;
     height: 50px;
   }
+  .createMenu{
+    right: 0px;
+    top: 150px;
+    background-color: rgb(255, 255, 255);
+    z-index: 10;
+  } 
+
+  .createBlock{
+    max-height: 90%;
+  }
+
 }

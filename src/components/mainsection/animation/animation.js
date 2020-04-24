@@ -75,8 +75,8 @@ export class Animation extends Component {
             })
 
          }, 
-            // 7000
-            100
+            7000
+            // 100
         );
         }
 

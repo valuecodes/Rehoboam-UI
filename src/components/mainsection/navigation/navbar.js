@@ -19,7 +19,7 @@ export class NavBar extends Component {
 
                     to={{
                         marginTop:inProgress?-190:0,
-                        cancel:inProgress?180:-190
+                        cancel:inProgress&&!initial?180:-190
                     }}
                     config={{mass:3, tension:600, friction:100}}
                     key={inProgress}
