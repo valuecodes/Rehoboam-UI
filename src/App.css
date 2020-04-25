@@ -304,8 +304,9 @@ html, body {
   display: grid;
   grid-template-rows: 3px 1fr;
   width: 400px;
-  right: 20px;
-  top: 10px;z-index: 1;
+  right: 0px;
+  top: 10px;
+  z-index: 1;
 
 }
 
@@ -333,7 +334,6 @@ html, body {
   padding: 0 30px;
   margin-bottom: 40px;
   margin-top: 10px;
-
 }
 
 .menuActionButton{
@@ -347,6 +347,8 @@ html, body {
 }
 
 .createSvg{
+  right: 0px;
+  top: 0px;
   position: absolute;
   z-index: -1;
 }

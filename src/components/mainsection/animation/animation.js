@@ -115,6 +115,7 @@ export class Animation extends Component {
             pos:this.activePosition(data,true),
             dataPosition:1,
             inProgress:true,
+            create:false,
         })
         this.interval = setInterval(() => {
         let inProgress=true;
@@ -131,7 +132,6 @@ export class Animation extends Component {
                 dataPosition:0,
                 inProgress:inProgress
             })  
-
         }else{
             pos=this.activePosition(data,true);
             this.setState({ 

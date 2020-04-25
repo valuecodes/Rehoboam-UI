@@ -95,7 +95,7 @@ export class Create extends Component {
                 }}
             >
             <div className='menuButtons'>
-                <svg className='createSvg' height="100%" width="100%">
+                <svg className='createSvg' height="100%" width="400px">
                     <polyline points={
                     "5 1505,"+ 
                     "5 15," +
