@@ -1,6 +1,6 @@
 ## Divergensity
 
-The "Reheboam" AI interface from the Westworld tv series. Click [here](https://www.google.com) to test.
+The "Reheboam" AI interface from the Westworld tv series. Click [here](https://9z76r.csb.app/) to test.
 
  ![alt text](./public/Picture.JPG)
 
