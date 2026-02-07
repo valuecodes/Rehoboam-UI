@@ -1,18 +1,18 @@
 import React, { useEffect, useRef } from "react";
 
-import { RingPosition } from "../../../types";
+import type { RingPosition } from "../../../types";
 
-interface CanvasProps {
+type CanvasProps = {
   divergence: RingPosition;
-}
+};
 
 type HexPoint = [number, number, number, number, number, number];
 
-function getRandomInt(max: number): number {
+const getRandomInt = (max: number): number => {
   return Math.floor(Math.random() * Math.floor(max));
-}
+};
 
-function Canvas({ divergence }: CanvasProps): JSX.Element {
+export const Canvas = ({ divergence }: CanvasProps): React.JSX.Element => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const divergenceRef = useRef<number | null>(null);
 
@@ -79,7 +79,7 @@ function Canvas({ divergence }: CanvasProps): JSX.Element {
         return hexValue + getRandomInt(a) * -1 + getRandomInt(a + 0.8);
       }
 
-      if (pos === false) {
+      if (!pos) {
         if (hexValue < variance || hexValue > -variance) {
           if (hexValue > 0) {
             return hexValue - 1;
@@ -98,7 +98,7 @@ function Canvas({ divergence }: CanvasProps): JSX.Element {
           return hexValue - 2;
         }
 
-        if (hexValue < -0) {
+        if (hexValue < 0) {
           return hexValue + 2;
         }
       }
@@ -249,7 +249,6 @@ function Canvas({ divergence }: CanvasProps): JSX.Element {
     let start3 = start2 + 105;
     let start4 = start3 + 105;
     let start5 = start4 + 105;
-    let start6 = start5 + 105;
 
     const intervalId = window.setInterval(() => {
       if (startPosTime === 2) {
@@ -282,7 +281,6 @@ function Canvas({ divergence }: CanvasProps): JSX.Element {
           start3 = start2 + 105;
           start4 = start3 + 105;
           start5 = start4 + 105;
-          start6 = start5 + 105;
         }
       }
 
@@ -336,6 +334,4 @@ function Canvas({ divergence }: CanvasProps): JSX.Element {
       <canvas id="canvas" ref={canvasRef} width={800} height={800} />
     </div>
   );
-}
-
-export default Canvas;
+};

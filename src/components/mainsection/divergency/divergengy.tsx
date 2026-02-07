@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { Spring } from "react-spring/renderprops";
 
-import { DisplayPositions } from "../../../types";
+import type { DisplayPositions } from "../../../types";
 
-interface DivergengyProps {
+type DivergengyProps = {
   positions: DisplayPositions;
-}
+};
 
-function Divergengy({
+export const Divergency = ({
   positions: nextPositions,
-}: DivergengyProps): JSX.Element {
+}: DivergengyProps): React.JSX.Element => {
   const [positions, setPositions] = useState<DisplayPositions>(nextPositions);
   const [open, setOpen] = useState<"open" | "close">("open");
 
@@ -46,7 +46,7 @@ function Divergengy({
         config={{ mass: 3, tension: 600, friction: 100 }}
         key={positions.num}
       >
-        {(springProps: any) => (
+        {(springProps: { opacity: number; width: number }) => (
           <div
             className="divergencyBlock"
             style={{
@@ -82,6 +82,4 @@ function Divergengy({
       </Spring>
     </div>
   );
-}
-
-export default Divergengy;
+};

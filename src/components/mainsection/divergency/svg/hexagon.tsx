@@ -1,13 +1,18 @@
 import React from "react";
 
-interface HexagonProps {
+type HexagonProps = {
   top: number;
   left: number;
   opacity: number;
   size: number;
-}
+};
 
-function Hexagon({ top, left, opacity, size }: HexagonProps): JSX.Element {
+export const Hexagon = ({
+  top,
+  left,
+  opacity,
+  size,
+}: HexagonProps): React.JSX.Element => {
   return (
     <svg
       className="hexagon"
@@ -40,6 +45,4 @@ function Hexagon({ top, left, opacity, size }: HexagonProps): JSX.Element {
       <g />
     </svg>
   );
-}
-
-export default Hexagon;
+};

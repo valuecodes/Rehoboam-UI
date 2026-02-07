@@ -1,22 +1,19 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
-import {
-  HIDDEN_RING_POSITION,
-  RingPosition,
-  TimelineEvent,
-} from "../../../types";
+import type { RingPosition, TimelineEvent } from "../../../types";
+import { HIDDEN_RING_POSITION } from "../../../types";
 import CoronaData from "./../data/corona.json";
-import Create from "./../navigation/create/create";
-import NavBar from "./../navigation/navbar";
-import Canvas from "./canvas";
+import { Create } from "./../navigation/create/create";
+import { NavBar } from "./../navigation/navbar";
+import { Canvas } from "./canvas";
 
-interface AnimationProps {
+type AnimationProps = {
   active: (pos: RingPosition, data: TimelineEvent) => void;
-}
+};
 
-interface CoronaDataPayload {
+type CoronaDataPayload = {
   data: TimelineEvent[];
-}
+};
 
 const INITIAL_SYSTEM_EVENT: TimelineEvent = {
   Date: "21.04.20",
@@ -29,15 +26,15 @@ const INITIAL_SYSTEM_EVENT: TimelineEvent = {
   initial: true,
 };
 
-function getRandomInt(max: number): number {
+const getRandomInt = (max: number): number => {
   return Math.floor(Math.random() * Math.floor(max));
-}
+};
 
-function createHiddenPosition(): RingPosition {
+const createHiddenPosition = (): RingPosition => {
   return { ...HIDDEN_RING_POSITION };
-}
+};
 
-function buildPositions(): RingPosition[] {
+const buildPositions = (): RingPosition[] => {
   const points: RingPosition[] = [];
   const value = 5.56;
 
@@ -52,9 +49,9 @@ function buildPositions(): RingPosition[] {
   }
 
   return points;
-}
+};
 
-function Animation({ active }: AnimationProps): JSX.Element {
+export const Animation = ({ active }: AnimationProps): React.JSX.Element => {
   const [positions, setPositions] = useState<RingPosition[]>([]);
   const [pos, setPos] = useState<RingPosition>(createHiddenPosition());
   const [dataPosition, setDataPosition] = useState(0);
@@ -80,7 +77,7 @@ function Animation({ active }: AnimationProps): JSX.Element {
       index: number,
       update: boolean
     ): RingPosition => {
-      const selectedData = timelineData[index];
+      const selectedData = timelineData.at(index);
 
       if (!selectedData) {
         return createHiddenPosition();
@@ -243,6 +240,4 @@ function Animation({ active }: AnimationProps): JSX.Element {
       <Create initial={initial} isOn={create} launchCustom={launchCustom} />
     </div>
   );
-}
-
-export default Animation;
+};
