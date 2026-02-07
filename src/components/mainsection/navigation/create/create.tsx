@@ -1,22 +1,22 @@
 import React, { useRef, useState } from "react";
 import { Spring } from "react-spring/renderprops";
 
-import { TimelineEvent } from "../../../../types";
-import ActionBlock from "./actionBlock";
+import type { TimelineEvent } from "../../../../types";
+import { ActionBlock } from "./actionBlock";
 
-interface CreateProps {
+type CreateProps = {
   initial: boolean;
   isOn: boolean;
   launchCustom: (customData: TimelineEvent[]) => void;
-}
+};
 
 type EditableField = "Date" | "Country" | "Message" | "Add";
 
-interface CustomAction extends TimelineEvent {
+type CustomAction = {
   id: number;
-}
+} & TimelineEvent;
 
-function buildEmptyAction(id: number): CustomAction {
+const buildEmptyAction = (id: number): CustomAction => {
   return {
     id,
     Date: "",
@@ -28,9 +28,13 @@ function buildEmptyAction(id: number): CustomAction {
     Add: "",
     initial: false,
   };
-}
+};
 
-function Create({ isOn, initial, launchCustom }: CreateProps): JSX.Element {
+export const Create = ({
+  isOn,
+  initial,
+  launchCustom,
+}: CreateProps): React.JSX.Element => {
   const [actions, setActions] = useState<CustomAction[]>([buildEmptyAction(1)]);
   const nextIdRef = useRef(1);
 
@@ -70,7 +74,7 @@ function Create({ isOn, initial, launchCustom }: CreateProps): JSX.Element {
   return (
     <Spring
       from={{
-        marginRight: !isOn && initial !== true ? 0 : -600,
+        marginRight: !isOn && !initial ? 0 : -600,
       }}
       to={{
         marginRight: !isOn ? -600 : 0,
@@ -78,7 +82,7 @@ function Create({ isOn, initial, launchCustom }: CreateProps): JSX.Element {
       config={{ mass: 5, tension: 600, friction: 80 }}
       key={String(isOn)}
     >
-      {(springProps: any) => (
+      {(springProps: { marginRight: number }) => (
         <div
           className="createMenu"
           style={{
@@ -119,6 +123,4 @@ function Create({ isOn, initial, launchCustom }: CreateProps): JSX.Element {
       )}
     </Spring>
   );
-}
-
-export default Create;
+};

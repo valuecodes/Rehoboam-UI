@@ -1,25 +1,26 @@
-import React, { ChangeEvent } from "react";
+import type { ChangeEvent } from "react";
+import React from "react";
 import { Spring } from "react-spring/renderprops";
 
-import { TimelineEvent } from "../../../../types";
+import type { TimelineEvent } from "../../../../types";
 
 type EditableField = "Date" | "Country" | "Message" | "Add";
 
-interface ActionBlockProps {
+type ActionBlockProps = {
   id: number;
   index: number;
   data: TimelineEvent;
   deleteActionBlock: (id: number) => void;
   addData: (field: EditableField, index: number, value: string) => void;
-}
+};
 
-function ActionBlock({
+export const ActionBlock = ({
   id,
   index,
   data,
   deleteActionBlock,
   addData,
-}: ActionBlockProps): JSX.Element {
+}: ActionBlockProps): React.JSX.Element => {
   const handleChange =
     (field: EditableField) => (event: ChangeEvent<HTMLInputElement>) => {
       addData(field, index, event.target.value);
@@ -40,7 +41,7 @@ function ActionBlock({
         }}
         config={{ duration: 400 }}
       >
-        {(springProps: any) => (
+        {(springProps: { x: number; opacity: number; width: number }) => (
           <div>
             <div
               className="actionHeader"
@@ -51,7 +52,9 @@ function ActionBlock({
               <h2>Event {index + 1}</h2>
               <button
                 className="menuActionButton"
-                onClick={() => deleteActionBlock(id)}
+                onClick={() => {
+                  deleteActionBlock(id);
+                }}
               >
                 Delete
               </button>
@@ -126,6 +129,4 @@ function ActionBlock({
       </Spring>
     </div>
   );
-}
-
-export default ActionBlock;
+};

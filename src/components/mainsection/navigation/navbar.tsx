@@ -1,27 +1,27 @@
 import React from "react";
 import { Spring } from "react-spring/renderprops";
 
-interface NavBarProps {
+type NavBarProps = {
   initial: boolean;
   inProgress: boolean;
   restart: () => void;
   create: () => void;
   cancel: () => void;
-}
+};
 
-function NavBar({
+export const NavBar = ({
   initial,
   inProgress,
   restart,
   create,
   cancel,
-}: NavBarProps): JSX.Element {
+}: NavBarProps): React.JSX.Element => {
   return (
     <div>
       <Spring
         from={{
-          marginTop: inProgress && initial !== true ? 0 : -190,
-          cancel: inProgress && initial !== true ? -190 : -190,
+          marginTop: inProgress && !initial ? 0 : -190,
+          cancel: inProgress && !initial ? -190 : -190,
         }}
         to={{
           marginTop: inProgress ? -190 : 0,
@@ -30,7 +30,7 @@ function NavBar({
         config={{ mass: 3, tension: 600, friction: 100 }}
         key={String(inProgress)}
       >
-        {(springProps: any) => (
+        {(springProps: { marginTop: number; cancel: number }) => (
           <div
             className="navBar"
             style={{
@@ -69,6 +69,4 @@ function NavBar({
       </Spring>
     </div>
   );
-}
-
-export default NavBar;
+};

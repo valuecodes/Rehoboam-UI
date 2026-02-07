@@ -1,4 +1,4 @@
-export interface TimelineEvent {
+export type TimelineEvent = {
   id?: number;
   Date: string;
   Country: string;
@@ -8,24 +8,24 @@ export interface TimelineEvent {
   Message: string;
   Add: string;
   initial: boolean;
-}
+};
 
-export interface RingPosition {
+export type RingPosition = {
   x1: number;
   y1: number;
   x2: number;
   y2: number;
   num: number;
-}
+};
 
-export interface DisplayPositions {
+export type DisplayPositions = {
   x: number;
   y: number;
   x2: number;
   y2: number;
   num: number;
   data: TimelineEvent;
-}
+};
 
 export const EMPTY_TIMELINE_EVENT: TimelineEvent = {
   Date: "",

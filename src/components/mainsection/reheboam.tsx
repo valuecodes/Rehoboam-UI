@@ -1,16 +1,16 @@
 import React, { useCallback, useState } from "react";
 
-import {
+import type {
   DisplayPositions,
-  EMPTY_DISPLAY_POSITIONS,
   RingPosition,
   TimelineEvent,
 } from "../../types";
-import Animation from "./animation/animation";
-import Divergency from "./divergency/divergengy";
-import MainSVG from "./divergency/mainSVG";
+import { EMPTY_DISPLAY_POSITIONS } from "../../types";
+import { Animation } from "./animation/animation";
+import { Divergency } from "./divergency/divergengy";
+import { MainSVG } from "./divergency/mainSVG";
 
-function Reheboam(): JSX.Element {
+export const Reheboam = (): React.JSX.Element => {
   const [positions, setPositions] = useState<DisplayPositions>(
     EMPTY_DISPLAY_POSITIONS
   );
@@ -86,6 +86,4 @@ function Reheboam(): JSX.Element {
       <Divergency positions={positions} />
     </div>
   );
-}
-
-export default Reheboam;
+};

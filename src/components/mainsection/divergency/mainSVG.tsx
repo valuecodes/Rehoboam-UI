@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { Spring } from "react-spring/renderprops";
 
-import { DisplayPositions } from "../../../types";
-import Hexagon from "./svg/hexagon";
+import type { DisplayPositions } from "../../../types";
+import { Hexagon } from "./svg/hexagon";
 
-interface MainSVGProps {
+type MainSVGProps = {
   positions: DisplayPositions;
-}
+};
 
-function MainSVG({ positions }: MainSVGProps): JSX.Element {
+export const MainSVG = ({ positions }: MainSVGProps): React.JSX.Element => {
   const [open, setOpen] = useState<"open" | "close">("open");
 
   useEffect(() => {
@@ -49,11 +49,18 @@ function MainSVG({ positions }: MainSVGProps): JSX.Element {
         config={{ duration: 1000 }}
         key={positions.num}
       >
-        {(springProps: any) => (
+        {(springProps: {
+          x: number;
+          size16: number;
+          size36: number;
+          size42: number;
+          r: number;
+          opacity: number;
+        }) => (
           <svg className="mainSvg" width="100%" height="100%">
             <line
               id="svgLine"
-              x2={positions.x + (positions.x < 1000 ? +300 : 100)}
+              x2={positions.x + (positions.x < 1000 ? 300 : 100)}
               y2={positions.y + (positions.y > 400 ? -0 : 100)}
               x1={positions.x2}
               y1={positions.y2}
@@ -115,6 +122,4 @@ function MainSVG({ positions }: MainSVGProps): JSX.Element {
       </Spring>
     </div>
   );
-}
-
-export default MainSVG;
+};
