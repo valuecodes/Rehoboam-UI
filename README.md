@@ -1,8 +1,28 @@
 ## Divergensity
 
-The "Reheboam" AI interface from the Westworld tv series. Click [here](https://9z76r.csb.app/) to test.
+The "Reheboam" AI interface from the Westworld TV series.
 
- ![alt text](./public/Picture.JPG)
+![Preview](./public/Picture.JPG)
 
-* Watch critical events of Covid 19  <img display='span' height='250' align="right" src="./public/read1.JPG">
-* Ability to create custom timeline
+- Watch critical COVID-19 timeline events.
+- Create and launch a custom timeline.
+
+## Development
+
+```bash
+npm install
+npm run dev
+```
+
+## Build
+
+```bash
+npm run build
+npm run preview
+```
+
+## Type Check
+
+```bash
+npm run typecheck
+```
