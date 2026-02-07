@@ -10,19 +10,19 @@ The "Reheboam" AI interface from the Westworld TV series.
 ## Development
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 ## Build
 
 ```bash
-npm run build
-npm run preview
+pnpm build
+pnpm preview
 ```
 
 ## Type Check
 
 ```bash
-npm run typecheck
+pnpm typecheck
 ```
