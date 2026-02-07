@@ -1,17 +1,18 @@
 import React, { useCallback, useState } from "react";
-import Animation from "./animation/animation";
-import Divergency from "./divergency/divergengy";
-import MainSVG from "./divergency/mainSVG";
+
 import {
   DisplayPositions,
   EMPTY_DISPLAY_POSITIONS,
   RingPosition,
   TimelineEvent,
 } from "../../types";
+import Animation from "./animation/animation";
+import Divergency from "./divergency/divergengy";
+import MainSVG from "./divergency/mainSVG";
 
 function Reheboam(): JSX.Element {
   const [positions, setPositions] = useState<DisplayPositions>(
-    EMPTY_DISPLAY_POSITIONS,
+    EMPTY_DISPLAY_POSITIONS
   );
 
   const active = useCallback((pos: RingPosition, data: TimelineEvent) => {

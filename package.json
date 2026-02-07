@@ -2,6 +2,7 @@
   "name": "dashboard",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "packageManager": "pnpm@10.28.1",
   "scripts": {
     "dev": "vite",
@@ -9,7 +10,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "format": "prettier --write ."
   },
   "dependencies": {
     "react": "^16.13.1",
@@ -17,10 +19,12 @@
     "react-spring": "^8.0.27"
   },
   "devDependencies": {
+    "@ianvs/prettier-plugin-sort-imports": "^4.7.1",
     "@types/react": "^16.14.67",
     "@types/react-dom": "^16.9.25",
     "@vitejs/plugin-react": "^4.3.4",
     "jsdom": "^25.0.1",
+    "prettier": "^3.8.1",
     "typescript": "^5.6.3",
     "vite": "^5.4.10",
     "vitest": "^2.1.8"

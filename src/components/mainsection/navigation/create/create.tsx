@@ -1,7 +1,8 @@
 import React, { useRef, useState } from "react";
 import { Spring } from "react-spring/renderprops";
-import ActionBlock from "./actionBlock";
+
 import { TimelineEvent } from "../../../../types";
+import ActionBlock from "./actionBlock";
 
 interface CreateProps {
   initial: boolean;
@@ -43,7 +44,7 @@ function Create({ isOn, initial, launchCustom }: CreateProps): JSX.Element {
 
   const deleteActionBlock = (id: number) => {
     setActions((currentActions) =>
-      currentActions.filter((action) => action.id !== id),
+      currentActions.filter((action) => action.id !== id)
     );
   };
 
@@ -62,7 +63,7 @@ function Create({ isOn, initial, launchCustom }: CreateProps): JSX.Element {
           ...action,
           [field]: value,
         };
-      }),
+      })
     );
   };
 
@@ -87,9 +88,7 @@ function Create({ isOn, initial, launchCustom }: CreateProps): JSX.Element {
           <div className="menuButtons">
             <svg className="createSvg" height="100%" width="400px">
               <polyline
-                points={
-                  "5 1505," + "5 15," + "20 2," + "220 2," + "420 2,"
-                }
+                points={"5 1505," + "5 15," + "20 2," + "220 2," + "420 2,"}
                 style={{
                   fill: "none",
                   stroke: "black",

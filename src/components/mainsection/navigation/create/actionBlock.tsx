@@ -1,5 +1,6 @@
 import React, { ChangeEvent } from "react";
 import { Spring } from "react-spring/renderprops";
+
 import { TimelineEvent } from "../../../../types";
 
 type EditableField = "Date" | "Country" | "Message" | "Add";

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+
 import { RingPosition } from "../../../types";
 
 interface CanvasProps {
@@ -46,10 +47,7 @@ function Canvas({ divergence }: CanvasProps): JSX.Element {
       const yCenter = 405;
 
       ctx.beginPath();
-      ctx.moveTo(
-        xCenter + size * Math.cos(0),
-        yCenter + size * Math.sin(0),
-      );
+      ctx.moveTo(xCenter + size * Math.cos(0), yCenter + size * Math.sin(0));
 
       const hex: HexPoint[] = [];
 
@@ -73,7 +71,7 @@ function Canvas({ divergence }: CanvasProps): JSX.Element {
       a: number,
       dive: number,
       pos: boolean,
-      extra: number,
+      extra: number
     ): number => {
       const variance = 35 + extra;
 
@@ -129,10 +127,7 @@ function Canvas({ divergence }: CanvasProps): JSX.Element {
       const yCenter = 400;
 
       ctx.beginPath();
-      ctx.moveTo(
-        xCenter + size * Math.cos(0),
-        yCenter + size * Math.sin(0),
-      );
+      ctx.moveTo(xCenter + size * Math.cos(0), yCenter + size * Math.sin(0));
 
       let width = 1;
 
@@ -157,7 +152,7 @@ function Canvas({ divergence }: CanvasProps): JSX.Element {
                   Math.cos((i * 2 * Math.PI) / sides),
               yCenter +
                 (currentSize + hex[i][3] + width - dive + (30 - q * 10)) *
-                  Math.sin((i * 2 * Math.PI) / sides),
+                  Math.sin((i * 2 * Math.PI) / sides)
             );
             ctx.lineTo(
               xCenter +
@@ -165,7 +160,7 @@ function Canvas({ divergence }: CanvasProps): JSX.Element {
                   Math.cos((i * 2 * Math.PI) / sides),
               yCenter +
                 (currentSize + hex[i][3] + width) *
-                  Math.sin((i * 2 * Math.PI) / sides),
+                  Math.sin((i * 2 * Math.PI) / sides)
             );
           }
         }
@@ -228,7 +223,7 @@ function Canvas({ divergence }: CanvasProps): JSX.Element {
               Math.cos((i * 2 * Math.PI) / sides),
           yCenter +
             (currentSize + hex[i][3] + width) *
-              Math.sin((i * 2 * Math.PI) / sides),
+              Math.sin((i * 2 * Math.PI) / sides)
         );
 
         width += 0.005;

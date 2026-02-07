@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Spring } from "react-spring/renderprops";
-import Hexagon from "./svg/hexagon";
+
 import { DisplayPositions } from "../../../types";
+import Hexagon from "./svg/hexagon";
 
 interface MainSVGProps {
   positions: DisplayPositions;
