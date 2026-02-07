@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { Spring } from "react-spring/renderprops";
+
 import { DisplayPositions } from "../../../types";
 
 interface DivergengyProps {
   positions: DisplayPositions;
 }
 
-function Divergengy({ positions: nextPositions }: DivergengyProps): JSX.Element {
+function Divergengy({
+  positions: nextPositions,
+}: DivergengyProps): JSX.Element {
   const [positions, setPositions] = useState<DisplayPositions>(nextPositions);
   const [open, setOpen] = useState<"open" | "close">("open");
 

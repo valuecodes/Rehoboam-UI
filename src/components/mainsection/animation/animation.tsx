@@ -1,13 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import Canvas from "./canvas";
-import CoronaData from "./../data/corona.json";
-import NavBar from "./../navigation/navbar";
-import Create from "./../navigation/create/create";
+
 import {
   HIDDEN_RING_POSITION,
   RingPosition,
   TimelineEvent,
 } from "../../../types";
+import CoronaData from "./../data/corona.json";
+import Create from "./../navigation/create/create";
+import NavBar from "./../navigation/navbar";
+import Canvas from "./canvas";
 
 interface AnimationProps {
   active: (pos: RingPosition, data: TimelineEvent) => void;
@@ -74,7 +75,11 @@ function Animation({ active }: AnimationProps): JSX.Element {
   }, []);
 
   const getActivePositionForIndex = useCallback(
-    (timelineData: TimelineEvent[], index: number, update: boolean): RingPosition => {
+    (
+      timelineData: TimelineEvent[],
+      index: number,
+      update: boolean
+    ): RingPosition => {
       const selectedData = timelineData[index];
 
       if (!selectedData) {
@@ -103,7 +108,7 @@ function Animation({ active }: AnimationProps): JSX.Element {
 
       return activePosition;
     },
-    [active],
+    [active]
   );
 
   const startPlayback = useCallback(
@@ -136,7 +141,7 @@ function Animation({ active }: AnimationProps): JSX.Element {
         const nextPosition = getActivePositionForIndex(
           timelineData,
           dataPositionRef.current,
-          true,
+          true
         );
 
         setPos(nextPosition);
@@ -145,7 +150,7 @@ function Animation({ active }: AnimationProps): JSX.Element {
         setInProgress(true);
       }, 8000);
     },
-    [clearPlaybackInterval, getActivePositionForIndex],
+    [clearPlaybackInterval, getActivePositionForIndex]
   );
 
   const restart = useCallback(() => {
@@ -161,7 +166,7 @@ function Animation({ active }: AnimationProps): JSX.Element {
     (customData: TimelineEvent[]) => {
       startPlayback(customData);
     },
-    [startPlayback],
+    [startPlayback]
   );
 
   const cancel = useCallback(() => {
