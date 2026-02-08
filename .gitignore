@@ -7,3 +7,8 @@
 .env
 .env.local
 .env.*
+
+# Playwright artifacts
+/test-results
+/playwright-report
+.tmp/screenshots/
