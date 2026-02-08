@@ -6,6 +6,8 @@ import type {
 } from "../../engine/types";
 import { drawBackgroundPass } from "./passes/background-pass";
 import type { BackgroundPassInput } from "./passes/background-pass";
+import { drawEventContourPass } from "./passes/event-contour-pass";
+import type { EventContourPassInput } from "./passes/event-contour-pass";
 import { createRingSpecs, drawRingsPass } from "./passes/rings-pass";
 import type { RingsPassInput, RingSpec } from "./passes/rings-pass";
 import { drawSweepPass } from "./passes/sweep-pass";
@@ -90,9 +92,17 @@ export const createRenderer2D = (
       interaction: frame.interaction,
       elapsedMs: frame.elapsedMs,
     };
+    const eventContourInput: EventContourPassInput = {
+      context,
+      viewport: frame.viewport,
+      theme,
+      events: frame.events,
+      elapsedMs: frame.elapsedMs,
+    };
 
     drawBackgroundPass(backgroundInput);
     drawRingsPass(ringsInput);
+    drawEventContourPass(eventContourInput);
     drawSweepPass(sweepInput);
   };
 

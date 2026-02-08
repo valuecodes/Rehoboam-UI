@@ -3,10 +3,10 @@ import type { RehoboamTheme, ViewportState } from "./types";
 export const DEFAULT_DPR_CAP = 2;
 
 export const DEFAULT_THEME: RehoboamTheme = {
-  backgroundColor: "#080f1a",
-  backgroundCoreColor: "#1d2c40",
-  ringColor: "#93a8c4",
-  sweepColor: "#dbeafe",
+  backgroundColor: "#efefed",
+  backgroundCoreColor: "#fbfbf9",
+  ringColor: "#1f1f1f",
+  sweepColor: "#303030",
   ringSeed: "rehoboam-v2-rings",
   ringCount: 22,
   sweepSpeedDegPerSecond: 8,

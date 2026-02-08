@@ -3,13 +3,13 @@ import type { SeedInput } from "../../../../../shared/utils/seeded-rng";
 import type { RehoboamTheme, ViewportState } from "../../../engine/types";
 import { TAU } from "../../../layout/polar";
 
-const LINE_WIDTHS = [0.6, 0.8, 1.2, 1.6, 2.4, 3.2] as const;
+const LINE_WIDTHS = [0.28, 0.36, 0.48, 0.62, 0.8] as const;
 const DASH_TEMPLATES = [
   [2, 4],
   [3, 6],
   [4, 8],
-  [6, 12],
-  [8, 14],
+  [5, 10],
+  [7, 12],
 ] as const;
 
 export type RingSpec = Readonly<{
@@ -66,17 +66,17 @@ export const createRingSpecs = (
     const rotationDirection = random.next() < 0.5 ? -1 : 1;
     const dashTemplate =
       DASH_TEMPLATES[random.nextInt(0, DASH_TEMPLATES.length)];
-    const hasDash = random.next() < 0.62;
-    const baseRadiusFactor = 0.18 + depth * 0.82;
+    const hasDash = random.next() < 0.42;
+    const baseRadiusFactor = 0.28 + depth * 0.44;
     const radiusFactor = Math.min(
-      1,
-      Math.max(0.12, baseRadiusFactor + random.nextFloat(-0.006, 0.006))
+      0.74,
+      Math.max(0.26, baseRadiusFactor + random.nextFloat(-0.003, 0.003))
     );
 
     return {
       radiusFactor,
       lineWidth: LINE_WIDTHS[random.nextInt(0, LINE_WIDTHS.length)],
-      alpha: random.nextFloat(0.06, 0.3),
+      alpha: random.nextFloat(0.004, 0.028),
       dashPattern: hasDash ? [...dashTemplate] : [],
       dashOffset: random.nextFloat(0, 160),
       rotationSpeedRadPerSecond:
@@ -95,16 +95,14 @@ export const drawRingsPass = (input: RingsPassInput): void => {
     const rotationAngle = elapsedSeconds * ring.rotationSpeedRadPerSecond;
     const pulse =
       (Math.sin(elapsedSeconds * 0.8 + ring.pulsePhaseOffset) + 1) / 2;
-    const pulseScale = 0.86 + pulse * 0.14;
+    const pulseScale = 0.94 + pulse * 0.06;
 
     context.save();
     context.strokeStyle = theme.ringColor;
     context.lineWidth = ring.lineWidth;
     context.globalAlpha = ring.alpha * pulseScale;
     context.setLineDash([...ring.dashPattern]);
-    context.lineDashOffset =
-      ring.dashOffset +
-      ringRadius * rotationAngle * (ring.dashPattern.length > 0 ? 1 : 0);
+    context.lineDashOffset = ring.dashOffset + ringRadius * rotationAngle;
     context.beginPath();
     context.arc(
       viewport.center.x,

@@ -15,16 +15,22 @@ export const drawBackgroundPass = (input: BackgroundPassInput): void => {
   context.fillStyle = theme.backgroundColor;
   context.fillRect(0, 0, viewport.width, viewport.height);
 
-  context.globalAlpha = 0.18;
-  context.fillStyle = theme.backgroundCoreColor;
+  context.globalAlpha = 0.06;
+  context.fillStyle = "#151515";
   context.beginPath();
   context.arc(
     viewport.center.x,
     viewport.center.y,
-    viewport.outerRadius * 0.62,
+    viewport.outerRadius * 0.87,
     0,
     TAU
   );
-  context.fill();
+  context.strokeStyle = "#151515";
+  context.lineWidth = viewport.outerRadius * 0.015;
+  context.stroke();
+
+  context.globalAlpha = 0.04;
+  context.fillStyle = theme.backgroundCoreColor;
+  context.fillRect(0, 0, viewport.width, viewport.height);
   context.restore();
 };
