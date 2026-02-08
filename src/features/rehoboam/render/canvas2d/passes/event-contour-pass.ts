@@ -10,7 +10,6 @@ import {
 } from "../../../layout/compute-angles";
 import type { ComputedEventAngle } from "../../../layout/compute-angles";
 import {
-  normalizeAngle,
   polarToCartesian,
   shortestAngularDistance,
   TAU,
@@ -173,117 +172,6 @@ const drawContourStroke = (
   context.restore();
 };
 
-const drawEventSpikes = (
-  context: CanvasRenderingContext2D,
-  viewport: ViewportState,
-  elapsedMs: number,
-  rankedEventAngles: readonly RankedEventAngle[]
-): void => {
-  const elapsedSeconds = elapsedMs / 1000;
-  const baseRadius = viewport.outerRadius * 0.84;
-
-  for (const ranked of rankedEventAngles.slice(0, 12)) {
-    const eventAngle = ranked.eventAngle;
-    const rankBoost = ranked.rank === 0 ? 2.2 : ranked.rank < 3 ? 1.4 : 1;
-    const severityBoost =
-      eventAngle.event.severity === "critical"
-        ? 2
-        : eventAngle.event.severity === "high"
-          ? 1.4
-          : 1;
-    const spikeHeight =
-      eventAngle.markerHeight *
-      viewport.outerRadius *
-      (eventAngle.isCluster ? 1.36 : 1) *
-      (1 + Math.min(eventAngle.clusterSize, 6) * 0.08) *
-      rankBoost *
-      severityBoost;
-    const widthRad = 0.008 + Math.min(eventAngle.clusterSize, 6) * 0.0026;
-    const pulse =
-      0.9 + 0.1 * Math.sin(elapsedSeconds * 5.2 + eventAngle.angleRad);
-    const tipRadius = baseRadius + spikeHeight * pulse;
-    const leftShoulder = polarToCartesian(
-      {
-        radius: baseRadius + spikeHeight * 0.42,
-        angleRad: normalizeAngle(eventAngle.angleRad - widthRad * 0.34),
-      },
-      viewport.center
-    );
-    const rightShoulder = polarToCartesian(
-      {
-        radius: baseRadius + spikeHeight * 0.42,
-        angleRad: normalizeAngle(eventAngle.angleRad + widthRad * 0.34),
-      },
-      viewport.center
-    );
-    const leftPoint = polarToCartesian(
-      {
-        radius: baseRadius,
-        angleRad: normalizeAngle(eventAngle.angleRad - widthRad),
-      },
-      viewport.center
-    );
-    const rightPoint = polarToCartesian(
-      {
-        radius: baseRadius,
-        angleRad: normalizeAngle(eventAngle.angleRad + widthRad),
-      },
-      viewport.center
-    );
-    const tipPoint = polarToCartesian(
-      {
-        radius: tipRadius,
-        angleRad: eventAngle.angleRad,
-      },
-      viewport.center
-    );
-
-    context.save();
-    context.fillStyle = "#1a1a1a";
-    context.globalAlpha = ranked.rank === 0 ? 0.6 : 0.38;
-    context.beginPath();
-    context.moveTo(leftPoint.x, leftPoint.y);
-    context.lineTo(leftShoulder.x, leftShoulder.y);
-    context.lineTo(tipPoint.x, tipPoint.y);
-    context.lineTo(rightShoulder.x, rightShoulder.y);
-    context.lineTo(rightPoint.x, rightPoint.y);
-    context.lineTo(leftPoint.x, leftPoint.y);
-    context.fill();
-    context.strokeStyle = "#191919";
-    context.globalAlpha = ranked.rank === 0 ? 0.3 : 0.16;
-    context.lineWidth = 0.8;
-    context.stroke();
-    context.restore();
-  }
-};
-
-const drawAnchorNodes = (
-  context: CanvasRenderingContext2D,
-  viewport: ViewportState,
-  rankedEventAngles: readonly RankedEventAngle[]
-): void => {
-  const baseRadius = viewport.outerRadius * 0.84;
-
-  for (const ranked of rankedEventAngles.slice(0, 8)) {
-    const eventAngle = ranked.eventAngle;
-    const point = polarToCartesian(
-      {
-        radius: baseRadius,
-        angleRad: eventAngle.angleRad,
-      },
-      viewport.center
-    );
-
-    context.save();
-    context.fillStyle = "#111111";
-    context.globalAlpha = ranked.rank === 0 ? 0.28 : 0.14;
-    context.beginPath();
-    context.arc(point.x, point.y, ranked.rank === 0 ? 3.6 : 2, 0, TAU);
-    context.fill();
-    context.restore();
-  }
-};
-
 const rankEventAngles = (
   eventAngles: readonly ComputedEventAngle[]
 ): readonly RankedEventAngle[] => {
@@ -335,6 +223,4 @@ export const drawEventContourPass = (input: EventContourPassInput): void => {
 
   drawContourStroke(context, viewport, contourSamples, 0.56, 2.6);
   drawContourStroke(context, viewport, contourSamples, 0.14, 7.8);
-  drawEventSpikes(context, viewport, elapsedMs, rankedEventAngles);
-  drawAnchorNodes(context, viewport, rankedEventAngles);
 };

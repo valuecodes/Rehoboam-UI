@@ -52,6 +52,7 @@ export type InteractionState = Readonly<{
   pointer: PointerState | null;
   isPointerDown: boolean;
   isDragging: boolean;
+  hoverCandidateEventId: string | null;
   hoveredEventId: string | null;
   selectedEventId: string | null;
   hoverStartedAtMs: number | null;
