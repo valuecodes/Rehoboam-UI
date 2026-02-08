@@ -1,7 +1,5 @@
-import { Reheboam } from "./components/mainsection/reheboam";
-
-import "./app.css";
+import { RehoboamScene } from "./features/rehoboam";
 
 export const App = () => {
-  return <Reheboam />;
+  return <RehoboamScene />;
 };
