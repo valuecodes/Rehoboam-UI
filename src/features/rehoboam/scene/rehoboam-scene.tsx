@@ -4,7 +4,9 @@ import type {
   PointerEvent as ReactPointerEvent,
 } from "react";
 
-import { getMockFixtureEvents } from "../data/source";
+import { refreshEventsFromSource } from "../data/bootstrap";
+import { loadPersistedEvents } from "../data/persistence";
+import { createMockEventSource } from "../data/source";
 import { DEFAULT_DPR_CAP } from "../engine/defaults";
 import {
   applyHoverDwellTick,
@@ -203,10 +205,11 @@ export const RehoboamScene = () => {
     width: 0,
     height: 0,
   });
+  const [events, setEvents] = useState<readonly WorldEvent[]>([]);
   const [interaction, setInteraction] = useState<InteractionState>(() => {
     return createInitialInteractionState();
   });
-  const events = useMemo(() => getMockFixtureEvents(), []);
+  const eventSource = useMemo(() => createMockEventSource(), []);
   const eventAngles = useMemo(() => {
     return computeAngles(events, {
       nowMs: getLayoutNowMs(events),
@@ -240,6 +243,33 @@ export const RehoboamScene = () => {
   }, [activeEventAngle, instrumentSize]);
 
   useEffect(() => {
+    let isCancelled = false;
+
+    const bootEvents = async () => {
+      const cachedEvents = await loadPersistedEvents();
+
+      if (!isCancelled && cachedEvents.length > 0) {
+        setEvents(cachedEvents);
+      }
+
+      const mergedEvents = await refreshEventsFromSource({
+        existingEvents: cachedEvents,
+        source: eventSource,
+      });
+
+      if (!isCancelled) {
+        setEvents(mergedEvents);
+      }
+    };
+
+    void bootEvents();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [eventSource]);
+
+  useEffect(() => {
     const instrument = instrumentRef.current;
     const canvas = canvasRef.current;
 
@@ -271,8 +301,8 @@ export const RehoboamScene = () => {
     });
 
     observer.observe(instrument);
-    engine.setEvents(events);
-    engine.setInteraction(interaction);
+    engine.setEvents([]);
+    engine.setInteraction(createInitialInteractionState());
     engine.start();
 
     return () => {
@@ -280,7 +310,7 @@ export const RehoboamScene = () => {
       engine.destroy();
       engineRef.current = null;
     };
-  }, [events]);
+  }, []);
 
   useEffect(() => {
     const engine = engineRef.current;
