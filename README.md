@@ -47,6 +47,41 @@ pnpm format:check
 pnpm test
 ```
 
+## Playwright Screenshots
+
+Use the local screenshot tool for fast UI iteration snapshots:
+
+```bash
+pnpm screenshot:scene
+```
+
+Default outputs:
+
+- full page: `.tmp/screenshots/current-codex-auto.png`
+- scene element: `.tmp/screenshots/current-codex-auto.instrument.png`
+
+Useful options:
+
+```bash
+pnpm screenshot:scene --output .tmp/screenshots/current-codex-auto.png
+pnpm screenshot:scene --width 1365 --height 1024 --settle-ms 250
+pnpm screenshot:scene --base-url http://127.0.0.1:3001
+pnpm screenshot:scene:headed
+```
+
+Equivalent environment variables:
+
+- `SCREENSHOT_OUTPUT_BASE`
+- `SCREENSHOT_VIEWPORT_WIDTH`
+- `SCREENSHOT_VIEWPORT_HEIGHT`
+- `SCREENSHOT_SETTLE_MS`
+- `SCREENSHOT_BASE_URL`
+- `SCREENSHOT_HEADLESS`
+
+The command uses a dedicated screenshot server on port `3001` by default,
+waits for `.rehoboam-scene__instrument` to be visible, and then applies a
+short settle delay before capturing.
+
 ## Scripts
 
 - `pnpm dev` - run the Vite dev server on port `3000`
@@ -58,6 +93,8 @@ pnpm test
 - `pnpm format` - auto-format files with Prettier
 - `pnpm format:check` - verify formatting
 - `pnpm test` - run tests with Vitest
+- `pnpm screenshot:scene` - capture deterministic full + scene screenshots
+- `pnpm screenshot:scene:headed` - run screenshot capture with headed browser
 
 ## CI Pipeline
 
