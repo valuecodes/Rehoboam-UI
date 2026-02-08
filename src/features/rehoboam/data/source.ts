@@ -11,7 +11,7 @@ export type EventPipelineOptions = Readonly<{
 }>;
 
 export type RehoboamEventSource = Readonly<{
-  loadEvents: () => Promise<readonly WorldEvent[]>;
+  loadEvents: () => Promise<unknown>;
 }>;
 
 const toEventList = (input: unknown): readonly unknown[] => {
@@ -77,7 +77,10 @@ export const createMockEventSource = (
 };
 
 export const loadEventsFromSource = async (
-  source: RehoboamEventSource
+  source: RehoboamEventSource,
+  options: EventPipelineOptions = {}
 ): Promise<readonly WorldEvent[]> => {
-  return source.loadEvents();
+  const payload = await source.loadEvents();
+
+  return runEventPipeline(payload, options);
 };
