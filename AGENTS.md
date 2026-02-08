@@ -21,11 +21,11 @@ It summarizes the current architecture, quality gates, and safe editing workflow
 ## Repository Map
 
 - Entry point: `src/main.tsx`
-- Root app: `src/App.tsx`
+- Root app: `src/app.tsx`
 - Main composition: `src/components/mainsection/reheboam.tsx`
 - Animation/timeline control: `src/components/mainsection/animation/animation.tsx`
 - Canvas ring rendering: `src/components/mainsection/animation/canvas.tsx`
-- Event overlay UI: `src/components/mainsection/divergency/mainSVG.tsx`
+- Event overlay UI: `src/components/mainsection/divergency/main-svg.tsx`
 - Event details panel: `src/components/mainsection/divergency/divergengy.tsx`
 - Custom event creation UI: `src/components/mainsection/navigation/create/create.tsx`
 - Timeline data: `src/components/mainsection/data/corona.json`
@@ -34,7 +34,7 @@ It summarizes the current architecture, quality gates, and safe editing workflow
 ## Local Commands
 
 - Install deps: `pnpm install`
-- Run dev server: `pnpm dev`
+- Run dev server (`http://localhost:3000`): `pnpm dev`
 - Build: `pnpm build`
 - Preview build: `pnpm preview`
 - Typecheck: `pnpm typecheck`

@@ -1,5 +1,9 @@
 /node_modules
 /dist
 /coverage
-/coverage
 .pnpm-store
+
+# Environment variables
+.env
+.env.local
+.env.*

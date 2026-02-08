@@ -7,12 +7,7 @@ type HexagonProps = {
   size: number;
 };
 
-export const Hexagon = ({
-  top,
-  left,
-  opacity,
-  size,
-}: HexagonProps): React.JSX.Element => {
+export const Hexagon = ({ top, left, opacity, size }: HexagonProps) => {
   return (
     <svg
       className="hexagon"

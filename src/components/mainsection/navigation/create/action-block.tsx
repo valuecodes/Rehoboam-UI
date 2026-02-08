@@ -20,7 +20,7 @@ export const ActionBlock = ({
   data,
   deleteActionBlock,
   addData,
-}: ActionBlockProps): React.JSX.Element => {
+}: ActionBlockProps) => {
   const handleChange =
     (field: EditableField) => (event: ChangeEvent<HTMLInputElement>) => {
       addData(field, index, event.target.value);

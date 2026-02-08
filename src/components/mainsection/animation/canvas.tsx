@@ -12,7 +12,7 @@ const getRandomInt = (max: number): number => {
   return Math.floor(Math.random() * Math.floor(max));
 };
 
-export const Canvas = ({ divergence }: CanvasProps): React.JSX.Element => {
+export const Canvas = ({ divergence }: CanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const divergenceRef = useRef<number | null>(null);
 

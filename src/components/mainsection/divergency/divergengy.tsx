@@ -7,9 +7,7 @@ type DivergengyProps = {
   positions: DisplayPositions;
 };
 
-export const Divergency = ({
-  positions: nextPositions,
-}: DivergengyProps): React.JSX.Element => {
+export const Divergency = ({ positions: nextPositions }: DivergengyProps) => {
   const [positions, setPositions] = useState<DisplayPositions>(nextPositions);
   const [open, setOpen] = useState<"open" | "close">("open");
 

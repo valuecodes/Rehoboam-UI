@@ -51,7 +51,7 @@ const buildPositions = (): RingPosition[] => {
   return points;
 };
 
-export const Animation = ({ active }: AnimationProps): React.JSX.Element => {
+export const Animation = ({ active }: AnimationProps) => {
   const [positions, setPositions] = useState<RingPosition[]>([]);
   const [pos, setPos] = useState<RingPosition>(createHiddenPosition());
   const [dataPosition, setDataPosition] = useState(0);

@@ -29,6 +29,8 @@ pnpm install
 pnpm dev
 ```
 
+Dev server URL: `http://localhost:3000`
+
 ## Build and Preview
 
 ```bash
@@ -47,8 +49,8 @@ pnpm test
 
 ## Scripts
 
-- `pnpm dev` - run the Vite dev server
-- `pnpm start` - alias for `pnpm dev`
+- `pnpm dev` - run the Vite dev server on port `3000`
+- `pnpm start` - alias for `pnpm dev` (port `3000`)
 - `pnpm build` - create production build
 - `pnpm preview` - preview the production build
 - `pnpm typecheck` - run TypeScript checks

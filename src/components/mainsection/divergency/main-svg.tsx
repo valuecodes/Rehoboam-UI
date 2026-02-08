@@ -10,7 +10,7 @@ type MainSVGProps = {
   positions: DisplayPositions;
 };
 
-export const MainSVG = ({ positions }: MainSVGProps): React.JSX.Element => {
+export const MainSVG = ({ positions }: MainSVGProps) => {
   const [open, setOpen] = useState<"open" | "close">("open");
 
   useEffect(() => {
