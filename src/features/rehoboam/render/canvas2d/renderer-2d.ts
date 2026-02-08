@@ -4,8 +4,11 @@ import type {
   RehoboamRendererFrame,
   RehoboamTheme,
 } from "../../engine/types";
+import { createDivergencePulseTracker } from "./divergence-pulse-tracker";
 import { drawBackgroundPass } from "./passes/background-pass";
 import type { BackgroundPassInput } from "./passes/background-pass";
+import { drawDivergencePass } from "./passes/divergence-pass";
+import type { DivergencePassInput } from "./passes/divergence-pass";
 import { drawEventContourPass } from "./passes/event-contour-pass";
 import type { EventContourPassInput } from "./passes/event-contour-pass";
 import { drawMarkersPass } from "./passes/markers-pass";
@@ -38,6 +41,7 @@ export const createRenderer2D = (
   const { context } = options;
   let theme = options.theme;
   let ringSpecs = buildRingSpecs(theme);
+  const divergencePulseTracker = createDivergencePulseTracker();
   let isDestroyed = false;
 
   const resize: RehoboamRenderer["resize"] = () => {
@@ -109,15 +113,27 @@ export const createRenderer2D = (
       events: frame.events,
       elapsedMs: frame.elapsedMs,
     };
+    divergencePulseTracker.updateEvents(frame.events, frame.timeMs);
+    const divergenceInput: DivergencePassInput = {
+      context,
+      viewport: frame.viewport,
+      theme,
+      events: frame.events,
+      pulses: divergencePulseTracker.getActivePulses(frame.timeMs),
+      elapsedMs: frame.elapsedMs,
+      timeMs: frame.timeMs,
+    };
 
     drawBackgroundPass(backgroundInput);
     drawRingsPass(ringsInput);
     drawEventContourPass(eventContourInput);
+    drawDivergencePass(divergenceInput);
     drawMarkersPass(markersInput);
     drawSweepPass(sweepInput);
   };
 
   const destroy: RehoboamRenderer["destroy"] = () => {
+    divergencePulseTracker.reset();
     isDestroyed = true;
   };
 
