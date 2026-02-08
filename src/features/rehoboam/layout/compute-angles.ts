@@ -3,6 +3,7 @@ import { normalizeAngle, TAU } from "./polar";
 
 export const DEFAULT_LAYOUT_WINDOW_MS = 24 * 60 * 60 * 1000;
 export const DEFAULT_MAX_VISIBLE_EVENT_COUNT = 48;
+export const DEFAULT_MIN_TIME_SPAN_RATIO_FOR_TIME_MAPPING = 0.35;
 
 export const SEVERITY_MARKER_HEIGHT: Readonly<
   Record<WorldEventSeverity, number>
@@ -25,9 +26,16 @@ export type TimeWindowAngleOptions = Readonly<{
   windowMs?: number;
 }>;
 
+export type EventAngleDistributionMode =
+  | "adaptive"
+  | "time-window"
+  | "ordered";
+
 export type ComputeAnglesOptions = TimeWindowAngleOptions &
   Readonly<{
     maxVisibleCount?: number;
+    distributionMode?: EventAngleDistributionMode;
+    minTimeSpanRatioForTimeMapping?: number;
   }>;
 
 export type ComputedEventAngle = Readonly<{
@@ -68,6 +76,25 @@ const sanitizeMaxVisibleCount = (
     1,
     Math.trunc(maxVisibleCount ?? DEFAULT_MAX_VISIBLE_EVENT_COUNT)
   );
+};
+
+const sanitizeDistributionMode = (
+  distributionMode: EventAngleDistributionMode | undefined
+): EventAngleDistributionMode => {
+  return distributionMode ?? "adaptive";
+};
+
+const sanitizeMinTimeSpanRatio = (
+  minTimeSpanRatioForTimeMapping: number | undefined
+): number => {
+  if (
+    minTimeSpanRatioForTimeMapping === undefined ||
+    !Number.isFinite(minTimeSpanRatioForTimeMapping)
+  ) {
+    return DEFAULT_MIN_TIME_SPAN_RATIO_FOR_TIME_MAPPING;
+  }
+
+  return Math.min(1, Math.max(0, minTimeSpanRatioForTimeMapping));
 };
 
 const compareEventsForLayout = (
@@ -142,14 +169,83 @@ export const mapTimestampToTimeWindowAngle = (
   return normalizeAngle(boundedTimePosition * TAU);
 };
 
+const getTimestampSpanMs = (events: readonly WorldEvent[]): number => {
+  if (events.length <= 1) {
+    return 0;
+  }
+
+  let minTimestampMs = events[0].timestampMs;
+  let maxTimestampMs = events[0].timestampMs;
+
+  for (const event of events) {
+    minTimestampMs = Math.min(minTimestampMs, event.timestampMs);
+    maxTimestampMs = Math.max(maxTimestampMs, event.timestampMs);
+  }
+
+  return maxTimestampMs - minTimestampMs;
+};
+
+const resolveDistributionMode = (
+  sortedEvents: readonly WorldEvent[],
+  options: ComputeAnglesOptions
+): Exclude<EventAngleDistributionMode, "adaptive"> => {
+  const distributionMode = sanitizeDistributionMode(options.distributionMode);
+
+  if (distributionMode === "ordered" || distributionMode === "time-window") {
+    return distributionMode;
+  }
+
+  if (sortedEvents.length <= 1) {
+    return "time-window";
+  }
+
+  const windowMs = sanitizeWindowMs(options.windowMs);
+  const timestampSpanMs = getTimestampSpanMs(sortedEvents);
+  const timeSpanRatio = timestampSpanMs / windowMs;
+  const minimumTimeSpanRatio = sanitizeMinTimeSpanRatio(
+    options.minTimeSpanRatioForTimeMapping
+  );
+
+  if (timeSpanRatio < minimumTimeSpanRatio) {
+    return "ordered";
+  }
+
+  return "time-window";
+};
+
+const mapOrderedIndexToAngle = (
+  index: number,
+  totalCount: number,
+  nowMs: number
+): number => {
+  if (totalCount <= 1) {
+    return mapTimestampToTimeWindowAngle(nowMs, {
+      nowMs,
+      windowMs: DEFAULT_LAYOUT_WINDOW_MS,
+    });
+  }
+
+  const position = index / totalCount;
+
+  return normalizeAngle(position * TAU);
+};
+
 const resolveEventMarkers = (
   events: readonly WorldEvent[],
   options: ComputeAnglesOptions
 ): readonly ResolvedEventMarker[] => {
-  return [...events].sort(compareEventsForLayout).map((event) => {
+  const sortedEvents = [...events].sort(compareEventsForLayout);
+  const distributionMode = resolveDistributionMode(sortedEvents, options);
+
+  return sortedEvents.map((event, index) => {
+    const angleRad =
+      distributionMode === "ordered"
+        ? mapOrderedIndexToAngle(index, sortedEvents.length, options.nowMs)
+        : mapTimestampToTimeWindowAngle(event.timestampMs, options);
+
     return {
       event,
-      angleRad: mapTimestampToTimeWindowAngle(event.timestampMs, options),
+      angleRad,
       markerHeight: getMarkerHeightForSeverity(event.severity),
     };
   });

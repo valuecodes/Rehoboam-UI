@@ -120,4 +120,37 @@ describe("computeAngles", () => {
       clusteredInput.length
     );
   });
+
+  it("supports ordered distribution for full-circle progression", () => {
+    const nowMs = 1_770_600_000_000;
+    const events = [
+      createEvent({
+        id: "event-a",
+        timestampMs: nowMs - 60_000,
+      }),
+      createEvent({
+        id: "event-b",
+        timestampMs: nowMs - 50_000,
+      }),
+      createEvent({
+        id: "event-c",
+        timestampMs: nowMs - 40_000,
+      }),
+      createEvent({
+        id: "event-d",
+        timestampMs: nowMs - 30_000,
+      }),
+    ] satisfies readonly WorldEvent[];
+
+    const ordered = computeAngles(events, {
+      nowMs,
+      maxVisibleCount: 48,
+      distributionMode: "ordered",
+    });
+
+    expect(ordered[0].angleRad).toBeCloseTo(0);
+    expect(ordered[1].angleRad).toBeCloseTo(TAU * 0.25);
+    expect(ordered[2].angleRad).toBeCloseTo(TAU * 0.5);
+    expect(ordered[3].angleRad).toBeCloseTo(TAU * 0.75);
+  });
 });

@@ -2,6 +2,7 @@ import {
   createViewportState,
   DEFAULT_THEME,
 } from "../../../features/rehoboam/engine/defaults";
+import { createInitialInteractionState } from "../../../features/rehoboam/engine/input";
 import type { WorldEvent } from "../../../features/rehoboam/engine/types";
 import type { DivergencePulse } from "../../../features/rehoboam/render/canvas2d/divergence-pulse-tracker";
 import { drawDivergencePass } from "../../../features/rehoboam/render/canvas2d/passes/divergence-pass";
@@ -48,6 +49,7 @@ describe("drawDivergencePass", () => {
       context: first.context,
       viewport: VIEWPORT,
       theme: DEFAULT_THEME,
+      interaction: createInitialInteractionState(),
       events: EVENTS,
       pulses: PULSES,
       elapsedMs: 3_000,
@@ -58,6 +60,7 @@ describe("drawDivergencePass", () => {
       context: second.context,
       viewport: VIEWPORT,
       theme: DEFAULT_THEME,
+      interaction: createInitialInteractionState(),
       events: EVENTS,
       pulses: PULSES,
       elapsedMs: 3_000,
@@ -75,6 +78,7 @@ describe("drawDivergencePass", () => {
       context: withoutPulse.context,
       viewport: VIEWPORT,
       theme: DEFAULT_THEME,
+      interaction: createInitialInteractionState(),
       events: EVENTS,
       pulses: [],
       elapsedMs: 3_000,
@@ -85,6 +89,7 @@ describe("drawDivergencePass", () => {
       context: withPulse.context,
       viewport: VIEWPORT,
       theme: DEFAULT_THEME,
+      interaction: createInitialInteractionState(),
       events: EVENTS,
       pulses: PULSES,
       elapsedMs: 3_000,
@@ -105,6 +110,7 @@ describe("drawDivergencePass", () => {
         ...DEFAULT_THEME,
         divergenceSampleCount: 140,
       },
+      interaction: createInitialInteractionState(),
       events: EVENTS,
       pulses: [],
       elapsedMs: 3_000,
@@ -118,6 +124,7 @@ describe("drawDivergencePass", () => {
         ...DEFAULT_THEME,
         divergenceSampleCount: 520,
       },
+      interaction: createInitialInteractionState(),
       events: EVENTS,
       pulses: [],
       elapsedMs: 3_000,
