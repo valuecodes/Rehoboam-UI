@@ -1,3 +1,5 @@
+@import url(https://fonts.googleapis.com/css?family=Open+Sans:4,3);
+
 html,
 body {
   height: 100%;
@@ -168,8 +170,6 @@ body {
   height: 800px;
   width: 800px;
 }
-
-@import url(https://fonts.googleapis.com/css?family=Open+Sans:4,3);
 
 .innerLine {
   stroke: rgb(39, 103, 187);
