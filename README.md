@@ -2,7 +2,7 @@
 
 A React app inspired by the "Rehoboam" interface from Westworld TV series.
 
-![Preview](./public/Picture.JPG)
+![Preview](./public/preview.jpg)
 
 - Watch critical COVID-19 timeline events.
 - Create and launch a custom timeline.
