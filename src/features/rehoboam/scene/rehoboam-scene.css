@@ -25,6 +25,11 @@
   position: relative;
   overflow: visible;
   background: transparent;
+  outline: none;
+}
+
+.rehoboam-scene__instrument:focus-visible {
+  box-shadow: 0 0 0 2px rgba(20, 20, 20, 0.32);
 }
 
 .rehoboam-scene__canvas {
@@ -44,6 +49,8 @@
 .rehoboam-scene__callout-line {
   stroke: var(--rehoboam-line);
   stroke-width: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
   fill: none;
 }
 
@@ -69,7 +76,8 @@
 
 .rehoboam-scene__callout-time,
 .rehoboam-scene__callout-title,
-.rehoboam-scene__callout-subtitle {
+.rehoboam-scene__callout-subtitle,
+.rehoboam-scene__callout-meta {
   margin: 0;
   line-height: 1;
 }
@@ -97,6 +105,13 @@
   opacity: 0.9;
   max-width: 100%;
   line-height: 1.08;
+}
+
+.rehoboam-scene__callout-meta {
+  margin-top: 6px;
+  font-size: clamp(0.6rem, 0.78vw, 0.76rem);
+  letter-spacing: 0.12em;
+  opacity: 0.64;
 }
 
 @media (max-width: 700px) {
