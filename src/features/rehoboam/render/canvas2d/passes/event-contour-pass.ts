@@ -222,5 +222,5 @@ export const drawEventContourPass = (input: EventContourPassInput): void => {
   );
 
   drawContourStroke(context, viewport, contourSamples, 0.56, 2.6);
-  drawContourStroke(context, viewport, contourSamples, 0.14, 7.8);
+  drawContourStroke(context, viewport, contourSamples, 0.08, 5.6);
 };
