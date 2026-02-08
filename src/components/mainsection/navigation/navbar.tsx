@@ -15,7 +15,7 @@ export const NavBar = ({
   restart,
   create,
   cancel,
-}: NavBarProps): React.JSX.Element => {
+}: NavBarProps) => {
   const springProps = useSpring({
     from: {
       marginTop: inProgress && !initial ? 0 : -190,

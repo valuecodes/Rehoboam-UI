@@ -8,9 +8,9 @@ import type {
 import { EMPTY_DISPLAY_POSITIONS } from "../../types";
 import { Animation } from "./animation/animation";
 import { Divergency } from "./divergency/divergengy";
-import { MainSVG } from "./divergency/mainSVG";
+import { MainSVG } from "./divergency/main-svg";
 
-export const Reheboam = (): React.JSX.Element => {
+export const Reheboam = () => {
   const [positions, setPositions] = useState<DisplayPositions>(
     EMPTY_DISPLAY_POSITIONS
   );

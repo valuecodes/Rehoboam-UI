@@ -2,7 +2,7 @@ import React, { useRef, useState } from "react";
 import { animated, useSpring } from "react-spring";
 
 import type { TimelineEvent } from "../../../../types";
-import { ActionBlock } from "./actionBlock";
+import { ActionBlock } from "./action-block";
 
 type CreateProps = {
   initial: boolean;
@@ -30,11 +30,7 @@ const buildEmptyAction = (id: number): CustomAction => {
   };
 };
 
-export const Create = ({
-  isOn,
-  initial,
-  launchCustom,
-}: CreateProps): React.JSX.Element => {
+export const Create = ({ isOn, initial, launchCustom }: CreateProps) => {
   const [actions, setActions] = useState<CustomAction[]>([buildEmptyAction(1)]);
   const nextIdRef = useRef(1);
 
