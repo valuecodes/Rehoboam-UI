@@ -25,6 +25,20 @@ import type { DivergencePulse } from "../divergence-pulse-tracker";
 
 const LEADING_TIME_OFFSET_MS = 45 * 60 * 1000;
 
+const SEVERITY_RANK: Readonly<Record<WorldEventSeverity, number>> = {
+  low: 0,
+  medium: 1,
+  high: 2,
+  critical: 3,
+};
+
+const IDLE_TEAR_STRENGTH: Readonly<Record<WorldEventSeverity, number>> = {
+  low: 0.0048,
+  medium: 0.0068,
+  high: 0.0092,
+  critical: 0.012,
+};
+
 const PULSE_AMPLITUDE_SCALE: Readonly<Record<WorldEventSeverity, number>> = {
   low: 0.014,
   medium: 0.024,
@@ -126,9 +140,8 @@ const getRaisedCosineWindow = (
   return 0.5 * (1 + Math.cos((Math.PI * distanceRad) / windowRad));
 };
 
-const resolvePulseAngles = (
-  events: readonly WorldEvent[],
-  pulses: readonly DivergencePulse[]
+const resolveEventAnglesByEventId = (
+  events: readonly WorldEvent[]
 ): ReadonlyMap<string, number> => {
   const eventAngles = computeAngles(events, {
     nowMs: getLayoutNowMs(events),
@@ -144,17 +157,7 @@ const resolvePulseAngles = (
     }
   }
 
-  const pulseAngleByEventId = new Map<string, number>();
-
-  for (const pulse of pulses) {
-    const angleRad = angleByEventId.get(pulse.eventId);
-
-    if (angleRad !== undefined) {
-      pulseAngleByEventId.set(pulse.eventId, angleRad);
-    }
-  }
-
-  return pulseAngleByEventId;
+  return angleByEventId;
 };
 
 const resolveActivePulseDescriptors = (
@@ -199,7 +202,7 @@ const getPulseStrength = (pulse: DivergencePulse, timeMs: number): number => {
 
 const resolvePrimaryPulseEventId = (
   pulses: readonly DivergencePulse[],
-  pulseAngles: ReadonlyMap<string, number>,
+  eventAnglesByEventId: ReadonlyMap<string, number>,
   interaction: InteractionState,
   timeMs: number
 ): string | null => {
@@ -213,7 +216,10 @@ const resolvePrimaryPulseEventId = (
     }
 
     const isActive = pulses.some((pulse) => {
-      if (pulse.eventId !== eventId || pulseAngles.get(pulse.eventId) === undefined) {
+      if (
+        pulse.eventId !== eventId ||
+        eventAnglesByEventId.get(pulse.eventId) === undefined
+      ) {
         return false;
       }
 
@@ -229,7 +235,7 @@ const resolvePrimaryPulseEventId = (
   let strongestStrength = 0;
 
   for (const pulse of pulses) {
-    if (pulseAngles.get(pulse.eventId) === undefined) {
+    if (eventAnglesByEventId.get(pulse.eventId) === undefined) {
       continue;
     }
 
@@ -244,6 +250,69 @@ const resolvePrimaryPulseEventId = (
   }
 
   return strongestEventId;
+};
+
+const compareEventsByPriority = (left: WorldEvent, right: WorldEvent): number => {
+  const severityDelta =
+    SEVERITY_RANK[right.severity] - SEVERITY_RANK[left.severity];
+
+  if (severityDelta !== 0) {
+    return severityDelta;
+  }
+
+  if (left.timestampMs !== right.timestampMs) {
+    return right.timestampMs - left.timestampMs;
+  }
+
+  return left.id.localeCompare(right.id);
+};
+
+const resolvePrimaryEventId = (
+  events: readonly WorldEvent[],
+  eventAnglesByEventId: ReadonlyMap<string, number>,
+  interaction: InteractionState
+): string | null => {
+  for (const eventId of [
+    interaction.selectedEventId,
+    interaction.hoveredEventId,
+    interaction.hoverCandidateEventId,
+  ]) {
+    if (eventId !== null && eventAnglesByEventId.has(eventId)) {
+      return eventId;
+    }
+  }
+
+  return [...events]
+    .filter((event) => eventAnglesByEventId.has(event.id))
+    .sort(compareEventsByPriority)[0]?.id ?? null;
+};
+
+const createIdleTearDescriptor = (
+  events: readonly WorldEvent[],
+  eventAnglesByEventId: ReadonlyMap<string, number>,
+  primaryEventId: string | null,
+  elapsedMs: number
+): ActivePulseDescriptor | null => {
+  if (primaryEventId === null) {
+    return null;
+  }
+
+  const angleRad = eventAnglesByEventId.get(primaryEventId);
+  const event = events.find((candidate) => candidate.id === primaryEventId);
+
+  if (angleRad === undefined || event === undefined) {
+    return null;
+  }
+
+  const elapsedSeconds = elapsedMs / 1000;
+  const modulation =
+    0.88 + 0.12 * Math.sin(elapsedSeconds * 1.3 + angleRad * 2.1);
+
+  return {
+    angleRad,
+    severity: event.severity,
+    strength: IDLE_TEAR_STRENGTH[event.severity] * modulation,
+  };
 };
 
 const createContourSamples = (
@@ -488,16 +557,30 @@ const drawDirectionalTears = (
 };
 
 export const drawDivergencePass = (input: DivergencePassInput): void => {
-  const { context, viewport, theme, interaction, events, pulses, elapsedMs, timeMs } = input;
+  const {
+    context,
+    viewport,
+    theme,
+    interaction,
+    events,
+    pulses,
+    elapsedMs,
+    timeMs,
+  } = input;
 
   if (events.length === 0) {
     return;
   }
 
-  const pulseAngles = resolvePulseAngles(events, pulses);
+  const eventAnglesByEventId = resolveEventAnglesByEventId(events);
+  const primaryEventId = resolvePrimaryEventId(
+    events,
+    eventAnglesByEventId,
+    interaction
+  );
   const primaryPulseEventId = resolvePrimaryPulseEventId(
     pulses,
-    pulseAngles,
+    eventAnglesByEventId,
     interaction,
     timeMs
   );
@@ -509,15 +592,27 @@ export const drawDivergencePass = (input: DivergencePassInput): void => {
         });
   const activePulseDescriptors = resolveActivePulseDescriptors(
     activePulses,
-    pulseAngles,
+    eventAnglesByEventId,
     timeMs
   );
+  const idleTearDescriptor = createIdleTearDescriptor(
+    events,
+    eventAnglesByEventId,
+    primaryEventId,
+    elapsedMs
+  );
+  const directionalTears =
+    activePulseDescriptors.length > 0
+      ? activePulseDescriptors
+      : idleTearDescriptor === null
+        ? []
+        : [idleTearDescriptor];
   const samples = createContourSamples(
     viewport,
     elapsedMs,
     timeMs,
     activePulses,
-    pulseAngles,
+    eventAnglesByEventId,
     theme.divergenceSampleCount
   );
 
@@ -528,7 +623,7 @@ export const drawDivergencePass = (input: DivergencePassInput): void => {
     context,
     viewport,
     theme,
-    activePulseDescriptors,
+    directionalTears,
     elapsedMs
   );
 };
