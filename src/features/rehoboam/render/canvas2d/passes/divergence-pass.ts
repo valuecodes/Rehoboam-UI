@@ -1,4 +1,5 @@
 import type {
+  InteractionState,
   RehoboamTheme,
   ViewportState,
   WorldEvent,
@@ -42,6 +43,7 @@ export type DivergencePassInput = Readonly<{
   context: CanvasRenderingContext2D;
   viewport: ViewportState;
   theme: RehoboamTheme;
+  interaction: InteractionState;
   events: readonly WorldEvent[];
   pulses: readonly DivergencePulse[];
   elapsedMs: number;
@@ -132,6 +134,7 @@ const resolvePulseAngles = (
     nowMs: getLayoutNowMs(events),
     windowMs: DEFAULT_LAYOUT_WINDOW_MS,
     maxVisibleCount: DEFAULT_MAX_VISIBLE_EVENT_COUNT,
+    distributionMode: "ordered",
   });
   const angleByEventId = new Map<string, number>();
 
@@ -186,6 +189,61 @@ const resolveActivePulseDescriptors = (
   return descriptors.sort((left, right) => {
     return right.strength - left.strength;
   });
+};
+
+const getPulseStrength = (pulse: DivergencePulse, timeMs: number): number => {
+  const elapsedPulseMs = timeMs - pulse.startedAtMs;
+
+  return getPulseEnvelope(elapsedPulseMs) * PULSE_AMPLITUDE_SCALE[pulse.severity];
+};
+
+const resolvePrimaryPulseEventId = (
+  pulses: readonly DivergencePulse[],
+  pulseAngles: ReadonlyMap<string, number>,
+  interaction: InteractionState,
+  timeMs: number
+): string | null => {
+  for (const eventId of [
+    interaction.selectedEventId,
+    interaction.hoveredEventId,
+    interaction.hoverCandidateEventId,
+  ]) {
+    if (eventId === null) {
+      continue;
+    }
+
+    const isActive = pulses.some((pulse) => {
+      if (pulse.eventId !== eventId || pulseAngles.get(pulse.eventId) === undefined) {
+        return false;
+      }
+
+      return getPulseStrength(pulse, timeMs) > 0;
+    });
+
+    if (isActive) {
+      return eventId;
+    }
+  }
+
+  let strongestEventId: string | null = null;
+  let strongestStrength = 0;
+
+  for (const pulse of pulses) {
+    if (pulseAngles.get(pulse.eventId) === undefined) {
+      continue;
+    }
+
+    const strength = getPulseStrength(pulse, timeMs);
+
+    if (strength <= strongestStrength) {
+      continue;
+    }
+
+    strongestStrength = strength;
+    strongestEventId = pulse.eventId;
+  }
+
+  return strongestEventId;
 };
 
 const createContourSamples = (
@@ -364,7 +422,7 @@ const drawDirectionalTears = (
   pulses: readonly ActivePulseDescriptor[],
   elapsedMs: number
 ): void => {
-  const strongestPulses = pulses.slice(0, 2);
+  const strongestPulses = pulses.slice(0, 1);
   const elapsedSeconds = elapsedMs / 1000;
   const baseRadius = viewport.outerRadius * 0.84;
 
@@ -430,15 +488,27 @@ const drawDirectionalTears = (
 };
 
 export const drawDivergencePass = (input: DivergencePassInput): void => {
-  const { context, viewport, theme, events, pulses, elapsedMs, timeMs } = input;
+  const { context, viewport, theme, interaction, events, pulses, elapsedMs, timeMs } = input;
 
   if (events.length === 0) {
     return;
   }
 
   const pulseAngles = resolvePulseAngles(events, pulses);
-  const activePulseDescriptors = resolveActivePulseDescriptors(
+  const primaryPulseEventId = resolvePrimaryPulseEventId(
     pulses,
+    pulseAngles,
+    interaction,
+    timeMs
+  );
+  const activePulses =
+    primaryPulseEventId === null
+      ? []
+      : pulses.filter((pulse) => {
+          return pulse.eventId === primaryPulseEventId;
+        });
+  const activePulseDescriptors = resolveActivePulseDescriptors(
+    activePulses,
     pulseAngles,
     timeMs
   );
@@ -446,7 +516,7 @@ export const drawDivergencePass = (input: DivergencePassInput): void => {
     viewport,
     elapsedMs,
     timeMs,
-    pulses,
+    activePulses,
     pulseAngles,
     theme.divergenceSampleCount
   );

@@ -1,4 +1,5 @@
 import type {
+  InteractionState,
   RehoboamTheme,
   ViewportState,
   WorldEvent,
@@ -27,6 +28,7 @@ export type EventContourPassInput = Readonly<{
   context: CanvasRenderingContext2D;
   viewport: ViewportState;
   theme: RehoboamTheme;
+  interaction: InteractionState;
   events: readonly WorldEvent[];
   elapsedMs: number;
 }>;
@@ -34,11 +36,6 @@ export type EventContourPassInput = Readonly<{
 type ContourSample = Readonly<{
   angleRad: number;
   radius: number;
-}>;
-
-type RankedEventAngle = Readonly<{
-  eventAngle: ComputedEventAngle;
-  rank: number;
 }>;
 
 const getLayoutNowMs = (events: readonly WorldEvent[]): number => {
@@ -53,11 +50,64 @@ const getLayoutNowMs = (events: readonly WorldEvent[]): number => {
   return latestTimestampMs + LEADING_TIME_OFFSET_MS;
 };
 
+const compareEventAnglesByPriority = (
+  left: ComputedEventAngle,
+  right: ComputedEventAngle
+): number => {
+  const severityDelta =
+    SEVERITY_RANK[right.event.severity] - SEVERITY_RANK[left.event.severity];
+
+  if (severityDelta !== 0) {
+    return severityDelta;
+  }
+
+  if (left.event.timestampMs !== right.event.timestampMs) {
+    return right.event.timestampMs - left.event.timestampMs;
+  }
+
+  return left.event.id.localeCompare(right.event.id);
+};
+
+const findEventAngleByEventId = (
+  eventAngles: readonly ComputedEventAngle[],
+  eventId: string
+): ComputedEventAngle | null => {
+  for (const eventAngle of eventAngles) {
+    if (eventAngle.eventIds.includes(eventId)) {
+      return eventAngle;
+    }
+  }
+
+  return null;
+};
+
+const resolveActiveEventAngle = (
+  eventAngles: readonly ComputedEventAngle[],
+  interaction: InteractionState
+): ComputedEventAngle | null => {
+  for (const eventId of [
+    interaction.selectedEventId,
+    interaction.hoveredEventId,
+    interaction.hoverCandidateEventId,
+  ]) {
+    if (eventId === null) {
+      continue;
+    }
+
+    const matched = findEventAngleByEventId(eventAngles, eventId);
+
+    if (matched !== null) {
+      return matched;
+    }
+  }
+
+  return [...eventAngles].sort(compareEventAnglesByPriority)[0] ?? null;
+};
+
 const createContourSamples = (
   viewport: ViewportState,
   elapsedMs: number,
-  rankedEventAngles: readonly RankedEventAngle[],
-  primaryAngle: number | null
+  activeEventAngle: ComputedEventAngle | null
 ): readonly ContourSample[] => {
   const samples = 360;
   const elapsedSeconds = elapsedMs / 1000;
@@ -73,46 +123,46 @@ const createContourSamples = (
         viewport.outerRadius *
         0.0038;
 
-    const divergenceOffset = rankedEventAngles.reduce((sum, ranked) => {
-      const eventAngle = ranked.eventAngle;
-      const distance = Math.abs(
-        shortestAngularDistance(angleRad, eventAngle.angleRad)
-      );
-      const windowRad = 0.055 + Math.min(eventAngle.clusterSize, 5) * 0.012;
+    const divergenceOffset =
+      activeEventAngle === null
+        ? 0
+        : (() => {
+            const distance = Math.abs(
+              shortestAngularDistance(angleRad, activeEventAngle.angleRad)
+            );
+            const windowRad =
+              0.065 + Math.min(activeEventAngle.clusterSize, 5) * 0.016;
 
-      if (distance > windowRad) {
-        return sum;
-      }
+            if (distance > windowRad) {
+              return 0;
+            }
 
-      const envelope = (1 - distance / windowRad) ** 2;
-      const pulse =
-        0.8 + 0.2 * Math.sin(elapsedSeconds * 4.5 + eventAngle.angleRad);
-      const clusterScale = 1 + Math.min(eventAngle.clusterSize, 6) * 0.1;
-      const severityScale =
-        eventAngle.event.severity === "critical"
-          ? 2.7
-          : eventAngle.event.severity === "high"
-            ? 1.9
-            : 1.35;
-      const rankScale = ranked.rank === 0 ? 1.8 : ranked.rank < 4 ? 1.2 : 0.8;
+            const envelope = (1 - distance / windowRad) ** 2;
+            const pulse =
+              0.8 + 0.2 * Math.sin(elapsedSeconds * 4.5 + activeEventAngle.angleRad);
+            const clusterScale = 1 + Math.min(activeEventAngle.clusterSize, 6) * 0.12;
+            const severityScale =
+              activeEventAngle.event.severity === "critical"
+                ? 2.9
+                : activeEventAngle.event.severity === "high"
+                  ? 2.0
+                  : 1.4;
 
-      return (
-        sum +
-        eventAngle.markerHeight *
-          viewport.outerRadius *
-          envelope *
-          pulse *
-          clusterScale *
-          severityScale *
-          rankScale
-      );
-    }, 0);
+            return (
+              activeEventAngle.markerHeight *
+              viewport.outerRadius *
+              envelope *
+              pulse *
+              clusterScale *
+              severityScale
+            );
+          })();
     const primaryLift =
-      primaryAngle === null
+      activeEventAngle === null
         ? 0
         : (() => {
             const primaryDistance = Math.abs(
-              shortestAngularDistance(angleRad, primaryAngle)
+              shortestAngularDistance(angleRad, activeEventAngle.angleRad)
             );
 
             if (primaryDistance > 0.22) {
@@ -172,32 +222,8 @@ const drawContourStroke = (
   context.restore();
 };
 
-const rankEventAngles = (
-  eventAngles: readonly ComputedEventAngle[]
-): readonly RankedEventAngle[] => {
-  return [...eventAngles]
-    .sort((left, right) => {
-      const severityDelta =
-        SEVERITY_RANK[right.event.severity] -
-        SEVERITY_RANK[left.event.severity];
-
-      if (severityDelta !== 0) {
-        return severityDelta;
-      }
-
-      if (left.event.timestampMs !== right.event.timestampMs) {
-        return right.event.timestampMs - left.event.timestampMs;
-      }
-
-      return left.event.id.localeCompare(right.event.id);
-    })
-    .map((eventAngle, rank) => {
-      return { eventAngle, rank };
-    });
-};
-
 export const drawEventContourPass = (input: EventContourPassInput): void => {
-  const { context, viewport, events, elapsedMs } = input;
+  const { context, viewport, interaction, events, elapsedMs } = input;
 
   if (events.length === 0) {
     return;
@@ -207,19 +233,10 @@ export const drawEventContourPass = (input: EventContourPassInput): void => {
     nowMs: getLayoutNowMs(events),
     windowMs: DEFAULT_LAYOUT_WINDOW_MS,
     maxVisibleCount: DEFAULT_MAX_VISIBLE_EVENT_COUNT,
+    distributionMode: "ordered",
   });
-  const rankedEventAngles = rankEventAngles(eventAngles);
-  const primaryAngle =
-    rankedEventAngles.length === 0
-      ? null
-      : rankedEventAngles[0].eventAngle.angleRad;
-
-  const contourSamples = createContourSamples(
-    viewport,
-    elapsedMs,
-    rankedEventAngles,
-    primaryAngle
-  );
+  const activeEventAngle = resolveActiveEventAngle(eventAngles, interaction);
+  const contourSamples = createContourSamples(viewport, elapsedMs, activeEventAngle);
 
   drawContourStroke(context, viewport, contourSamples, 0.56, 2.6);
   drawContourStroke(context, viewport, contourSamples, 0.08, 5.6);

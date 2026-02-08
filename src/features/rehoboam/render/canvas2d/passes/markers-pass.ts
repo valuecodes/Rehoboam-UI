@@ -100,6 +100,31 @@ const isMarkerHovered = (
   return eventAngle.eventIds.includes(resolvedHoveredEventId);
 };
 
+const resolveActiveRankedEvent = (
+  rankedEventAngles: readonly RankedEventAngle[],
+  interaction: InteractionState
+): RankedEventAngle | null => {
+  for (const eventId of [
+    interaction.selectedEventId,
+    interaction.hoveredEventId,
+    interaction.hoverCandidateEventId,
+  ]) {
+    if (eventId === null) {
+      continue;
+    }
+
+    const matched = rankedEventAngles.find((ranked) => {
+      return ranked.eventAngle.eventIds.includes(eventId);
+    });
+
+    if (matched !== undefined) {
+      return matched;
+    }
+  }
+
+  return rankedEventAngles[0] ?? null;
+};
+
 const drawMarkerShape = (
   context: CanvasRenderingContext2D,
   viewport: ViewportState,
@@ -227,37 +252,44 @@ export const drawMarkersPass = (input: MarkersPassInput): void => {
     nowMs: getLayoutNowMs(events),
     windowMs: DEFAULT_LAYOUT_WINDOW_MS,
     maxVisibleCount: DEFAULT_MAX_VISIBLE_EVENT_COUNT,
+    distributionMode: "ordered",
   });
   const rankedEventAngles = rankEventAngles(eventAngles);
+  const activeRankedEvent = resolveActiveRankedEvent(
+    rankedEventAngles,
+    interaction
+  );
 
-  for (const ranked of rankedEventAngles.slice(0, 16)) {
-    const isSelected = isMarkerSelected(
-      ranked.eventAngle,
-      interaction.selectedEventId
-    );
-    const isHovered = isMarkerHovered(
-      ranked.eventAngle,
-      interaction.selectedEventId,
-      interaction.hoveredEventId,
-      interaction.hoverCandidateEventId
-    );
-
-    drawMarkerShape(
-      context,
-      viewport,
-      theme,
-      ranked,
-      elapsedMs,
-      isSelected,
-      isHovered
-    );
-    drawAnchorNode(
-      context,
-      viewport,
-      theme,
-      ranked.eventAngle,
-      isSelected,
-      isHovered
-    );
+  if (activeRankedEvent === null) {
+    return;
   }
+
+  const isSelected = isMarkerSelected(
+    activeRankedEvent.eventAngle,
+    interaction.selectedEventId
+  );
+  const isHovered = isMarkerHovered(
+    activeRankedEvent.eventAngle,
+    interaction.selectedEventId,
+    interaction.hoveredEventId,
+    interaction.hoverCandidateEventId
+  );
+
+  drawMarkerShape(
+    context,
+    viewport,
+    theme,
+    activeRankedEvent,
+    elapsedMs,
+    isSelected,
+    isHovered
+  );
+  drawAnchorNode(
+    context,
+    viewport,
+    theme,
+    activeRankedEvent.eventAngle,
+    isSelected,
+    isHovered
+  );
 };

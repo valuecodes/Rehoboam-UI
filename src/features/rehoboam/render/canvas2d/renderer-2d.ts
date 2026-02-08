@@ -102,6 +102,7 @@ export const createRenderer2D = (
       context,
       viewport: frame.viewport,
       theme,
+      interaction: frame.interaction,
       events: frame.events,
       elapsedMs: frame.elapsedMs,
     };
@@ -118,6 +119,7 @@ export const createRenderer2D = (
       context,
       viewport: frame.viewport,
       theme,
+      interaction: frame.interaction,
       events: frame.events,
       pulses: divergencePulseTracker.getActivePulses(frame.timeMs),
       elapsedMs: frame.elapsedMs,

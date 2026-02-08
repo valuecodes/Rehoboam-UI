@@ -46,6 +46,7 @@ import { resolveSceneQualityProfile } from "./quality";
 import "./rehoboam-scene.css";
 
 const LEADING_TIME_OFFSET_MS = 45 * 60 * 1000;
+const AUTO_EVENT_CYCLE_MS = 3200;
 
 const SEVERITY_RANK: Readonly<Record<WorldEventSeverity, number>> = {
   low: 0,
@@ -143,36 +144,54 @@ const findEventAngleByEventId = (
 
 const resolveActiveEventAngle = (
   eventAngles: readonly ComputedEventAngle[],
-  selectedEventId: string | null,
-  hoveredEventId: string | null
+  activeEventId: string | null
 ): ComputedEventAngle | null => {
   if (eventAngles.length === 0) {
     return null;
   }
 
-  if (selectedEventId !== null) {
-    const selectedEventAngle = findEventAngleByEventId(
-      eventAngles,
-      selectedEventId
-    );
+  if (activeEventId !== null) {
+    const matched = findEventAngleByEventId(eventAngles, activeEventId);
 
-    if (selectedEventAngle !== null) {
-      return selectedEventAngle;
-    }
-  }
-
-  if (hoveredEventId !== null) {
-    const hoveredEventAngle = findEventAngleByEventId(
-      eventAngles,
-      hoveredEventId
-    );
-
-    if (hoveredEventAngle !== null) {
-      return hoveredEventAngle;
+    if (matched !== null) {
+      return matched;
     }
   }
 
   return [...eventAngles].sort(compareEventAnglesByPriority)[0] ?? null;
+};
+
+const getClockwiseEventCycleIds = (
+  eventAngles: readonly ComputedEventAngle[]
+): readonly string[] => {
+  return [...eventAngles]
+    .sort((left, right) => {
+      if (left.angleRad !== right.angleRad) {
+        return left.angleRad - right.angleRad;
+      }
+
+      return left.event.id.localeCompare(right.event.id);
+    })
+    .map((eventAngle) => eventAngle.event.id);
+};
+
+const resolveActiveEventId = (
+  eventAngles: readonly ComputedEventAngle[],
+  selectedEventId: string | null,
+  hoveredEventId: string | null,
+  autoEventId: string | null
+): string | null => {
+  for (const candidateEventId of [selectedEventId, hoveredEventId, autoEventId]) {
+    if (candidateEventId === null) {
+      continue;
+    }
+
+    if (findEventAngleByEventId(eventAngles, candidateEventId) !== null) {
+      return candidateEventId;
+    }
+  }
+
+  return [...eventAngles].sort(compareEventAnglesByPriority)[0]?.event.id ?? null;
 };
 
 const toMarkerHitTargets = (
@@ -234,6 +253,7 @@ export const RehoboamScene = () => {
   const [interaction, setInteraction] = useState<InteractionState>(() => {
     return createInitialInteractionState();
   });
+  const [autoEventId, setAutoEventId] = useState<string | null>(null);
   const eventSource = useMemo(() => createMockEventSource(), []);
   const qualityProfile = useMemo(() => {
     return resolveSceneQualityProfile({
@@ -247,33 +267,50 @@ export const RehoboamScene = () => {
     return computeAngles(events, {
       nowMs: getLayoutNowMs(events),
       maxVisibleCount: DEFAULT_MAX_VISIBLE_EVENT_COUNT,
+      distributionMode: "ordered",
     });
   }, [events]);
+  const clockwiseEventCycleIds = useMemo(() => {
+    return getClockwiseEventCycleIds(eventAngles);
+  }, [eventAngles]);
   const markerHitTargets = useMemo(() => {
     return toMarkerHitTargets(eventAngles, instrumentSize);
   }, [eventAngles, instrumentSize]);
-  const activeEventAngle = useMemo(() => {
-    return resolveActiveEventAngle(
+  const activeEventId = useMemo(() => {
+    return resolveActiveEventId(
       eventAngles,
       interaction.selectedEventId,
-      interaction.hoveredEventId
+      interaction.hoveredEventId,
+      autoEventId
     );
-  }, [eventAngles, interaction.hoveredEventId, interaction.selectedEventId]);
-  const activeEventId = useMemo(() => {
-    if (interaction.selectedEventId !== null) {
-      return interaction.selectedEventId;
-    }
-
-    if (interaction.hoveredEventId !== null) {
-      return interaction.hoveredEventId;
-    }
-
-    return activeEventAngle?.event.id ?? null;
   }, [
-    activeEventAngle,
+    autoEventId,
+    eventAngles,
     interaction.hoveredEventId,
     interaction.selectedEventId,
   ]);
+  const activeEventAngle = useMemo(() => {
+    return resolveActiveEventAngle(eventAngles, activeEventId);
+  }, [activeEventId, eventAngles]);
+  const interactionForRender = useMemo<InteractionState>(() => {
+    if (activeEventId === null) {
+      return interaction;
+    }
+
+    if (
+      interaction.selectedEventId !== null ||
+      interaction.hoveredEventId !== null
+    ) {
+      return interaction;
+    }
+
+    return {
+      ...interaction,
+      hoverCandidateEventId: null,
+      hoveredEventId: activeEventId,
+      hoverStartedAtMs: null,
+    };
+  }, [activeEventId, interaction]);
   const activeCalloutTarget = useMemo<CalloutOverlayTarget | null>(() => {
     if (
       activeEventAngle === null ||
@@ -289,6 +326,49 @@ export const RehoboamScene = () => {
       anchorRadius: getMarkerAnchorRadius(instrumentSize),
     };
   }, [activeEventAngle, instrumentSize]);
+
+  useEffect(() => {
+    if (clockwiseEventCycleIds.length === 0) {
+      setAutoEventId(null);
+
+      return;
+    }
+
+    if (
+      interaction.selectedEventId !== null ||
+      interaction.hoveredEventId !== null ||
+      interaction.hoverCandidateEventId !== null ||
+      interaction.isPointerDown
+    ) {
+      return;
+    }
+
+    if (
+      autoEventId === null ||
+      !clockwiseEventCycleIds.includes(autoEventId)
+    ) {
+      setAutoEventId(clockwiseEventCycleIds[0]);
+
+      return;
+    }
+
+    const currentIndex = clockwiseEventCycleIds.indexOf(autoEventId);
+    const timeoutHandle = window.setTimeout(() => {
+      const nextIndex = (currentIndex + 1) % clockwiseEventCycleIds.length;
+      setAutoEventId(clockwiseEventCycleIds[nextIndex]);
+    }, AUTO_EVENT_CYCLE_MS);
+
+    return () => {
+      window.clearTimeout(timeoutHandle);
+    };
+  }, [
+    autoEventId,
+    clockwiseEventCycleIds,
+    interaction.hoverCandidateEventId,
+    interaction.hoveredEventId,
+    interaction.isPointerDown,
+    interaction.selectedEventId,
+  ]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -381,8 +461,8 @@ export const RehoboamScene = () => {
       return;
     }
 
-    engine.setInteraction(interaction);
-  }, [interaction]);
+    engine.setInteraction(interactionForRender);
+  }, [interactionForRender]);
 
   useEffect(() => {
     const engine = engineRef.current;
@@ -518,6 +598,7 @@ export const RehoboamScene = () => {
         hoverStartedAtMs: null,
       };
     });
+    setAutoEventId(eventId);
   };
 
   const handlePanelSelectionClear = () => {
