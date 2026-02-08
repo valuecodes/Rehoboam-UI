@@ -1,8 +1,8 @@
 .rehoboam-scene {
-  --rehoboam-bg-start: #f8fafc;
-  --rehoboam-bg-end: #e5e7eb;
-  --rehoboam-frame: rgba(15, 23, 42, 0.25);
-  --rehoboam-label: rgba(226, 232, 240, 0.95);
+  --rehoboam-bg-start: #f1f1ef;
+  --rehoboam-bg-end: #e7e7e4;
+  --rehoboam-ink: #1a1a1a;
+  --rehoboam-line: rgba(24, 24, 24, 0.34);
 
   min-height: 100dvh;
   width: 100%;
@@ -20,13 +20,11 @@
 }
 
 .rehoboam-scene__instrument {
-  width: min(88vmin, 980px);
+  width: min(92vmin, 1080px);
   aspect-ratio: 1 / 1;
-  border-radius: 50%;
-  border: 1px solid var(--rehoboam-frame);
   position: relative;
-  overflow: hidden;
-  background: rgba(2, 6, 23, 0.28);
+  overflow: visible;
+  background: transparent;
 }
 
 .rehoboam-scene__canvas {
@@ -35,16 +33,91 @@
   display: block;
 }
 
-.rehoboam-scene__label {
+.rehoboam-scene__overlay {
   position: absolute;
-  left: 50%;
-  bottom: clamp(14px, 3.2vw, 24px);
-  transform: translateX(-50%);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.rehoboam-scene__callout-line {
+  stroke: var(--rehoboam-line);
+  stroke-width: 1;
+  fill: none;
+}
+
+.rehoboam-scene__callout-node {
+  stroke: var(--rehoboam-line);
+  stroke-width: 1;
+  fill: rgba(255, 255, 255, 0.58);
+}
+
+.rehoboam-scene__callout-node--inner {
+  fill: rgba(26, 26, 26, 0.72);
+  stroke: transparent;
+}
+
+.rehoboam-scene__callout {
+  position: absolute;
   margin: 0;
-  color: var(--rehoboam-label);
-  font-family: "Open Sans", "Segoe UI", sans-serif;
-  font-size: clamp(0.68rem, 0.9vw, 0.84rem);
-  font-weight: 600;
-  letter-spacing: 0.22em;
+  color: var(--rehoboam-ink);
+  font-family: "Roboto Condensed", "Arial Narrow", "Segoe UI", sans-serif;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.rehoboam-scene__callout-time,
+.rehoboam-scene__callout-title,
+.rehoboam-scene__callout-subtitle {
+  margin: 0;
+  line-height: 1;
+}
+
+.rehoboam-scene__callout-time {
+  font-size: clamp(0.72rem, 0.95vw, 1rem);
+  letter-spacing: 0.03em;
+  font-weight: 300;
+  white-space: nowrap;
+}
+
+.rehoboam-scene__callout-title {
+  margin-top: 2px;
+  font-size: clamp(1rem, 1.5vw, 1.56rem);
+  letter-spacing: 0.015em;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.rehoboam-scene__callout-subtitle {
+  margin-top: 3px;
+  font-size: clamp(0.82rem, 1.15vw, 1.2rem);
+  letter-spacing: 0.02em;
+  font-weight: 300;
+  opacity: 0.9;
+  max-width: 100%;
+  line-height: 1.08;
+}
+
+@media (max-width: 700px) {
+  .rehoboam-scene__callout {
+    transform: scale(0.86);
+    transform-origin: top left;
+  }
+
+  .rehoboam-scene__callout-subtitle {
+    max-width: min(66vw, 340px);
+  }
+}
+
+.rehoboam-scene__debug-label {
+  position: absolute;
+  inset: auto 0 clamp(12px, 2.2vw, 20px) 0;
+  margin: 0;
+  color: rgba(16, 16, 16, 0.45);
+  text-align: center;
+  font-family: "Roboto Condensed", "Arial Narrow", sans-serif;
+  font-size: clamp(0.62rem, 0.78vw, 0.8rem);
+  letter-spacing: 0.18em;
   pointer-events: none;
 }
