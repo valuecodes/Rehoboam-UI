@@ -93,4 +93,46 @@ describe("drawDivergencePass", () => {
 
     expect(withoutPulse.commands).not.toStrictEqual(withPulse.commands);
   });
+
+  it("uses quality-adjusted divergence sample count", () => {
+    const lowSampleContext = createMockCanvasContext();
+    const highSampleContext = createMockCanvasContext();
+
+    drawDivergencePass({
+      context: lowSampleContext.context,
+      viewport: VIEWPORT,
+      theme: {
+        ...DEFAULT_THEME,
+        divergenceSampleCount: 140,
+      },
+      events: EVENTS,
+      pulses: [],
+      elapsedMs: 3_000,
+      timeMs: 3_000,
+    });
+
+    drawDivergencePass({
+      context: highSampleContext.context,
+      viewport: VIEWPORT,
+      theme: {
+        ...DEFAULT_THEME,
+        divergenceSampleCount: 520,
+      },
+      events: EVENTS,
+      pulses: [],
+      elapsedMs: 3_000,
+      timeMs: 3_000,
+    });
+
+    const lowSampleLineToCount = lowSampleContext.commands.filter((command) => {
+      return command.startsWith("lineTo(");
+    }).length;
+    const highSampleLineToCount = highSampleContext.commands.filter(
+      (command) => {
+        return command.startsWith("lineTo(");
+      }
+    ).length;
+
+    expect(lowSampleLineToCount).toBeLessThan(highSampleLineToCount);
+  });
 });

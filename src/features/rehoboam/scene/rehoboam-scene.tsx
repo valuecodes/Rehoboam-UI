@@ -7,7 +7,7 @@ import type {
 import { refreshEventsFromSource } from "../data/bootstrap";
 import { loadPersistedEvents } from "../data/persistence";
 import { createMockEventSource } from "../data/source";
-import { DEFAULT_DPR_CAP } from "../engine/defaults";
+import { DEFAULT_DPR_CAP, DEFAULT_THEME } from "../engine/defaults";
 import {
   applyHoverDwellTick,
   clearInteractionSelection,
@@ -40,6 +40,8 @@ import type {
   CalloutOverlayTarget,
   InstrumentSize,
 } from "../overlay/callout-overlay";
+import { EventListPanel } from "../overlay/event-list-panel";
+import { resolveSceneQualityProfile } from "./quality";
 
 import "./rehoboam-scene.css";
 
@@ -56,6 +58,29 @@ const readDevicePixelRatio = (): number => {
   const value = window.devicePixelRatio;
 
   return Number.isFinite(value) && value > 0 ? value : 1;
+};
+
+const readHardwareConcurrency = (): number | null => {
+  const value = navigator.hardwareConcurrency;
+
+  if (!Number.isFinite(value) || value <= 0) {
+    return null;
+  }
+
+  return Math.trunc(value);
+};
+
+const readDeviceMemoryGiB = (): number | null => {
+  const capabilityNavigator = navigator as Navigator & {
+    deviceMemory?: number;
+  };
+  const value = capabilityNavigator.deviceMemory;
+
+  if (value === undefined || !Number.isFinite(value) || value <= 0) {
+    return null;
+  }
+
+  return value;
 };
 
 const readNowMs = (): number => {
@@ -210,6 +235,14 @@ export const RehoboamScene = () => {
     return createInitialInteractionState();
   });
   const eventSource = useMemo(() => createMockEventSource(), []);
+  const qualityProfile = useMemo(() => {
+    return resolveSceneQualityProfile({
+      width: instrumentSize.width,
+      height: instrumentSize.height,
+      hardwareConcurrency: readHardwareConcurrency(),
+      deviceMemoryGiB: readDeviceMemoryGiB(),
+    });
+  }, [instrumentSize.height, instrumentSize.width]);
   const eventAngles = useMemo(() => {
     return computeAngles(events, {
       nowMs: getLayoutNowMs(events),
@@ -226,6 +259,21 @@ export const RehoboamScene = () => {
       interaction.hoveredEventId
     );
   }, [eventAngles, interaction.hoveredEventId, interaction.selectedEventId]);
+  const activeEventId = useMemo(() => {
+    if (interaction.selectedEventId !== null) {
+      return interaction.selectedEventId;
+    }
+
+    if (interaction.hoveredEventId !== null) {
+      return interaction.hoveredEventId;
+    }
+
+    return activeEventAngle?.event.id ?? null;
+  }, [
+    activeEventAngle,
+    interaction.hoveredEventId,
+    interaction.selectedEventId,
+  ]);
   const activeCalloutTarget = useMemo<CalloutOverlayTarget | null>(() => {
     if (
       activeEventAngle === null ||
@@ -268,6 +316,20 @@ export const RehoboamScene = () => {
       isCancelled = true;
     };
   }, [eventSource]);
+
+  useEffect(() => {
+    const engine = engineRef.current;
+
+    if (engine === null) {
+      return;
+    }
+
+    engine.setTheme({
+      ...DEFAULT_THEME,
+      ringCount: qualityProfile.ringCount,
+      divergenceSampleCount: qualityProfile.divergenceSampleCount,
+    });
+  }, [qualityProfile.divergenceSampleCount, qualityProfile.ringCount]);
 
   useEffect(() => {
     const instrument = instrumentRef.current;
@@ -446,29 +508,55 @@ export const RehoboamScene = () => {
     });
   };
 
+  const handlePanelSelection = (eventId: string) => {
+    setInteraction((previousInteraction) => {
+      return {
+        ...previousInteraction,
+        selectedEventId: eventId,
+        hoverCandidateEventId: null,
+        hoveredEventId: null,
+        hoverStartedAtMs: null,
+      };
+    });
+  };
+
+  const handlePanelSelectionClear = () => {
+    setInteraction((previousInteraction) => {
+      return clearInteractionSelection(previousInteraction);
+    });
+  };
+
   return (
     <main className="rehoboam-scene">
-      <section
-        aria-label="Rehoboam V2 scene container"
-        className="rehoboam-scene__instrument"
-        onKeyDown={handleKeyDown}
-        onPointerDown={handlePointerDown}
-        onPointerLeave={handlePointerLeave}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        ref={instrumentRef}
-        tabIndex={0}
-      >
-        <canvas
-          aria-hidden
-          className="rehoboam-scene__canvas"
-          ref={canvasRef}
+      <div className="rehoboam-scene__layout">
+        <section
+          aria-label="Rehoboam V2 scene container"
+          className="rehoboam-scene__instrument"
+          onKeyDown={handleKeyDown}
+          onPointerDown={handlePointerDown}
+          onPointerLeave={handlePointerLeave}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          ref={instrumentRef}
+          tabIndex={0}
+        >
+          <canvas
+            aria-hidden
+            className="rehoboam-scene__canvas"
+            ref={canvasRef}
+          />
+          <CalloutOverlay
+            instrumentSize={instrumentSize}
+            target={activeCalloutTarget}
+          />
+        </section>
+        <EventListPanel
+          activeEventId={activeEventId}
+          eventAngles={eventAngles}
+          onClearSelection={handlePanelSelectionClear}
+          onSelectEvent={handlePanelSelection}
         />
-        <CalloutOverlay
-          instrumentSize={instrumentSize}
-          target={activeCalloutTarget}
-        />
-      </section>
+      </div>
     </main>
   );
 };

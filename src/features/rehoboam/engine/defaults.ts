@@ -9,6 +9,7 @@ export const DEFAULT_THEME: RehoboamTheme = {
   sweepColor: "#303030",
   ringSeed: "rehoboam-v2-rings",
   ringCount: 22,
+  divergenceSampleCount: 360,
   sweepSpeedDegPerSecond: 8,
 };
 

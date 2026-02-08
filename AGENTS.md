@@ -22,14 +22,15 @@ It summarizes the current architecture, quality gates, and safe editing workflow
 
 - Entry point: `src/main.tsx`
 - Root app: `src/app.tsx`
-- Main composition: `src/components/mainsection/reheboam.tsx`
-- Animation/timeline control: `src/components/mainsection/animation/animation.tsx`
-- Canvas ring rendering: `src/components/mainsection/animation/canvas.tsx`
-- Event overlay UI: `src/components/mainsection/divergency/main-svg.tsx`
-- Event details panel: `src/components/mainsection/divergency/divergengy.tsx`
-- Custom event creation UI: `src/components/mainsection/navigation/create/create.tsx`
-- Timeline data: `src/components/mainsection/data/corona.json`
-- Shared types: `src/types.ts`
+- Scene composition: `src/features/rehoboam/scene/rehoboam-scene.tsx`
+- Renderer orchestration: `src/features/rehoboam/render/canvas2d/renderer-2d.ts`
+- Divergence pass: `src/features/rehoboam/render/canvas2d/passes/divergence-pass.ts`
+- Event callout overlay: `src/features/rehoboam/overlay/callout-overlay.tsx`
+- Event list panel: `src/features/rehoboam/overlay/event-list-panel.tsx`
+- Data source + pipeline: `src/features/rehoboam/data/source.ts`
+- Persistence + boot refresh: `src/features/rehoboam/data/persistence.ts`, `src/features/rehoboam/data/bootstrap.ts`
+- Shared event fixture: `src/features/rehoboam/fixtures/mock-events.json`
+- Scene quality tiering: `src/features/rehoboam/scene/quality.ts`
 
 ## Local Commands
 
@@ -57,15 +58,14 @@ CI enforces `typecheck`, `lint`, `format-check`, and `test` on PRs and `main`.
 
 ## Implementation Notes
 
-- The app relies on fixed geometry centered around an 800x800 visualization.
-- Playback sequencing in `animation.tsx` uses timers (`setInterval`/`setTimeout`) and refs for state synchronization.
-- Positioning in `reheboam.tsx` is computed from DOM measurements and screen width checks.
-- A typo in folder/file naming is intentional and currently part of the codebase: `divergency/divergengy.tsx`.
-  Keep existing imports/paths consistent unless deliberately refactoring.
+- The active implementation is V2 under `src/features/rehoboam/**`; legacy V1 source files were removed.
+- Scene boot is cache-first via IndexedDB persistence, then mock-source refresh in background.
+- Playback sequencing still relies on timers/RAF and refs for interaction synchronization.
+- Rendering quality is tiered by viewport/device capability (ring count + divergence samples).
 
 ## Safe Agent Workflow
 
-1. Read relevant files in `src/components/mainsection/**` before changing timeline behavior.
+1. Read relevant files in `src/features/rehoboam/**` before changing timeline behavior.
 2. Make minimal, targeted edits and preserve existing named-export patterns.
 3. Run, at minimum, `pnpm typecheck` and `pnpm lint` after code edits.
 4. Run `pnpm format` if formatting drifts, then re-run checks.

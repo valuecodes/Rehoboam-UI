@@ -60,6 +60,14 @@ type ActivePulseDescriptor = Readonly<{
   severity: WorldEventSeverity;
 }>;
 
+const sanitizeSampleCount = (value: number): number => {
+  if (!Number.isFinite(value)) {
+    return 360;
+  }
+
+  return Math.max(96, Math.min(720, Math.trunc(value)));
+};
+
 const getTearCountForSeverity = (severity: WorldEventSeverity): number => {
   if (severity === "critical") {
     return 9;
@@ -185,9 +193,10 @@ const createContourSamples = (
   elapsedMs: number,
   timeMs: number,
   pulses: readonly DivergencePulse[],
-  pulseAngles: ReadonlyMap<string, number>
+  pulseAngles: ReadonlyMap<string, number>,
+  sampleCount: number
 ): readonly ContourSample[] => {
-  const samples = 360;
+  const samples = sanitizeSampleCount(sampleCount);
   const elapsedSeconds = elapsedMs / 1000;
   const baseRadius = viewport.outerRadius * 0.84;
 
@@ -438,7 +447,8 @@ export const drawDivergencePass = (input: DivergencePassInput): void => {
     elapsedMs,
     timeMs,
     pulses,
-    pulseAngles
+    pulseAngles,
+    theme.divergenceSampleCount
   );
 
   drawContourStroke(context, viewport, samples, theme.ringColor, 0.22, 1.6);

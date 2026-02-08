@@ -65,6 +65,7 @@ export type RehoboamTheme = Readonly<{
   sweepColor: string;
   ringSeed: SeedInput;
   ringCount: number;
+  divergenceSampleCount: number;
   sweepSpeedDegPerSecond: number;
 }>;
 
