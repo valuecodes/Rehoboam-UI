@@ -99,6 +99,27 @@ describe("drawDivergencePass", () => {
     expect(withoutPulse.commands).not.toStrictEqual(withPulse.commands);
   });
 
+  it("keeps directional tears visible without active pulses", () => {
+    const context = createMockCanvasContext();
+
+    drawDivergencePass({
+      context: context.context,
+      viewport: VIEWPORT,
+      theme: DEFAULT_THEME,
+      interaction: createInitialInteractionState(),
+      events: EVENTS,
+      pulses: [],
+      elapsedMs: 3_000,
+      timeMs: 3_000,
+    });
+
+    const fillCommandCount = context.commands.filter((command) => {
+      return command === "fill";
+    }).length;
+
+    expect(fillCommandCount).toBeGreaterThan(0);
+  });
+
   it("uses quality-adjusted divergence sample count", () => {
     const lowSampleContext = createMockCanvasContext();
     const highSampleContext = createMockCanvasContext();

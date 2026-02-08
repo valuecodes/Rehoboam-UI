@@ -21,7 +21,7 @@ export const drawBackgroundPass = (input: BackgroundPassInput): void => {
   context.arc(
     viewport.center.x,
     viewport.center.y,
-    viewport.outerRadius * 0.87,
+    viewport.outerRadius * 0.84,
     0,
     TAU
   );
