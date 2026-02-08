@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { Spring } from "react-spring/renderprops";
+import { animated, useSpring } from "react-spring";
 
 import type { TimelineEvent } from "../../../../types";
 import { ActionBlock } from "./actionBlock";
@@ -71,56 +71,53 @@ export const Create = ({
     );
   };
 
+  const springProps = useSpring({
+    from: {
+      marginRight: !isOn && !initial ? 0 : -600,
+    },
+    to: {
+      marginRight: !isOn ? -600 : 0,
+    },
+    config: { mass: 5, tension: 600, friction: 80 },
+  });
+
   return (
-    <Spring
-      from={{
-        marginRight: !isOn && !initial ? 0 : -600,
+    <animated.div
+      className="createMenu"
+      style={{
+        marginRight: springProps.marginRight,
       }}
-      to={{
-        marginRight: !isOn ? -600 : 0,
-      }}
-      config={{ mass: 5, tension: 600, friction: 80 }}
-      key={String(isOn)}
     >
-      {(springProps: { marginRight: number }) => (
-        <div
-          className="createMenu"
-          style={{
-            marginRight: springProps.marginRight,
-          }}
-        >
-          <div className="menuButtons">
-            <svg className="createSvg" height="100%" width="400px">
-              <polyline
-                points={"5 1505," + "5 15," + "20 2," + "220 2," + "420 2,"}
-                style={{
-                  fill: "none",
-                  stroke: "black",
-                  strokeWidth: 2,
-                }}
-              />
-            </svg>
-            <button className="menuActionButton" onClick={addNew}>
-              Add new
-            </button>
-            <button className="menuActionButton" onClick={launch}>
-              Launch
-            </button>
-          </div>
-          <div className="createBlock">
-            {actions.map((action, index) => (
-              <ActionBlock
-                id={action.id}
-                key={action.id}
-                data={action}
-                index={index}
-                deleteActionBlock={deleteActionBlock}
-                addData={addData}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-    </Spring>
+      <div className="menuButtons">
+        <svg className="createSvg" height="100%" width="400px">
+          <polyline
+            points={"5 1505," + "5 15," + "20 2," + "220 2," + "420 2,"}
+            style={{
+              fill: "none",
+              stroke: "black",
+              strokeWidth: 2,
+            }}
+          />
+        </svg>
+        <button className="menuActionButton" onClick={addNew}>
+          Add new
+        </button>
+        <button className="menuActionButton" onClick={launch}>
+          Launch
+        </button>
+      </div>
+      <div className="createBlock">
+        {actions.map((action, index) => (
+          <ActionBlock
+            id={action.id}
+            key={action.id}
+            data={action}
+            index={index}
+            deleteActionBlock={deleteActionBlock}
+            addData={addData}
+          />
+        ))}
+      </div>
+    </animated.div>
   );
 };
