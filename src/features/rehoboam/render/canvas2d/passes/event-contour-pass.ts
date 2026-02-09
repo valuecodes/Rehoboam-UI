@@ -31,6 +31,7 @@ export type EventContourPassInput = Readonly<{
   interaction: InteractionState;
   events: readonly WorldEvent[];
   elapsedMs: number;
+  entranceScale: number;
 }>;
 
 type ContourSample = Readonly<{
@@ -107,7 +108,8 @@ const resolveActiveEventAngle = (
 const createContourSamples = (
   viewport: ViewportState,
   elapsedMs: number,
-  activeEventAngle: ComputedEventAngle | null
+  activeEventAngle: ComputedEventAngle | null,
+  entranceScale: number
 ): readonly ContourSample[] => {
   const samples = 360;
   const elapsedSeconds = elapsedMs / 1000;
@@ -154,7 +156,8 @@ const createContourSamples = (
               envelope *
               pulse *
               clusterScale *
-              severityScale
+              severityScale *
+              entranceScale
             );
           })();
     const primaryLift =
@@ -175,7 +178,8 @@ const createContourSamples = (
               envelope *
               viewport.outerRadius *
               0.018 *
-              (0.85 + 0.15 * Math.sin(elapsedSeconds * 2.8))
+              (0.85 + 0.15 * Math.sin(elapsedSeconds * 2.8)) *
+              entranceScale
             );
           })();
 
@@ -223,7 +227,8 @@ const drawContourStroke = (
 };
 
 export const drawEventContourPass = (input: EventContourPassInput): void => {
-  const { context, viewport, interaction, events, elapsedMs } = input;
+  const { context, viewport, interaction, events, elapsedMs, entranceScale } =
+    input;
 
   if (events.length === 0) {
     return;
@@ -236,7 +241,13 @@ export const drawEventContourPass = (input: EventContourPassInput): void => {
     distributionMode: "ordered",
   });
   const activeEventAngle = resolveActiveEventAngle(eventAngles, interaction);
-  const contourSamples = createContourSamples(viewport, elapsedMs, activeEventAngle);
+  const resolvedEntranceScale = Math.max(0, Math.min(1, entranceScale));
+  const contourSamples = createContourSamples(
+    viewport,
+    elapsedMs,
+    activeEventAngle,
+    resolvedEntranceScale
+  );
 
   drawContourStroke(context, viewport, contourSamples, 0.56, 2.6);
   drawContourStroke(context, viewport, contourSamples, 0.08, 5.6);

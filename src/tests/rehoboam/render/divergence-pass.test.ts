@@ -54,6 +54,7 @@ describe("drawDivergencePass", () => {
       pulses: PULSES,
       elapsedMs: 3_000,
       timeMs: 3_000,
+      entranceScale: 1,
     });
 
     drawDivergencePass({
@@ -65,6 +66,7 @@ describe("drawDivergencePass", () => {
       pulses: PULSES,
       elapsedMs: 3_000,
       timeMs: 3_000,
+      entranceScale: 1,
     });
 
     expect(first.commands).toStrictEqual(second.commands);
@@ -83,6 +85,7 @@ describe("drawDivergencePass", () => {
       pulses: [],
       elapsedMs: 3_000,
       timeMs: 3_000,
+      entranceScale: 1,
     });
 
     drawDivergencePass({
@@ -94,6 +97,7 @@ describe("drawDivergencePass", () => {
       pulses: PULSES,
       elapsedMs: 3_000,
       timeMs: 3_000,
+      entranceScale: 1,
     });
 
     expect(withoutPulse.commands).not.toStrictEqual(withPulse.commands);
@@ -111,6 +115,7 @@ describe("drawDivergencePass", () => {
       pulses: [],
       elapsedMs: 3_000,
       timeMs: 3_000,
+      entranceScale: 1,
     });
 
     const fillCommandCount = context.commands.filter((command) => {
@@ -136,6 +141,7 @@ describe("drawDivergencePass", () => {
       pulses: [],
       elapsedMs: 3_000,
       timeMs: 3_000,
+      entranceScale: 1,
     });
 
     drawDivergencePass({
@@ -150,6 +156,7 @@ describe("drawDivergencePass", () => {
       pulses: [],
       elapsedMs: 3_000,
       timeMs: 3_000,
+      entranceScale: 1,
     });
 
     const lowSampleLineToCount = lowSampleContext.commands.filter((command) => {

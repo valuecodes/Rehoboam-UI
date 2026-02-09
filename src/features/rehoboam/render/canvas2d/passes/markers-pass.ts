@@ -27,6 +27,7 @@ export type MarkersPassInput = Readonly<{
   interaction: InteractionState;
   events: readonly WorldEvent[];
   elapsedMs: number;
+  entranceScale: number;
 }>;
 
 type RankedEventAngle = Readonly<{
@@ -132,7 +133,8 @@ const drawMarkerShape = (
   ranked: RankedEventAngle,
   elapsedMs: number,
   isSelected: boolean,
-  isHovered: boolean
+  isHovered: boolean,
+  entranceScale: number
 ): void => {
   const { eventAngle } = ranked;
   const elapsedSeconds = elapsedMs / 1000;
@@ -151,9 +153,12 @@ const drawMarkerShape = (
     viewport.outerRadius *
     clusterScale *
     interactionScale *
-    rankScale;
+    rankScale *
+    entranceScale;
   const widthRad =
-    (0.0065 + Math.min(eventAngle.clusterSize, 6) * 0.0023) * interactionScale;
+    (0.0065 + Math.min(eventAngle.clusterSize, 6) * 0.0023) *
+    interactionScale *
+    entranceScale;
   const tipRadius = baseRadius + spikeHeight * pulse;
   const leftPoint = polarToCartesian(
     {
@@ -193,7 +198,8 @@ const drawMarkerShape = (
 
   context.save();
   context.fillStyle = theme.ringColor;
-  context.globalAlpha = isSelected ? 0.72 : isHovered ? 0.52 : 0.34;
+  context.globalAlpha =
+    (isSelected ? 0.72 : isHovered ? 0.52 : 0.34) * entranceScale;
   context.beginPath();
   context.moveTo(leftPoint.x, leftPoint.y);
   context.lineTo(leftShoulder.x, leftShoulder.y);
@@ -203,7 +209,8 @@ const drawMarkerShape = (
   context.lineTo(leftPoint.x, leftPoint.y);
   context.fill();
   context.strokeStyle = theme.ringColor;
-  context.globalAlpha = isSelected ? 0.4 : isHovered ? 0.28 : 0.16;
+  context.globalAlpha =
+    (isSelected ? 0.4 : isHovered ? 0.28 : 0.16) * entranceScale;
   context.lineWidth = isSelected ? 1.5 : 0.9;
   context.stroke();
   context.restore();
@@ -215,7 +222,8 @@ const drawAnchorNode = (
   theme: RehoboamTheme,
   eventAngle: ComputedEventAngle,
   isSelected: boolean,
-  isHovered: boolean
+  isHovered: boolean,
+  entranceScale: number
 ): void => {
   const baseRadius = viewport.outerRadius * 0.84;
   const nodePoint = polarToCartesian(
@@ -228,12 +236,13 @@ const drawAnchorNode = (
 
   context.save();
   context.fillStyle = theme.ringColor;
-  context.globalAlpha = isSelected ? 0.56 : isHovered ? 0.3 : 0.14;
+  context.globalAlpha =
+    (isSelected ? 0.56 : isHovered ? 0.3 : 0.14) * entranceScale;
   context.beginPath();
   context.arc(
     nodePoint.x,
     nodePoint.y,
-    isSelected ? 4.4 : isHovered ? 3.2 : 2,
+    (isSelected ? 4.4 : isHovered ? 3.2 : 2) * entranceScale,
     0,
     TAU
   );
@@ -242,7 +251,15 @@ const drawAnchorNode = (
 };
 
 export const drawMarkersPass = (input: MarkersPassInput): void => {
-  const { context, viewport, theme, interaction, events, elapsedMs } = input;
+  const {
+    context,
+    viewport,
+    theme,
+    interaction,
+    events,
+    elapsedMs,
+    entranceScale,
+  } = input;
 
   if (events.length === 0) {
     return;
@@ -263,6 +280,7 @@ export const drawMarkersPass = (input: MarkersPassInput): void => {
   if (activeRankedEvent === null) {
     return;
   }
+  const resolvedEntranceScale = Math.max(0, Math.min(1, entranceScale));
 
   const isSelected = isMarkerSelected(
     activeRankedEvent.eventAngle,
@@ -282,7 +300,8 @@ export const drawMarkersPass = (input: MarkersPassInput): void => {
     activeRankedEvent,
     elapsedMs,
     isSelected,
-    isHovered
+    isHovered,
+    resolvedEntranceScale
   );
   drawAnchorNode(
     context,
@@ -290,6 +309,7 @@ export const drawMarkersPass = (input: MarkersPassInput): void => {
     theme,
     activeRankedEvent.eventAngle,
     isSelected,
-    isHovered
+    isHovered,
+    resolvedEntranceScale
   );
 };
