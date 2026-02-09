@@ -62,6 +62,7 @@ export type DivergencePassInput = Readonly<{
   pulses: readonly DivergencePulse[];
   elapsedMs: number;
   timeMs: number;
+  entranceScale: number;
 }>;
 
 type ContourSample = Readonly<{
@@ -76,12 +77,62 @@ type ActivePulseDescriptor = Readonly<{
   severity: WorldEventSeverity;
 }>;
 
+type FlowLane = Readonly<{
+  radiusOffsetFactor: number;
+  stride: number;
+  driftCyclesPerSecond: number;
+  alpha: number;
+  minCircleRadius: number;
+  maxCircleRadius: number;
+}>;
+
+const FLOW_LANES: readonly FlowLane[] = [
+  {
+    radiusOffsetFactor: -0.028,
+    stride: 3,
+    driftCyclesPerSecond: 0.06,
+    alpha: 0.072,
+    minCircleRadius: 0.42,
+    maxCircleRadius: 1.08,
+  },
+  {
+    radiusOffsetFactor: -0.012,
+    stride: 2,
+    driftCyclesPerSecond: -0.08,
+    alpha: 0.086,
+    minCircleRadius: 0.5,
+    maxCircleRadius: 1.18,
+  },
+  {
+    radiusOffsetFactor: 0.008,
+    stride: 2,
+    driftCyclesPerSecond: 0.1,
+    alpha: 0.096,
+    minCircleRadius: 0.54,
+    maxCircleRadius: 1.24,
+  },
+  {
+    radiusOffsetFactor: 0.024,
+    stride: 3,
+    driftCyclesPerSecond: -0.05,
+    alpha: 0.068,
+    minCircleRadius: 0.4,
+    maxCircleRadius: 1.02,
+  },
+] as const;
+
 const sanitizeSampleCount = (value: number): number => {
   if (!Number.isFinite(value)) {
     return 360;
   }
 
   return Math.max(96, Math.min(720, Math.trunc(value)));
+};
+
+const positiveModulo = (value: number, modulus: number): number => {
+  const remainder = value % modulus;
+
+  return remainder < 0 ? remainder + modulus : remainder;
 };
 
 const getTearCountForSeverity = (severity: WorldEventSeverity): number => {
@@ -321,7 +372,8 @@ const createContourSamples = (
   timeMs: number,
   pulses: readonly DivergencePulse[],
   pulseAngles: ReadonlyMap<string, number>,
-  sampleCount: number
+  sampleCount: number,
+  entranceScale: number
 ): readonly ContourSample[] => {
   const samples = sanitizeSampleCount(sampleCount);
   const elapsedSeconds = elapsedMs / 1000;
@@ -330,12 +382,15 @@ const createContourSamples = (
   return Array.from({ length: samples + 1 }, (_, index) => {
     const angleRad = (index / samples) * TAU;
     const baselineOffset =
-      Math.sin(angleRad * 11 + elapsedSeconds * 0.46) *
+      Math.sin(angleRad * 4.6 - elapsedSeconds * 0.42) *
         viewport.outerRadius *
-        0.0029 +
-      Math.sin(angleRad * 23 - elapsedSeconds * 0.29) *
+        0.0039 +
+      Math.sin(angleRad * 8.8 + elapsedSeconds * 0.74) *
         viewport.outerRadius *
-        0.0023;
+        0.0028 +
+      Math.sin(angleRad * 14.1 - elapsedSeconds * 1.05) *
+        viewport.outerRadius *
+        0.0017;
 
     let pulseInfluence = 0;
     const pulseOffset = pulses.reduce((sum, pulse) => {
@@ -369,27 +424,28 @@ const createContourSamples = (
       const influence = timeEnvelope * angularEnvelope;
       pulseInfluence += influence;
 
-      return sum + amplitude * influence * ripple;
+      return sum + amplitude * influence * ripple * entranceScale;
     }, 0);
     const grainOffset =
       pulseInfluence <= 0
         ? 0
-        : ((Math.sin(angleRad * 91 + elapsedSeconds * 8.4) +
-            Math.sin(angleRad * 147 - elapsedSeconds * 6.2)) /
+        : ((Math.sin(angleRad * 33 + elapsedSeconds * 2.9) +
+            Math.sin(angleRad * 57 - elapsedSeconds * 2.4)) /
             2) *
           viewport.outerRadius *
-          0.008 *
-          Math.min(1, pulseInfluence * 1.25);
+          0.0046 *
+          Math.min(1, pulseInfluence * 1.1) *
+          entranceScale;
     const roughnessOffset =
       pulseInfluence <= 0
         ? 0
-        : ((Math.sin(angleRad * 211 + elapsedSeconds * 10.6) +
-            Math.sin(angleRad * 317 - elapsedSeconds * 8.1) +
-            Math.sin(angleRad * 503 + elapsedSeconds * 13.2)) /
-            3) *
+        : ((Math.sin(angleRad * 87 + elapsedSeconds * 5.2) +
+            Math.sin(angleRad * 119 - elapsedSeconds * 4.1)) /
+            2) *
           viewport.outerRadius *
-          0.009 *
-          Math.min(1, pulseInfluence * 1.35);
+          0.0038 *
+          Math.min(1, pulseInfluence * 1.2) *
+          entranceScale;
 
     return {
       angleRad,
@@ -399,7 +455,7 @@ const createContourSamples = (
         pulseOffset +
         grainOffset +
         roughnessOffset,
-      pulseInfluence: Math.min(1, pulseInfluence),
+      pulseInfluence: Math.min(1, pulseInfluence) * entranceScale,
     };
   });
 };
@@ -438,6 +494,129 @@ const drawContourStroke = (
   }
 
   context.stroke();
+  context.restore();
+};
+
+const drawFlowCircleLanes = (
+  context: CanvasRenderingContext2D,
+  viewport: ViewportState,
+  theme: RehoboamTheme,
+  samples: readonly ContourSample[],
+  elapsedMs: number
+): void => {
+  const sampleCount = samples.length - 1;
+
+  if (sampleCount <= 0) {
+    return;
+  }
+
+  const elapsedSeconds = elapsedMs / 1000;
+
+  context.save();
+  context.fillStyle = theme.ringColor;
+  context.shadowColor = theme.ringColor;
+  context.shadowBlur = 2.2;
+
+  for (const lane of FLOW_LANES) {
+    const phaseShift = Math.trunc(
+      elapsedSeconds * lane.driftCyclesPerSecond * sampleCount
+    );
+
+    for (let index = 0; index < sampleCount; index += lane.stride) {
+      const laneIndex = positiveModulo(index + phaseShift, sampleCount);
+      const sample = samples[laneIndex];
+      const laneWave =
+        Math.sin(
+          sample.angleRad * 9.6 +
+            elapsedSeconds * (1.2 + lane.driftCyclesPerSecond * 4) +
+            lane.radiusOffsetFactor * 86
+        ) * viewport.outerRadius * 0.0042;
+      const radius =
+        sample.radius +
+        viewport.outerRadius * lane.radiusOffsetFactor +
+        laneWave * (0.62 + sample.pulseInfluence * 0.58);
+      const point = polarToCartesian(
+        {
+          radius,
+          angleRad: sample.angleRad,
+        },
+        viewport.center
+      );
+      const sizeMix =
+        (Math.sin(sample.angleRad * 27 + elapsedSeconds * 2.6) + 1) / 2;
+      const circleRadius =
+        lane.minCircleRadius +
+        (lane.maxCircleRadius - lane.minCircleRadius) * sizeMix +
+        sample.pulseInfluence * 0.7;
+
+      context.globalAlpha = Math.min(
+        0.34,
+        lane.alpha * (0.92 + sample.pulseInfluence * 1.45)
+      );
+      context.beginPath();
+      context.arc(point.x, point.y, circleRadius, 0, TAU);
+      context.fill();
+    }
+  }
+
+  context.restore();
+};
+
+const drawInterRingParticles = (
+  context: CanvasRenderingContext2D,
+  viewport: ViewportState,
+  theme: RehoboamTheme,
+  samples: readonly ContourSample[],
+  elapsedMs: number
+): void => {
+  const sampleCount = samples.length - 1;
+
+  if (sampleCount <= 0) {
+    return;
+  }
+
+  const elapsedSeconds = elapsedMs / 1000;
+
+  context.save();
+  context.fillStyle = theme.ringColor;
+  context.shadowColor = theme.ringColor;
+  context.shadowBlur = 1.8;
+
+  for (let index = 0; index < sampleCount; index += 2) {
+    const sample = samples[index];
+    const flowSignal =
+      (Math.sin(sample.angleRad * 41 - elapsedSeconds * 3.2) + 1) / 2;
+    const pulseBoost = sample.pulseInfluence * 0.7;
+
+    if (flowSignal + pulseBoost < 0.44) {
+      continue;
+    }
+
+    const radialMix =
+      (Math.sin(sample.angleRad * 73 + elapsedSeconds * 4.7) + 1) / 2;
+    const radialOffsetFactor = -0.031 + radialMix * 0.064;
+    const radius = sample.radius + viewport.outerRadius * radialOffsetFactor;
+    const driftAngle = normalizeAngle(sample.angleRad + (flowSignal - 0.5) * 0.018);
+    const point = polarToCartesian(
+      {
+        radius,
+        angleRad: driftAngle,
+      },
+      viewport.center
+    );
+    const particleRadius =
+      0.34 +
+      radialMix * 1.02 +
+      flowSignal * 0.28 +
+      sample.pulseInfluence * 0.92;
+
+    context.globalAlpha =
+      0.03 + flowSignal * 0.068 + sample.pulseInfluence * 0.14;
+    context.beginPath();
+    context.arc(point.x, point.y, particleRadius, 0, TAU);
+    context.fill();
+  }
+
   context.restore();
 };
 
@@ -489,7 +668,8 @@ const drawDirectionalTears = (
   viewport: ViewportState,
   theme: RehoboamTheme,
   pulses: readonly ActivePulseDescriptor[],
-  elapsedMs: number
+  elapsedMs: number,
+  entranceScale: number
 ): void => {
   const strongestPulses = pulses.slice(0, 1);
   const elapsedSeconds = elapsedMs / 1000;
@@ -512,11 +692,14 @@ const drawDirectionalTears = (
       const angleRad = normalizeAngle(pulse.angleRad + localOffset + flutter);
       const noise =
         (Math.sin(angleRad * 41 + index * 1.37 + elapsedSeconds * 4.6) + 1) / 2;
-      const widthRad = 0.0036 + pulse.strength * 0.14 * (0.5 + noise * 0.7);
+      const widthRad =
+        (0.0036 + pulse.strength * 0.14 * (0.5 + noise * 0.7)) *
+        entranceScale;
       const tearHeight =
         viewport.outerRadius *
         (0.014 + pulse.strength * 1.45) *
-        (0.52 + noise * 1.18);
+        (0.52 + noise * 1.18) *
+        entranceScale;
       const tipRadius = baseRadius + tearHeight;
       const leftPoint = polarToCartesian(
         {
@@ -540,14 +723,14 @@ const drawDirectionalTears = (
         viewport.center
       );
 
-      context.globalAlpha = 0.09 + pulse.strength * 4.4;
+      context.globalAlpha = (0.09 + pulse.strength * 4.4) * entranceScale;
       context.beginPath();
       context.moveTo(leftPoint.x, leftPoint.y);
       context.lineTo(tipPoint.x, tipPoint.y);
       context.lineTo(rightPoint.x, rightPoint.y);
       context.lineTo(leftPoint.x, leftPoint.y);
       context.fill();
-      context.globalAlpha = 0.06 + pulse.strength * 2.4;
+      context.globalAlpha = (0.06 + pulse.strength * 2.4) * entranceScale;
       context.lineWidth = 0.95;
       context.stroke();
     }
@@ -566,6 +749,7 @@ export const drawDivergencePass = (input: DivergencePassInput): void => {
     pulses,
     elapsedMs,
     timeMs,
+    entranceScale,
   } = input;
 
   if (events.length === 0) {
@@ -607,23 +791,28 @@ export const drawDivergencePass = (input: DivergencePassInput): void => {
       : idleTearDescriptor === null
         ? []
         : [idleTearDescriptor];
+  const resolvedEntranceScale = Math.max(0, Math.min(1, entranceScale));
   const samples = createContourSamples(
     viewport,
     elapsedMs,
     timeMs,
     activePulses,
     eventAnglesByEventId,
-    theme.divergenceSampleCount
+    theme.divergenceSampleCount,
+    resolvedEntranceScale
   );
 
-  drawContourStroke(context, viewport, samples, theme.ringColor, 0.22, 1.6);
-  drawContourStroke(context, viewport, samples, theme.ringColor, 0.07, 4.2);
+  drawContourStroke(context, viewport, samples, theme.ringColor, 0.19, 1.45);
+  drawFlowCircleLanes(context, viewport, theme, samples, elapsedMs);
+  drawInterRingParticles(context, viewport, theme, samples, elapsedMs);
   drawPulseGrain(context, viewport, samples, elapsedMs);
+  drawContourStroke(context, viewport, samples, theme.ringColor, 0.1, 4.9);
   drawDirectionalTears(
     context,
     viewport,
     theme,
     directionalTears,
-    elapsedMs
+    elapsedMs,
+    resolvedEntranceScale
   );
 };

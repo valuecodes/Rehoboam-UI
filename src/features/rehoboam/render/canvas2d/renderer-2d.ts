@@ -98,6 +98,9 @@ export const createRenderer2D = (
       interaction: frame.interaction,
       elapsedMs: frame.elapsedMs,
     };
+
+    divergencePulseTracker.updateEvents(frame.events, frame.timeMs);
+    const activePulses = divergencePulseTracker.getActivePulses(frame.timeMs);
     const eventContourInput: EventContourPassInput = {
       context,
       viewport: frame.viewport,
@@ -105,6 +108,7 @@ export const createRenderer2D = (
       interaction: frame.interaction,
       events: frame.events,
       elapsedMs: frame.elapsedMs,
+      entranceScale: 1,
     };
     const markersInput: MarkersPassInput = {
       context,
@@ -113,17 +117,18 @@ export const createRenderer2D = (
       interaction: frame.interaction,
       events: frame.events,
       elapsedMs: frame.elapsedMs,
+      entranceScale: 1,
     };
-    divergencePulseTracker.updateEvents(frame.events, frame.timeMs);
     const divergenceInput: DivergencePassInput = {
       context,
       viewport: frame.viewport,
       theme,
       interaction: frame.interaction,
       events: frame.events,
-      pulses: divergencePulseTracker.getActivePulses(frame.timeMs),
+      pulses: activePulses,
       elapsedMs: frame.elapsedMs,
       timeMs: frame.timeMs,
+      entranceScale: 1,
     };
 
     drawBackgroundPass(backgroundInput);

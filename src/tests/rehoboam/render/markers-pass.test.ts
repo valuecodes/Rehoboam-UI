@@ -51,6 +51,7 @@ describe("drawMarkersPass", () => {
       interaction,
       events: EVENTS,
       elapsedMs: 1_000,
+      entranceScale: 1,
     });
 
     drawMarkersPass({
@@ -60,6 +61,7 @@ describe("drawMarkersPass", () => {
       interaction,
       events: EVENTS,
       elapsedMs: 1_000,
+      entranceScale: 1,
     });
 
     expect(first.commands).toStrictEqual(second.commands);
@@ -76,6 +78,7 @@ describe("drawMarkersPass", () => {
       interaction: createInitialInteractionState(),
       events: EVENTS,
       elapsedMs: 1_000,
+      entranceScale: 1,
     });
 
     drawMarkersPass({
@@ -88,6 +91,7 @@ describe("drawMarkersPass", () => {
       },
       events: EVENTS,
       elapsedMs: 1_000,
+      entranceScale: 1,
     });
 
     expect(normal.commands).not.toStrictEqual(selected.commands);
