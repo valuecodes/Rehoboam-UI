@@ -101,31 +101,6 @@ const isMarkerHovered = (
   return eventAngle.eventIds.includes(resolvedHoveredEventId);
 };
 
-const resolveActiveRankedEvent = (
-  rankedEventAngles: readonly RankedEventAngle[],
-  interaction: InteractionState
-): RankedEventAngle | null => {
-  for (const eventId of [
-    interaction.selectedEventId,
-    interaction.hoveredEventId,
-    interaction.hoverCandidateEventId,
-  ]) {
-    if (eventId === null) {
-      continue;
-    }
-
-    const matched = rankedEventAngles.find((ranked) => {
-      return ranked.eventAngle.eventIds.includes(eventId);
-    });
-
-    if (matched !== undefined) {
-      return matched;
-    }
-  }
-
-  return rankedEventAngles[0] ?? null;
-};
-
 const drawMarkerShape = (
   context: CanvasRenderingContext2D,
   viewport: ViewportState,
@@ -145,8 +120,10 @@ const drawMarkerShape = (
       Math.sin(
         elapsedSeconds * 5.1 + eventAngle.angleRad + (isSelected ? 0.6 : 0)
       );
-  const interactionScale = isSelected ? 1.42 : isHovered ? 1.2 : 1;
-  const rankScale = ranked.rank === 0 ? 1.38 : ranked.rank < 3 ? 1.14 : 1;
+  const interactionScale = isSelected ? 1.45 : isHovered ? 1.25 : 1;
+  const rankScale =
+    ranked.rank === 0 ? 1.26 : ranked.rank < 3 ? 1.15 : ranked.rank < 7 ? 1.06 : 1;
+  const visibilityScale = Math.max(0.44, 1 - ranked.rank * 0.03);
   const clusterScale = 1 + Math.min(eventAngle.clusterSize, 6) * 0.08;
   const spikeHeight =
     eventAngle.markerHeight *
@@ -154,10 +131,12 @@ const drawMarkerShape = (
     clusterScale *
     interactionScale *
     rankScale *
+    visibilityScale *
     entranceScale;
   const widthRad =
     (0.0065 + Math.min(eventAngle.clusterSize, 6) * 0.0023) *
     interactionScale *
+    (0.82 + visibilityScale * 0.18) *
     entranceScale;
   const tipRadius = baseRadius + spikeHeight * pulse;
   const leftPoint = polarToCartesian(
@@ -199,7 +178,8 @@ const drawMarkerShape = (
   context.save();
   context.fillStyle = theme.ringColor;
   context.globalAlpha =
-    (isSelected ? 0.72 : isHovered ? 0.52 : 0.34) * entranceScale;
+    (isSelected ? 0.7 : isHovered ? 0.54 : 0.19 + visibilityScale * 0.13) *
+    entranceScale;
   context.beginPath();
   context.moveTo(leftPoint.x, leftPoint.y);
   context.lineTo(leftShoulder.x, leftShoulder.y);
@@ -210,8 +190,9 @@ const drawMarkerShape = (
   context.fill();
   context.strokeStyle = theme.ringColor;
   context.globalAlpha =
-    (isSelected ? 0.4 : isHovered ? 0.28 : 0.16) * entranceScale;
-  context.lineWidth = isSelected ? 1.5 : 0.9;
+    (isSelected ? 0.42 : isHovered ? 0.3 : 0.09 + visibilityScale * 0.1) *
+    entranceScale;
+  context.lineWidth = isSelected ? 1.5 : isHovered ? 1.05 : 0.82;
   context.stroke();
   context.restore();
 };
@@ -237,7 +218,7 @@ const drawAnchorNode = (
   context.save();
   context.fillStyle = theme.ringColor;
   context.globalAlpha =
-    (isSelected ? 0.56 : isHovered ? 0.3 : 0.14) * entranceScale;
+    (isSelected ? 0.58 : isHovered ? 0.34 : 0.13) * entranceScale;
   context.beginPath();
   context.arc(
     nodePoint.x,
@@ -248,6 +229,18 @@ const drawAnchorNode = (
   );
   context.fill();
   context.restore();
+};
+
+const getMarkerDrawPriority = (isSelected: boolean, isHovered: boolean): number => {
+  if (isSelected) {
+    return 2;
+  }
+
+  if (isHovered) {
+    return 1;
+  }
+
+  return 0;
 };
 
 export const drawMarkersPass = (input: MarkersPassInput): void => {
@@ -272,44 +265,73 @@ export const drawMarkersPass = (input: MarkersPassInput): void => {
     distributionMode: "ordered",
   });
   const rankedEventAngles = rankEventAngles(eventAngles);
-  const activeRankedEvent = resolveActiveRankedEvent(
-    rankedEventAngles,
-    interaction
-  );
-
-  if (activeRankedEvent === null) {
+  if (rankedEventAngles.length === 0) {
     return;
   }
+
   const resolvedEntranceScale = Math.max(0, Math.min(1, entranceScale));
+  const drawQueue = [...rankedEventAngles].sort((left, right) => {
+    const leftIsSelected = isMarkerSelected(
+      left.eventAngle,
+      interaction.selectedEventId
+    );
+    const leftIsHovered = isMarkerHovered(
+      left.eventAngle,
+      interaction.selectedEventId,
+      interaction.hoveredEventId,
+      interaction.hoverCandidateEventId
+    );
+    const rightIsSelected = isMarkerSelected(
+      right.eventAngle,
+      interaction.selectedEventId
+    );
+    const rightIsHovered = isMarkerHovered(
+      right.eventAngle,
+      interaction.selectedEventId,
+      interaction.hoveredEventId,
+      interaction.hoverCandidateEventId
+    );
+    const priorityDelta =
+      getMarkerDrawPriority(leftIsSelected, leftIsHovered) -
+      getMarkerDrawPriority(rightIsSelected, rightIsHovered);
 
-  const isSelected = isMarkerSelected(
-    activeRankedEvent.eventAngle,
-    interaction.selectedEventId
-  );
-  const isHovered = isMarkerHovered(
-    activeRankedEvent.eventAngle,
-    interaction.selectedEventId,
-    interaction.hoveredEventId,
-    interaction.hoverCandidateEventId
-  );
+    if (priorityDelta !== 0) {
+      return priorityDelta;
+    }
 
-  drawMarkerShape(
-    context,
-    viewport,
-    theme,
-    activeRankedEvent,
-    elapsedMs,
-    isSelected,
-    isHovered,
-    resolvedEntranceScale
-  );
-  drawAnchorNode(
-    context,
-    viewport,
-    theme,
-    activeRankedEvent.eventAngle,
-    isSelected,
-    isHovered,
-    resolvedEntranceScale
-  );
+    return left.rank - right.rank;
+  });
+
+  for (const rankedEvent of drawQueue) {
+    const isSelected = isMarkerSelected(
+      rankedEvent.eventAngle,
+      interaction.selectedEventId
+    );
+    const isHovered = isMarkerHovered(
+      rankedEvent.eventAngle,
+      interaction.selectedEventId,
+      interaction.hoveredEventId,
+      interaction.hoverCandidateEventId
+    );
+
+    drawMarkerShape(
+      context,
+      viewport,
+      theme,
+      rankedEvent,
+      elapsedMs,
+      isSelected,
+      isHovered,
+      resolvedEntranceScale
+    );
+    drawAnchorNode(
+      context,
+      viewport,
+      theme,
+      rankedEvent.eventAngle,
+      isSelected,
+      isHovered,
+      resolvedEntranceScale
+    );
+  }
 };

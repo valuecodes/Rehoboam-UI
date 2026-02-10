@@ -24,6 +24,9 @@ import {
 import type { DivergencePulse } from "../divergence-pulse-tracker";
 
 const LEADING_TIME_OFFSET_MS = 45 * 60 * 1000;
+const MAX_RENDERABLE_PULSES = 14;
+const MAX_AMBIENT_TEAR_SOURCES = 5;
+const MAX_DIRECTIONAL_TEAR_SOURCES = 6;
 
 const SEVERITY_RANK: Readonly<Record<WorldEventSeverity, number>> = {
   low: 0,
@@ -77,47 +80,64 @@ type ActivePulseDescriptor = Readonly<{
   severity: WorldEventSeverity;
 }>;
 
-type FlowLane = Readonly<{
-  radiusOffsetFactor: number;
-  stride: number;
+type MountainWaveLayer = Readonly<{
+  baseOffsetFactor: number;
+  amplitudeFactor: number;
+  crestFrequencyA: number;
+  crestFrequencyB: number;
   driftCyclesPerSecond: number;
-  alpha: number;
-  minCircleRadius: number;
-  maxCircleRadius: number;
+  fillAlpha: number;
+  strokeAlpha: number;
+  lineWidth: number;
 }>;
 
-const FLOW_LANES: readonly FlowLane[] = [
+type MountainWaveSample = Readonly<{
+  angleRad: number;
+  baseRadius: number;
+  crestRadius: number;
+  crestHeight: number;
+}>;
+
+const MOUNTAIN_WAVE_LAYERS: readonly MountainWaveLayer[] = [
   {
-    radiusOffsetFactor: -0.028,
-    stride: 3,
-    driftCyclesPerSecond: 0.06,
-    alpha: 0.072,
-    minCircleRadius: 0.42,
-    maxCircleRadius: 1.08,
+    baseOffsetFactor: 0.003,
+    amplitudeFactor: 0.022,
+    crestFrequencyA: 16,
+    crestFrequencyB: 39,
+    driftCyclesPerSecond: 0.08,
+    fillAlpha: 0.082,
+    strokeAlpha: 0.22,
+    lineWidth: 1.18,
   },
   {
-    radiusOffsetFactor: -0.012,
-    stride: 2,
-    driftCyclesPerSecond: -0.08,
-    alpha: 0.086,
-    minCircleRadius: 0.5,
-    maxCircleRadius: 1.18,
+    baseOffsetFactor: 0.01,
+    amplitudeFactor: 0.028,
+    crestFrequencyA: 19,
+    crestFrequencyB: 46,
+    driftCyclesPerSecond: -0.06,
+    fillAlpha: 0.065,
+    strokeAlpha: 0.18,
+    lineWidth: 1.04,
   },
   {
-    radiusOffsetFactor: 0.008,
-    stride: 2,
-    driftCyclesPerSecond: 0.1,
-    alpha: 0.096,
-    minCircleRadius: 0.54,
-    maxCircleRadius: 1.24,
+    baseOffsetFactor: 0.017,
+    amplitudeFactor: 0.034,
+    crestFrequencyA: 23,
+    crestFrequencyB: 58,
+    driftCyclesPerSecond: 0.07,
+    fillAlpha: 0.052,
+    strokeAlpha: 0.16,
+    lineWidth: 0.92,
   },
   {
-    radiusOffsetFactor: 0.024,
-    stride: 3,
+    baseOffsetFactor: 0.025,
+    amplitudeFactor: 0.041,
+    crestFrequencyA: 28,
+    crestFrequencyB: 71,
     driftCyclesPerSecond: -0.05,
-    alpha: 0.068,
-    minCircleRadius: 0.4,
-    maxCircleRadius: 1.02,
+    fillAlpha: 0.043,
+    strokeAlpha: 0.13,
+    lineWidth: 0.82,
   },
 ] as const;
 
@@ -127,12 +147,6 @@ const sanitizeSampleCount = (value: number): number => {
   }
 
   return Math.max(96, Math.min(720, Math.trunc(value)));
-};
-
-const positiveModulo = (value: number, modulus: number): number => {
-  const remainder = value % modulus;
-
-  return remainder < 0 ? remainder + modulus : remainder;
 };
 
 const getTearCountForSeverity = (severity: WorldEventSeverity): number => {
@@ -216,7 +230,7 @@ const resolveActivePulseDescriptors = (
   pulseAngles: ReadonlyMap<string, number>,
   timeMs: number
 ): readonly ActivePulseDescriptor[] => {
-  const descriptors: ActivePulseDescriptor[] = [];
+  const descriptorByEventId = new Map<string, ActivePulseDescriptor>();
 
   for (const pulse of pulses) {
     const angleRad = pulseAngles.get(pulse.eventId);
@@ -233,15 +247,23 @@ const resolveActivePulseDescriptors = (
       continue;
     }
 
-    descriptors.push({
-      angleRad,
-      strength,
-      severity: pulse.severity,
-    });
+    const existingDescriptor = descriptorByEventId.get(pulse.eventId);
+
+    if (existingDescriptor === undefined || strength > existingDescriptor.strength) {
+      descriptorByEventId.set(pulse.eventId, {
+        angleRad,
+        strength,
+        severity: pulse.severity,
+      });
+    }
   }
 
-  return descriptors.sort((left, right) => {
-    return right.strength - left.strength;
+  return [...descriptorByEventId.values()].sort((left, right) => {
+    if (left.strength !== right.strength) {
+      return right.strength - left.strength;
+    }
+
+    return SEVERITY_RANK[right.severity] - SEVERITY_RANK[left.severity];
   });
 };
 
@@ -251,56 +273,58 @@ const getPulseStrength = (pulse: DivergencePulse, timeMs: number): number => {
   return getPulseEnvelope(elapsedPulseMs) * PULSE_AMPLITUDE_SCALE[pulse.severity];
 };
 
-const resolvePrimaryPulseEventId = (
+type PrioritizedPulse = Readonly<{
+  pulse: DivergencePulse;
+  strength: number;
+}>;
+
+const resolveRenderablePulses = (
   pulses: readonly DivergencePulse[],
   eventAnglesByEventId: ReadonlyMap<string, number>,
   interaction: InteractionState,
   timeMs: number
-): string | null => {
-  for (const eventId of [
-    interaction.selectedEventId,
-    interaction.hoveredEventId,
-    interaction.hoverCandidateEventId,
-  ]) {
-    if (eventId === null) {
-      continue;
-    }
-
-    const isActive = pulses.some((pulse) => {
-      if (
-        pulse.eventId !== eventId ||
-        eventAnglesByEventId.get(pulse.eventId) === undefined
-      ) {
-        return false;
-      }
-
-      return getPulseStrength(pulse, timeMs) > 0;
-    });
-
-    if (isActive) {
-      return eventId;
-    }
-  }
-
-  let strongestEventId: string | null = null;
-  let strongestStrength = 0;
+): readonly DivergencePulse[] => {
+  const prioritizedPulses: PrioritizedPulse[] = [];
 
   for (const pulse of pulses) {
-    if (eventAnglesByEventId.get(pulse.eventId) === undefined) {
+    if (!eventAnglesByEventId.has(pulse.eventId)) {
       continue;
     }
 
     const strength = getPulseStrength(pulse, timeMs);
 
-    if (strength <= strongestStrength) {
+    if (strength <= 0) {
       continue;
     }
 
-    strongestStrength = strength;
-    strongestEventId = pulse.eventId;
+    const isInteractionEvent =
+      pulse.eventId === interaction.selectedEventId ||
+      pulse.eventId === interaction.hoveredEventId ||
+      pulse.eventId === interaction.hoverCandidateEventId;
+
+    prioritizedPulses.push({
+      pulse,
+      strength: isInteractionEvent ? strength * 1.22 : strength,
+    });
   }
 
-  return strongestEventId;
+  prioritizedPulses.sort((left, right) => {
+    if (left.strength !== right.strength) {
+      return right.strength - left.strength;
+    }
+
+    if (left.pulse.startedAtMs !== right.pulse.startedAtMs) {
+      return right.pulse.startedAtMs - left.pulse.startedAtMs;
+    }
+
+    return left.pulse.eventId.localeCompare(right.pulse.eventId);
+  });
+
+  return prioritizedPulses
+    .slice(0, MAX_RENDERABLE_PULSES)
+    .map((prioritizedPulse) => {
+      return prioritizedPulse.pulse;
+    });
 };
 
 const compareEventsByPriority = (left: WorldEvent, right: WorldEvent): number => {
@@ -318,52 +342,57 @@ const compareEventsByPriority = (left: WorldEvent, right: WorldEvent): number =>
   return left.id.localeCompare(right.id);
 };
 
-const resolvePrimaryEventId = (
+const getInteractionBoostForEvent = (
+  eventId: string,
+  interaction: InteractionState
+): number => {
+  if (eventId === interaction.selectedEventId) {
+    return 1.45;
+  }
+
+  if (eventId === interaction.hoveredEventId) {
+    return 1.3;
+  }
+
+  if (eventId === interaction.hoverCandidateEventId) {
+    return 1.18;
+  }
+
+  return 1;
+};
+
+const resolveAmbientTearDescriptors = (
   events: readonly WorldEvent[],
   eventAnglesByEventId: ReadonlyMap<string, number>,
-  interaction: InteractionState
-): string | null => {
-  for (const eventId of [
-    interaction.selectedEventId,
-    interaction.hoveredEventId,
-    interaction.hoverCandidateEventId,
-  ]) {
-    if (eventId !== null && eventAnglesByEventId.has(eventId)) {
-      return eventId;
-    }
-  }
+  interaction: InteractionState,
+  elapsedMs: number
+): readonly ActivePulseDescriptor[] => {
+  const elapsedSeconds = elapsedMs / 1000;
 
   return [...events]
     .filter((event) => eventAnglesByEventId.has(event.id))
-    .sort(compareEventsByPriority)[0]?.id ?? null;
-};
+    .sort(compareEventsByPriority)
+    .slice(0, MAX_AMBIENT_TEAR_SOURCES)
+    .map((event, index) => {
+      const angleRad = eventAnglesByEventId.get(event.id) ?? 0;
+      const rankFalloff = Math.max(0.48, 1 - index * 0.14);
+      const modulation =
+        0.84 +
+        0.16 *
+          Math.sin(
+            elapsedSeconds * (1.1 + index * 0.17) + angleRad * 1.9 + index * 0.44
+          );
 
-const createIdleTearDescriptor = (
-  events: readonly WorldEvent[],
-  eventAnglesByEventId: ReadonlyMap<string, number>,
-  primaryEventId: string | null,
-  elapsedMs: number
-): ActivePulseDescriptor | null => {
-  if (primaryEventId === null) {
-    return null;
-  }
-
-  const angleRad = eventAnglesByEventId.get(primaryEventId);
-  const event = events.find((candidate) => candidate.id === primaryEventId);
-
-  if (angleRad === undefined || event === undefined) {
-    return null;
-  }
-
-  const elapsedSeconds = elapsedMs / 1000;
-  const modulation =
-    0.88 + 0.12 * Math.sin(elapsedSeconds * 1.3 + angleRad * 2.1);
-
-  return {
-    angleRad,
-    severity: event.severity,
-    strength: IDLE_TEAR_STRENGTH[event.severity] * modulation,
-  };
+      return {
+        angleRad,
+        severity: event.severity,
+        strength:
+          IDLE_TEAR_STRENGTH[event.severity] *
+          rankFalloff *
+          modulation *
+          getInteractionBoostForEvent(event.id, interaction),
+      };
+    });
 };
 
 const createContourSamples = (
@@ -514,150 +543,121 @@ const drawFlowCircleLanes = (
 
   context.save();
   context.fillStyle = theme.ringColor;
-  context.shadowColor = theme.ringColor;
-  context.shadowBlur = 2.2;
+  context.strokeStyle = theme.ringColor;
+  context.setLineDash([]);
+  context.lineDashOffset = 0;
 
-  for (const lane of FLOW_LANES) {
-    const phaseShift = Math.trunc(
-      elapsedSeconds * lane.driftCyclesPerSecond * sampleCount
+  for (const layer of MOUNTAIN_WAVE_LAYERS) {
+    const mountainSamples: MountainWaveSample[] = Array.from(
+      { length: sampleCount + 1 },
+      (_, index) => {
+        const sample = samples[index];
+        const baseRadius = sample.radius + viewport.outerRadius * layer.baseOffsetFactor;
+        const carrierEnvelope =
+          0.4 +
+          ((Math.sin(sample.angleRad * 7.2 + elapsedSeconds * 0.4) + 1) / 2) * 0.6;
+        const waveA =
+          (Math.sin(
+            sample.angleRad * layer.crestFrequencyA +
+              elapsedSeconds * layer.driftCyclesPerSecond * TAU
+          ) +
+            1) /
+          2;
+        const waveB =
+          (Math.sin(
+            sample.angleRad * layer.crestFrequencyB -
+              elapsedSeconds *
+                layer.driftCyclesPerSecond *
+                1.7 *
+                TAU +
+              layer.baseOffsetFactor * 180
+          ) +
+            1) /
+          2;
+        const jaggedness = Math.pow(waveA, 3) * 0.58 + Math.pow(waveB, 6) * 0.42;
+        const pulseBoost = 0.74 + Math.pow(sample.pulseInfluence, 0.78) * 2.8;
+        const crestHeight =
+          viewport.outerRadius *
+          layer.amplitudeFactor *
+          carrierEnvelope *
+          jaggedness *
+          pulseBoost;
+
+        return {
+          angleRad: sample.angleRad,
+          baseRadius,
+          crestRadius: baseRadius + crestHeight,
+          crestHeight,
+        };
+      }
     );
 
-    for (let index = 0; index < sampleCount; index += lane.stride) {
-      const laneIndex = positiveModulo(index + phaseShift, sampleCount);
-      const sample = samples[laneIndex];
-      const laneWave =
-        Math.sin(
-          sample.angleRad * 9.6 +
-            elapsedSeconds * (1.2 + lane.driftCyclesPerSecond * 4) +
-            lane.radiusOffsetFactor * 86
-        ) * viewport.outerRadius * 0.0042;
-      const radius =
-        sample.radius +
-        viewport.outerRadius * lane.radiusOffsetFactor +
-        laneWave * (0.62 + sample.pulseInfluence * 0.58);
-      const point = polarToCartesian(
+    context.globalAlpha = layer.fillAlpha;
+    context.beginPath();
+
+    for (let index = 0; index < mountainSamples.length; index += 1) {
+      const mountainSample = mountainSamples[index];
+      const crestPoint = polarToCartesian(
         {
-          radius,
-          angleRad: sample.angleRad,
+          radius: mountainSample.crestRadius,
+          angleRad: mountainSample.angleRad,
         },
         viewport.center
       );
-      const sizeMix =
-        (Math.sin(sample.angleRad * 27 + elapsedSeconds * 2.6) + 1) / 2;
-      const circleRadius =
-        lane.minCircleRadius +
-        (lane.maxCircleRadius - lane.minCircleRadius) * sizeMix +
-        sample.pulseInfluence * 0.7;
 
-      context.globalAlpha = Math.min(
-        0.34,
-        lane.alpha * (0.92 + sample.pulseInfluence * 1.45)
+      if (index === 0) {
+        context.moveTo(crestPoint.x, crestPoint.y);
+      } else {
+        context.lineTo(crestPoint.x, crestPoint.y);
+      }
+    }
+
+    for (let index = mountainSamples.length - 1; index >= 0; index -= 1) {
+      const mountainSample = mountainSamples[index];
+      const basePoint = polarToCartesian(
+        {
+          radius: mountainSample.baseRadius,
+          angleRad: mountainSample.angleRad,
+        },
+        viewport.center
       );
-      context.beginPath();
-      context.arc(point.x, point.y, circleRadius, 0, TAU);
-      context.fill();
-    }
-  }
 
-  context.restore();
-};
-
-const drawInterRingParticles = (
-  context: CanvasRenderingContext2D,
-  viewport: ViewportState,
-  theme: RehoboamTheme,
-  samples: readonly ContourSample[],
-  elapsedMs: number
-): void => {
-  const sampleCount = samples.length - 1;
-
-  if (sampleCount <= 0) {
-    return;
-  }
-
-  const elapsedSeconds = elapsedMs / 1000;
-
-  context.save();
-  context.fillStyle = theme.ringColor;
-  context.shadowColor = theme.ringColor;
-  context.shadowBlur = 1.8;
-
-  for (let index = 0; index < sampleCount; index += 2) {
-    const sample = samples[index];
-    const flowSignal =
-      (Math.sin(sample.angleRad * 41 - elapsedSeconds * 3.2) + 1) / 2;
-    const pulseBoost = sample.pulseInfluence * 0.7;
-
-    if (flowSignal + pulseBoost < 0.44) {
-      continue;
+      context.lineTo(basePoint.x, basePoint.y);
     }
 
-    const radialMix =
-      (Math.sin(sample.angleRad * 73 + elapsedSeconds * 4.7) + 1) / 2;
-    const radialOffsetFactor = -0.031 + radialMix * 0.064;
-    const radius = sample.radius + viewport.outerRadius * radialOffsetFactor;
-    const driftAngle = normalizeAngle(sample.angleRad + (flowSignal - 0.5) * 0.018);
-    const point = polarToCartesian(
+    const firstMountainSample = mountainSamples[0];
+    const firstCrestPoint = polarToCartesian(
       {
-        radius,
-        angleRad: driftAngle,
+        radius: firstMountainSample.crestRadius,
+        angleRad: firstMountainSample.angleRad,
       },
       viewport.center
     );
-    const particleRadius =
-      0.34 +
-      radialMix * 1.02 +
-      flowSignal * 0.28 +
-      sample.pulseInfluence * 0.92;
-
-    context.globalAlpha =
-      0.03 + flowSignal * 0.068 + sample.pulseInfluence * 0.14;
-    context.beginPath();
-    context.arc(point.x, point.y, particleRadius, 0, TAU);
+    context.lineTo(firstCrestPoint.x, firstCrestPoint.y);
     context.fill();
-  }
 
-  context.restore();
-};
+    context.globalAlpha = layer.strokeAlpha;
+    context.lineWidth = layer.lineWidth;
+    context.beginPath();
 
-const drawPulseGrain = (
-  context: CanvasRenderingContext2D,
-  viewport: ViewportState,
-  samples: readonly ContourSample[],
-  elapsedMs: number
-): void => {
-  const elapsedSeconds = elapsedMs / 1000;
+    for (let index = 0; index < mountainSamples.length; index += 1) {
+      const mountainSample = mountainSamples[index];
+      const crestPoint = polarToCartesian(
+        {
+          radius: mountainSample.crestRadius,
+          angleRad: mountainSample.angleRad,
+        },
+        viewport.center
+      );
 
-  context.save();
-  context.fillStyle = "#171717";
-
-  for (let index = 0; index < samples.length; index += 2) {
-    const sample = samples[index];
-
-    if (sample.pulseInfluence < 0.08) {
-      continue;
+      if (index === 0) {
+        context.moveTo(crestPoint.x, crestPoint.y);
+      } else {
+        context.lineTo(crestPoint.x, crestPoint.y);
+      }
     }
 
-    const jitter =
-      (Math.sin(sample.angleRad * 133 + elapsedSeconds * 7.2) +
-        Math.sin(sample.angleRad * 79 - elapsedSeconds * 5.6)) /
-      2;
-    const grainRadius =
-      sample.radius +
-      jitter * viewport.outerRadius * 0.01 * sample.pulseInfluence +
-      viewport.outerRadius * 0.008 * sample.pulseInfluence;
-    const point = polarToCartesian(
-      {
-        radius: grainRadius,
-        angleRad: sample.angleRad,
-      },
-      viewport.center
-    );
-
-    context.globalAlpha = 0.05 + sample.pulseInfluence * 0.11;
-    context.beginPath();
-    context.arc(point.x, point.y, 0.9 + sample.pulseInfluence * 1.05, 0, TAU);
-    context.fill();
+    context.stroke();
   }
 
   context.restore();
@@ -671,7 +671,7 @@ const drawDirectionalTears = (
   elapsedMs: number,
   entranceScale: number
 ): void => {
-  const strongestPulses = pulses.slice(0, 1);
+  const strongestPulses = pulses.slice(0, MAX_DIRECTIONAL_TEAR_SOURCES);
   const elapsedSeconds = elapsedMs / 1000;
   const baseRadius = viewport.outerRadius * 0.84;
 
@@ -679,8 +679,10 @@ const drawDirectionalTears = (
   context.fillStyle = theme.ringColor;
   context.strokeStyle = theme.ringColor;
 
-  for (const pulse of strongestPulses) {
+  for (let sourceIndex = 0; sourceIndex < strongestPulses.length; sourceIndex += 1) {
+    const pulse = strongestPulses[sourceIndex];
     const tearCount = getTearCountForSeverity(pulse.severity);
+    const sourceFalloff = Math.max(0.46, 1 - sourceIndex * 0.13);
 
     for (let index = 0; index < tearCount; index += 1) {
       const normalizedIndex =
@@ -694,11 +696,13 @@ const drawDirectionalTears = (
         (Math.sin(angleRad * 41 + index * 1.37 + elapsedSeconds * 4.6) + 1) / 2;
       const widthRad =
         (0.0036 + pulse.strength * 0.14 * (0.5 + noise * 0.7)) *
+        sourceFalloff *
         entranceScale;
       const tearHeight =
         viewport.outerRadius *
         (0.014 + pulse.strength * 1.45) *
         (0.52 + noise * 1.18) *
+        sourceFalloff *
         entranceScale;
       const tipRadius = baseRadius + tearHeight;
       const leftPoint = polarToCartesian(
@@ -723,14 +727,16 @@ const drawDirectionalTears = (
         viewport.center
       );
 
-      context.globalAlpha = (0.09 + pulse.strength * 4.4) * entranceScale;
+      context.globalAlpha =
+        (0.09 + pulse.strength * 4.4) * sourceFalloff * entranceScale;
       context.beginPath();
       context.moveTo(leftPoint.x, leftPoint.y);
       context.lineTo(tipPoint.x, tipPoint.y);
       context.lineTo(rightPoint.x, rightPoint.y);
       context.lineTo(leftPoint.x, leftPoint.y);
       context.fill();
-      context.globalAlpha = (0.06 + pulse.strength * 2.4) * entranceScale;
+      context.globalAlpha =
+        (0.06 + pulse.strength * 2.4) * sourceFalloff * entranceScale;
       context.lineWidth = 0.95;
       context.stroke();
     }
@@ -757,46 +763,34 @@ export const drawDivergencePass = (input: DivergencePassInput): void => {
   }
 
   const eventAnglesByEventId = resolveEventAnglesByEventId(events);
-  const primaryEventId = resolvePrimaryEventId(
-    events,
-    eventAnglesByEventId,
-    interaction
-  );
-  const primaryPulseEventId = resolvePrimaryPulseEventId(
+  const renderablePulses = resolveRenderablePulses(
     pulses,
     eventAnglesByEventId,
     interaction,
     timeMs
   );
-  const activePulses =
-    primaryPulseEventId === null
-      ? []
-      : pulses.filter((pulse) => {
-          return pulse.eventId === primaryPulseEventId;
-        });
   const activePulseDescriptors = resolveActivePulseDescriptors(
-    activePulses,
+    renderablePulses,
     eventAnglesByEventId,
     timeMs
   );
-  const idleTearDescriptor = createIdleTearDescriptor(
+  const ambientTearDescriptors = resolveAmbientTearDescriptors(
     events,
     eventAnglesByEventId,
-    primaryEventId,
+    interaction,
     elapsedMs
   );
-  const directionalTears =
-    activePulseDescriptors.length > 0
-      ? activePulseDescriptors
-      : idleTearDescriptor === null
-        ? []
-        : [idleTearDescriptor];
+  const directionalTears = [...activePulseDescriptors, ...ambientTearDescriptors]
+    .sort((left, right) => {
+      return right.strength - left.strength;
+    })
+    .slice(0, MAX_DIRECTIONAL_TEAR_SOURCES);
   const resolvedEntranceScale = Math.max(0, Math.min(1, entranceScale));
   const samples = createContourSamples(
     viewport,
     elapsedMs,
     timeMs,
-    activePulses,
+    renderablePulses,
     eventAnglesByEventId,
     theme.divergenceSampleCount,
     resolvedEntranceScale
@@ -804,8 +798,6 @@ export const drawDivergencePass = (input: DivergencePassInput): void => {
 
   drawContourStroke(context, viewport, samples, theme.ringColor, 0.19, 1.45);
   drawFlowCircleLanes(context, viewport, theme, samples, elapsedMs);
-  drawInterRingParticles(context, viewport, theme, samples, elapsedMs);
-  drawPulseGrain(context, viewport, samples, elapsedMs);
   drawContourStroke(context, viewport, samples, theme.ringColor, 0.1, 4.9);
   drawDirectionalTears(
     context,

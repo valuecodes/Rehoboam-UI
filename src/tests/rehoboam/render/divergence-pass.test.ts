@@ -40,6 +40,15 @@ const PULSES: readonly DivergencePulse[] = [
   },
 ];
 
+const MULTI_PULSES: readonly DivergencePulse[] = [
+  ...PULSES,
+  {
+    eventId: "event-2",
+    startedAtMs: 2_100,
+    severity: "medium",
+  },
+];
+
 describe("drawDivergencePass", () => {
   it("is deterministic for fixed events, pulses, and time", () => {
     const first = createMockCanvasContext();
@@ -101,6 +110,37 @@ describe("drawDivergencePass", () => {
     });
 
     expect(withoutPulse.commands).not.toStrictEqual(withPulse.commands);
+  });
+
+  it("blends multiple concentration zones when multiple pulses are active", () => {
+    const singlePulse = createMockCanvasContext();
+    const multiPulse = createMockCanvasContext();
+
+    drawDivergencePass({
+      context: singlePulse.context,
+      viewport: VIEWPORT,
+      theme: DEFAULT_THEME,
+      interaction: createInitialInteractionState(),
+      events: EVENTS,
+      pulses: PULSES,
+      elapsedMs: 3_000,
+      timeMs: 3_000,
+      entranceScale: 1,
+    });
+
+    drawDivergencePass({
+      context: multiPulse.context,
+      viewport: VIEWPORT,
+      theme: DEFAULT_THEME,
+      interaction: createInitialInteractionState(),
+      events: EVENTS,
+      pulses: MULTI_PULSES,
+      elapsedMs: 3_000,
+      timeMs: 3_000,
+      entranceScale: 1,
+    });
+
+    expect(singlePulse.commands).not.toStrictEqual(multiPulse.commands);
   });
 
   it("keeps directional tears visible without active pulses", () => {
