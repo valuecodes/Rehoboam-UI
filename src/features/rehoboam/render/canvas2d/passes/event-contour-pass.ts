@@ -17,6 +17,7 @@ import {
 } from "../../../layout/polar";
 
 const LEADING_TIME_OFFSET_MS = 45 * 60 * 1000;
+const MAX_CONTOUR_TARGETS = 12;
 const SEVERITY_RANK: Readonly<Record<WorldEvent["severity"], number>> = {
   low: 0,
   medium: 1,
@@ -37,6 +38,12 @@ export type EventContourPassInput = Readonly<{
 type ContourSample = Readonly<{
   angleRad: number;
   radius: number;
+}>;
+
+type ContourTarget = Readonly<{
+  eventAngle: ComputedEventAngle;
+  rank: number;
+  weight: number;
 }>;
 
 const getLayoutNowMs = (events: readonly WorldEvent[]): number => {
@@ -69,46 +76,74 @@ const compareEventAnglesByPriority = (
   return left.event.id.localeCompare(right.event.id);
 };
 
-const findEventAngleByEventId = (
-  eventAngles: readonly ComputedEventAngle[],
-  eventId: string
-): ComputedEventAngle | null => {
-  for (const eventAngle of eventAngles) {
-    if (eventAngle.eventIds.includes(eventId)) {
-      return eventAngle;
-    }
+const getInteractionWeight = (
+  eventAngle: ComputedEventAngle,
+  interaction: InteractionState
+): number => {
+  if (
+    interaction.selectedEventId !== null &&
+    eventAngle.eventIds.includes(interaction.selectedEventId)
+  ) {
+    return 1.55;
   }
 
-  return null;
+  if (
+    interaction.hoveredEventId !== null &&
+    eventAngle.eventIds.includes(interaction.hoveredEventId)
+  ) {
+    return 1.36;
+  }
+
+  if (
+    interaction.hoverCandidateEventId !== null &&
+    eventAngle.eventIds.includes(interaction.hoverCandidateEventId)
+  ) {
+    return 1.2;
+  }
+
+  return 1;
 };
 
-const resolveActiveEventAngle = (
+const resolveContourTargets = (
   eventAngles: readonly ComputedEventAngle[],
   interaction: InteractionState
-): ComputedEventAngle | null => {
-  for (const eventId of [
-    interaction.selectedEventId,
-    interaction.hoveredEventId,
-    interaction.hoverCandidateEventId,
-  ]) {
-    if (eventId === null) {
-      continue;
-    }
+): readonly ContourTarget[] => {
+  return [...eventAngles]
+    .sort(compareEventAnglesByPriority)
+    .slice(0, MAX_CONTOUR_TARGETS)
+    .map((eventAngle, rank) => {
+      const rankWeight = Math.max(0.34, 1 - rank * 0.1);
 
-    const matched = findEventAngleByEventId(eventAngles, eventId);
+      return {
+        eventAngle,
+        rank,
+        weight: rankWeight * getInteractionWeight(eventAngle, interaction),
+      };
+    });
+};
 
-    if (matched !== null) {
-      return matched;
-    }
+const getSeverityScale = (eventAngle: ComputedEventAngle): number => {
+  const { severity } = eventAngle.event;
+
+  if (severity === "critical") {
+    return 2.85;
   }
 
-  return [...eventAngles].sort(compareEventAnglesByPriority)[0] ?? null;
+  if (severity === "high") {
+    return 2.2;
+  }
+
+  if (severity === "medium") {
+    return 1.68;
+  }
+
+  return 1.32;
 };
 
 const createContourSamples = (
   viewport: ViewportState,
   elapsedMs: number,
-  activeEventAngle: ComputedEventAngle | null,
+  contourTargets: readonly ContourTarget[],
   entranceScale: number
 ): readonly ContourSample[] => {
   const samples = 360;
@@ -125,67 +160,70 @@ const createContourSamples = (
         viewport.outerRadius *
         0.0038;
 
-    const divergenceOffset =
-      activeEventAngle === null
-        ? 0
-        : (() => {
-            const distance = Math.abs(
-              shortestAngularDistance(angleRad, activeEventAngle.angleRad)
-            );
-            const windowRad =
-              0.065 + Math.min(activeEventAngle.clusterSize, 5) * 0.016;
+    const divergenceOffset = contourTargets.reduce((sum, target) => {
+      const distance = Math.abs(
+        shortestAngularDistance(angleRad, target.eventAngle.angleRad)
+      );
+      const windowRad =
+        0.053 +
+        Math.min(target.eventAngle.clusterSize, 6) * 0.014 +
+        target.weight * 0.009;
 
-            if (distance > windowRad) {
-              return 0;
-            }
+      if (distance > windowRad) {
+        return sum;
+      }
 
-            const envelope = (1 - distance / windowRad) ** 2;
-            const pulse =
-              0.8 + 0.2 * Math.sin(elapsedSeconds * 4.5 + activeEventAngle.angleRad);
-            const clusterScale = 1 + Math.min(activeEventAngle.clusterSize, 6) * 0.12;
-            const severityScale =
-              activeEventAngle.event.severity === "critical"
-                ? 2.9
-                : activeEventAngle.event.severity === "high"
-                  ? 2.0
-                  : 1.4;
+      const envelope = (1 - distance / windowRad) ** 2;
+      const pulse =
+        0.78 +
+        0.22 *
+          Math.sin(
+            elapsedSeconds * (4.2 + target.rank * 0.2) +
+              target.eventAngle.angleRad * 1.4 +
+              target.rank * 0.36
+          );
+      const clusterScale = 1 + Math.min(target.eventAngle.clusterSize, 6) * 0.12;
+      const amplitude =
+        target.eventAngle.markerHeight *
+        viewport.outerRadius *
+        0.66 *
+        target.weight *
+        getSeverityScale(target.eventAngle);
 
-            return (
-              activeEventAngle.markerHeight *
-              viewport.outerRadius *
-              envelope *
-              pulse *
-              clusterScale *
-              severityScale *
-              entranceScale
-            );
-          })();
-    const primaryLift =
-      activeEventAngle === null
-        ? 0
-        : (() => {
-            const primaryDistance = Math.abs(
-              shortestAngularDistance(angleRad, activeEventAngle.angleRad)
-            );
+      return sum + amplitude * envelope * pulse * clusterScale * entranceScale;
+    }, 0);
+    const distributedLift = contourTargets.reduce((sum, target) => {
+      const distance = Math.abs(
+        shortestAngularDistance(angleRad, target.eventAngle.angleRad)
+      );
 
-            if (primaryDistance > 0.22) {
-              return 0;
-            }
+      if (distance > 0.2) {
+        return sum;
+      }
 
-            const envelope = (1 - primaryDistance / 0.22) ** 2;
+      const envelope = (1 - distance / 0.2) ** 2;
+      const pulse =
+        0.82 +
+        0.18 *
+          Math.sin(
+            elapsedSeconds * (2.6 + target.rank * 0.08) -
+              target.eventAngle.angleRad * 0.7
+          );
 
-            return (
-              envelope *
-              viewport.outerRadius *
-              0.018 *
-              (0.85 + 0.15 * Math.sin(elapsedSeconds * 2.8)) *
-              entranceScale
-            );
-          })();
+      return (
+        sum +
+        envelope *
+          viewport.outerRadius *
+          0.009 *
+          target.weight *
+          pulse *
+          entranceScale
+      );
+    }, 0);
 
     return {
       angleRad,
-      radius: baseRadius + baselineOffset + divergenceOffset + primaryLift,
+      radius: baseRadius + baselineOffset + divergenceOffset + distributedLift,
     };
   });
 };
@@ -240,12 +278,17 @@ export const drawEventContourPass = (input: EventContourPassInput): void => {
     maxVisibleCount: DEFAULT_MAX_VISIBLE_EVENT_COUNT,
     distributionMode: "ordered",
   });
-  const activeEventAngle = resolveActiveEventAngle(eventAngles, interaction);
+  const contourTargets = resolveContourTargets(eventAngles, interaction);
+
+  if (contourTargets.length === 0) {
+    return;
+  }
+
   const resolvedEntranceScale = Math.max(0, Math.min(1, entranceScale));
   const contourSamples = createContourSamples(
     viewport,
     elapsedMs,
-    activeEventAngle,
+    contourTargets,
     resolvedEntranceScale
   );
 

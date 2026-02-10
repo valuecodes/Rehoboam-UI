@@ -96,4 +96,24 @@ describe("drawMarkersPass", () => {
 
     expect(normal.commands).not.toStrictEqual(selected.commands);
   });
+
+  it("renders markers for all ranked visible events", () => {
+    const context = createMockCanvasContext();
+
+    drawMarkersPass({
+      context: context.context,
+      viewport: VIEWPORT,
+      theme: DEFAULT_THEME,
+      interaction: createInitialInteractionState(),
+      events: EVENTS,
+      elapsedMs: 1_000,
+      entranceScale: 1,
+    });
+
+    const fillCommandCount = context.commands.filter((command) => {
+      return command === "fill";
+    }).length;
+
+    expect(fillCommandCount).toBeGreaterThanOrEqual(EVENTS.length * 2);
+  });
 });
