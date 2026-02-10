@@ -143,7 +143,7 @@ describe("drawDivergencePass", () => {
     expect(singlePulse.commands).not.toStrictEqual(multiPulse.commands);
   });
 
-  it("keeps directional tears visible without active pulses", () => {
+  it("keeps mountain extensions visible without active pulses", () => {
     const context = createMockCanvasContext();
 
     drawDivergencePass({
