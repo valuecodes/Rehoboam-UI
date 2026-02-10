@@ -11,7 +11,6 @@ import {
   DEFAULT_MAX_VISIBLE_EVENT_COUNT,
 } from "../../../layout/compute-angles";
 import {
-  normalizeAngle,
   polarToCartesian,
   shortestAngularDistance,
   TAU,
@@ -26,7 +25,7 @@ import type { DivergencePulse } from "../divergence-pulse-tracker";
 const LEADING_TIME_OFFSET_MS = 45 * 60 * 1000;
 const MAX_RENDERABLE_PULSES = 14;
 const MAX_AMBIENT_TEAR_SOURCES = 5;
-const MAX_DIRECTIONAL_TEAR_SOURCES = 6;
+const MAX_MOUNTAIN_EXTENSION_SOURCES = 9;
 
 const SEVERITY_RANK: Readonly<Record<WorldEventSeverity, number>> = {
   low: 0,
@@ -147,22 +146,6 @@ const sanitizeSampleCount = (value: number): number => {
   }
 
   return Math.max(96, Math.min(720, Math.trunc(value)));
-};
-
-const getTearCountForSeverity = (severity: WorldEventSeverity): number => {
-  if (severity === "critical") {
-    return 9;
-  }
-
-  if (severity === "high") {
-    return 8;
-  }
-
-  if (severity === "medium") {
-    return 7;
-  }
-
-  return 6;
 };
 
 const getLayoutNowMs = (events: readonly WorldEvent[]): number => {
@@ -531,6 +514,7 @@ const drawFlowCircleLanes = (
   viewport: ViewportState,
   theme: RehoboamTheme,
   samples: readonly ContourSample[],
+  extensions: readonly ActivePulseDescriptor[],
   elapsedMs: number
 ): void => {
   const sampleCount = samples.length - 1;
@@ -574,8 +558,35 @@ const drawFlowCircleLanes = (
           ) +
             1) /
           2;
+        const extensionStrength = extensions.reduce((sum, extension) => {
+          const extensionDistance = Math.abs(
+            shortestAngularDistance(sample.angleRad, extension.angleRad)
+          );
+          const extensionWindowRad =
+            extension.severity === "critical"
+              ? 0.31
+              : extension.severity === "high"
+                ? 0.27
+                : extension.severity === "medium"
+                  ? 0.22
+                  : 0.18;
+          const extensionEnvelope = getRaisedCosineWindow(
+            extensionDistance,
+            extensionWindowRad
+          );
+
+          if (extensionEnvelope <= 0) {
+            return sum;
+          }
+
+          return sum + extension.strength * extensionEnvelope;
+        }, 0);
+        const normalizedExtension = Math.min(1, extensionStrength * 17.5);
         const jaggedness = Math.pow(waveA, 3) * 0.58 + Math.pow(waveB, 6) * 0.42;
-        const pulseBoost = 0.74 + Math.pow(sample.pulseInfluence, 0.78) * 2.8;
+        const pulseBoost =
+          0.7 +
+          Math.pow(sample.pulseInfluence, 0.78) * 2.4 +
+          normalizedExtension * 3.1;
         const crestHeight =
           viewport.outerRadius *
           layer.amplitudeFactor *
@@ -663,88 +674,6 @@ const drawFlowCircleLanes = (
   context.restore();
 };
 
-const drawDirectionalTears = (
-  context: CanvasRenderingContext2D,
-  viewport: ViewportState,
-  theme: RehoboamTheme,
-  pulses: readonly ActivePulseDescriptor[],
-  elapsedMs: number,
-  entranceScale: number
-): void => {
-  const strongestPulses = pulses.slice(0, MAX_DIRECTIONAL_TEAR_SOURCES);
-  const elapsedSeconds = elapsedMs / 1000;
-  const baseRadius = viewport.outerRadius * 0.84;
-
-  context.save();
-  context.fillStyle = theme.ringColor;
-  context.strokeStyle = theme.ringColor;
-
-  for (let sourceIndex = 0; sourceIndex < strongestPulses.length; sourceIndex += 1) {
-    const pulse = strongestPulses[sourceIndex];
-    const tearCount = getTearCountForSeverity(pulse.severity);
-    const sourceFalloff = Math.max(0.46, 1 - sourceIndex * 0.13);
-
-    for (let index = 0; index < tearCount; index += 1) {
-      const normalizedIndex =
-        tearCount <= 1 ? 0 : index / (tearCount - 1) - 0.5;
-      const localOffset = normalizedIndex * 0.22;
-      const flutter =
-        Math.sin(elapsedSeconds * 0.7 + pulse.angleRad * 4 + index * 0.8) *
-        0.014;
-      const angleRad = normalizeAngle(pulse.angleRad + localOffset + flutter);
-      const noise =
-        (Math.sin(angleRad * 41 + index * 1.37 + elapsedSeconds * 4.6) + 1) / 2;
-      const widthRad =
-        (0.0036 + pulse.strength * 0.14 * (0.5 + noise * 0.7)) *
-        sourceFalloff *
-        entranceScale;
-      const tearHeight =
-        viewport.outerRadius *
-        (0.014 + pulse.strength * 1.45) *
-        (0.52 + noise * 1.18) *
-        sourceFalloff *
-        entranceScale;
-      const tipRadius = baseRadius + tearHeight;
-      const leftPoint = polarToCartesian(
-        {
-          radius: baseRadius,
-          angleRad: normalizeAngle(angleRad - widthRad),
-        },
-        viewport.center
-      );
-      const rightPoint = polarToCartesian(
-        {
-          radius: baseRadius,
-          angleRad: normalizeAngle(angleRad + widthRad),
-        },
-        viewport.center
-      );
-      const tipPoint = polarToCartesian(
-        {
-          radius: tipRadius,
-          angleRad,
-        },
-        viewport.center
-      );
-
-      context.globalAlpha =
-        (0.09 + pulse.strength * 4.4) * sourceFalloff * entranceScale;
-      context.beginPath();
-      context.moveTo(leftPoint.x, leftPoint.y);
-      context.lineTo(tipPoint.x, tipPoint.y);
-      context.lineTo(rightPoint.x, rightPoint.y);
-      context.lineTo(leftPoint.x, leftPoint.y);
-      context.fill();
-      context.globalAlpha =
-        (0.06 + pulse.strength * 2.4) * sourceFalloff * entranceScale;
-      context.lineWidth = 0.95;
-      context.stroke();
-    }
-  }
-
-  context.restore();
-};
-
 export const drawDivergencePass = (input: DivergencePassInput): void => {
   const {
     context,
@@ -780,11 +709,11 @@ export const drawDivergencePass = (input: DivergencePassInput): void => {
     interaction,
     elapsedMs
   );
-  const directionalTears = [...activePulseDescriptors, ...ambientTearDescriptors]
+  const mountainExtensions = [...activePulseDescriptors, ...ambientTearDescriptors]
     .sort((left, right) => {
       return right.strength - left.strength;
     })
-    .slice(0, MAX_DIRECTIONAL_TEAR_SOURCES);
+    .slice(0, MAX_MOUNTAIN_EXTENSION_SOURCES);
   const resolvedEntranceScale = Math.max(0, Math.min(1, entranceScale));
   const samples = createContourSamples(
     viewport,
@@ -797,14 +726,13 @@ export const drawDivergencePass = (input: DivergencePassInput): void => {
   );
 
   drawContourStroke(context, viewport, samples, theme.ringColor, 0.19, 1.45);
-  drawFlowCircleLanes(context, viewport, theme, samples, elapsedMs);
-  drawContourStroke(context, viewport, samples, theme.ringColor, 0.1, 4.9);
-  drawDirectionalTears(
+  drawFlowCircleLanes(
     context,
     viewport,
     theme,
-    directionalTears,
-    elapsedMs,
-    resolvedEntranceScale
+    samples,
+    mountainExtensions,
+    elapsedMs
   );
+  drawContourStroke(context, viewport, samples, theme.ringColor, 0.1, 4.9);
 };

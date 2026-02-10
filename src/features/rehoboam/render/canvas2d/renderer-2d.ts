@@ -11,8 +11,6 @@ import { drawDivergencePass } from "./passes/divergence-pass";
 import type { DivergencePassInput } from "./passes/divergence-pass";
 import { drawEventContourPass } from "./passes/event-contour-pass";
 import type { EventContourPassInput } from "./passes/event-contour-pass";
-import { drawMarkersPass } from "./passes/markers-pass";
-import type { MarkersPassInput } from "./passes/markers-pass";
 import { createRingSpecs, drawRingsPass } from "./passes/rings-pass";
 import type { RingsPassInput, RingSpec } from "./passes/rings-pass";
 import { drawSweepPass } from "./passes/sweep-pass";
@@ -110,15 +108,6 @@ export const createRenderer2D = (
       elapsedMs: frame.elapsedMs,
       entranceScale: 1,
     };
-    const markersInput: MarkersPassInput = {
-      context,
-      viewport: frame.viewport,
-      theme,
-      interaction: frame.interaction,
-      events: frame.events,
-      elapsedMs: frame.elapsedMs,
-      entranceScale: 1,
-    };
     const divergenceInput: DivergencePassInput = {
       context,
       viewport: frame.viewport,
@@ -135,7 +124,6 @@ export const createRenderer2D = (
     drawRingsPass(ringsInput);
     drawEventContourPass(eventContourInput);
     drawDivergencePass(divergenceInput);
-    drawMarkersPass(markersInput);
     drawSweepPass(sweepInput);
   };
 
