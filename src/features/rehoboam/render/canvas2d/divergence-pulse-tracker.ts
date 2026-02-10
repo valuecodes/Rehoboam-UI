@@ -19,6 +19,7 @@ export type DivergencePulseTracker = Readonly<{
 export type CreateDivergencePulseTrackerOptions = Readonly<{
   maxActivePulses?: number;
   pulseLifetimeMs?: number;
+  emitInitialPulses?: boolean;
 }>;
 
 const getEventRevisionSignature = (event: WorldEvent): string => {
@@ -62,9 +63,11 @@ export const createDivergencePulseTracker = (
     options.pulseLifetimeMs,
     DIVERGENCE_PULSE_LIFETIME_MS
   );
+  const emitInitialPulses = options.emitInitialPulses === true;
 
   let knownRevisionByEventId = new Map<string, string>();
   let pulses: readonly DivergencePulse[] = [];
+  let hasInitializedWithEvents = false;
 
   const updateEvents: DivergencePulseTracker["updateEvents"] = (
     events,
@@ -74,6 +77,8 @@ export const createDivergencePulseTracker = (
     const sortedEvents = [...events].sort((left, right) => {
       return left.id.localeCompare(right.id);
     });
+    const shouldSuppressInitialPulses =
+      !emitInitialPulses && !hasInitializedWithEvents && sortedEvents.length > 0;
     const nextPulses: DivergencePulse[] = [];
 
     for (const event of sortedEvents) {
@@ -81,6 +86,10 @@ export const createDivergencePulseTracker = (
       const previousRevisionSignature = knownRevisionByEventId.get(event.id);
 
       nextKnownRevisionByEventId.set(event.id, revisionSignature);
+
+      if (shouldSuppressInitialPulses) {
+        continue;
+      }
 
       if (
         previousRevisionSignature === undefined ||
@@ -95,6 +104,9 @@ export const createDivergencePulseTracker = (
     }
 
     knownRevisionByEventId = nextKnownRevisionByEventId;
+    if (sortedEvents.length > 0) {
+      hasInitializedWithEvents = true;
+    }
 
     const mergedPulses = [...pulses, ...nextPulses];
     const activePulses = pruneExpiredPulses(
@@ -120,6 +132,7 @@ export const createDivergencePulseTracker = (
   const reset: DivergencePulseTracker["reset"] = () => {
     knownRevisionByEventId = new Map<string, string>();
     pulses = [];
+    hasInitializedWithEvents = false;
   };
 
   return {

@@ -9,8 +9,6 @@ import { drawBackgroundPass } from "./passes/background-pass";
 import type { BackgroundPassInput } from "./passes/background-pass";
 import { drawDivergencePass } from "./passes/divergence-pass";
 import type { DivergencePassInput } from "./passes/divergence-pass";
-import { drawEventContourPass } from "./passes/event-contour-pass";
-import type { EventContourPassInput } from "./passes/event-contour-pass";
 import { createRingSpecs, drawRingsPass } from "./passes/rings-pass";
 import type { RingsPassInput, RingSpec } from "./passes/rings-pass";
 import { drawSweepPass } from "./passes/sweep-pass";
@@ -99,15 +97,6 @@ export const createRenderer2D = (
 
     divergencePulseTracker.updateEvents(frame.events, frame.timeMs);
     const activePulses = divergencePulseTracker.getActivePulses(frame.timeMs);
-    const eventContourInput: EventContourPassInput = {
-      context,
-      viewport: frame.viewport,
-      theme,
-      interaction: frame.interaction,
-      events: frame.events,
-      elapsedMs: frame.elapsedMs,
-      entranceScale: 1,
-    };
     const divergenceInput: DivergencePassInput = {
       context,
       viewport: frame.viewport,
@@ -122,7 +111,6 @@ export const createRenderer2D = (
 
     drawBackgroundPass(backgroundInput);
     drawRingsPass(ringsInput);
-    drawEventContourPass(eventContourInput);
     drawDivergencePass(divergenceInput);
     drawSweepPass(sweepInput);
   };
