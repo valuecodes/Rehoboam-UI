@@ -4,6 +4,7 @@ import type {
   RehoboamRendererFrame,
   RehoboamTheme,
 } from "../../engine/types";
+import { createDivergenceClusterTracker } from "./divergence-cluster-tracker";
 import { createDivergencePulseTracker } from "./divergence-pulse-tracker";
 import { drawBackgroundPass } from "./passes/background-pass";
 import type { BackgroundPassInput } from "./passes/background-pass";
@@ -37,6 +38,7 @@ export const createRenderer2D = (
   const { context } = options;
   let theme = options.theme;
   let ringSpecs = buildRingSpecs(theme);
+  const divergenceClusterTracker = createDivergenceClusterTracker();
   const divergencePulseTracker = createDivergencePulseTracker();
   let isDestroyed = false;
 
@@ -97,6 +99,10 @@ export const createRenderer2D = (
 
     divergencePulseTracker.updateEvents(frame.events, frame.timeMs);
     const activePulses = divergencePulseTracker.getActivePulses(frame.timeMs);
+    divergenceClusterTracker.update(frame.timeMs);
+    const activeClusters = divergenceClusterTracker.getActiveClusters(
+      frame.timeMs
+    );
     const divergenceInput: DivergencePassInput = {
       context,
       viewport: frame.viewport,
@@ -104,6 +110,7 @@ export const createRenderer2D = (
       interaction: frame.interaction,
       events: frame.events,
       pulses: activePulses,
+      clusters: activeClusters,
       elapsedMs: frame.elapsedMs,
       timeMs: frame.timeMs,
       entranceScale: 1,
@@ -116,6 +123,7 @@ export const createRenderer2D = (
   };
 
   const destroy: RehoboamRenderer["destroy"] = () => {
+    divergenceClusterTracker.reset();
     divergencePulseTracker.reset();
     isDestroyed = true;
   };
