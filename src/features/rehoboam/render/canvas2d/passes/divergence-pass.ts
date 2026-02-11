@@ -11,10 +11,12 @@ import {
   DEFAULT_MAX_VISIBLE_EVENT_COUNT,
 } from "../../../layout/compute-angles";
 import {
+  normalizeAngle,
   polarToCartesian,
   shortestAngularDistance,
   TAU,
 } from "../../../layout/polar";
+import type { DivergenceCluster } from "../divergence-cluster-tracker";
 import {
   DIVERGENCE_ATTACK_MS,
   DIVERGENCE_DECAY_MS,
@@ -24,23 +26,21 @@ import type { DivergencePulse } from "../divergence-pulse-tracker";
 
 const LEADING_TIME_OFFSET_MS = 45 * 60 * 1000;
 const MAX_RENDERABLE_PULSES = 14;
-const MAX_AMBIENT_TEAR_SOURCES = 5;
-const MAX_MOUNTAIN_EXTENSION_SOURCES = 9;
+const MAX_MOUNTAIN_EXTENSION_SOURCES = 16;
+const MAX_RENDERABLE_PULSE_EXTENSIONS = 4;
+const MAX_SPIKE_DESCRIPTORS_PER_CLUSTER = 3;
 const BASE_WAVE_COLOR = "#101010";
 const ACCENT_WAVE_COLOR = "#040404";
+const CLUSTER_MODULATION_SPEED_SCALE = 0.52;
+const EXTENSION_INFLUENCE_SCALE = 15;
+const EXTENSION_OFFSET_SCALE = 1.05;
+const EXTENSION_OFFSET_CAP = 0.066;
 
 const SEVERITY_RANK: Readonly<Record<WorldEventSeverity, number>> = {
   low: 0,
   medium: 1,
   high: 2,
   critical: 3,
-};
-
-const IDLE_TEAR_STRENGTH: Readonly<Record<WorldEventSeverity, number>> = {
-  low: 0.0056,
-  medium: 0.0079,
-  high: 0.0114,
-  critical: 0.0158,
 };
 
 const PULSE_AMPLITUDE_SCALE: Readonly<Record<WorldEventSeverity, number>> = {
@@ -64,6 +64,7 @@ export type DivergencePassInput = Readonly<{
   interaction: InteractionState;
   events: readonly WorldEvent[];
   pulses: readonly DivergencePulse[];
+  clusters: readonly DivergenceCluster[];
   elapsedMs: number;
   timeMs: number;
   entranceScale: number;
@@ -79,6 +80,7 @@ type ActivePulseDescriptor = Readonly<{
   angleRad: number;
   strength: number;
   severity: WorldEventSeverity;
+  windowScale: number;
 }>;
 
 type MountainWaveLayer = Readonly<{
@@ -191,7 +193,9 @@ const getRaisedCosineWindow = (
   return 0.5 * (1 + Math.cos((Math.PI * distanceRad) / windowRad));
 };
 
-const getExtensionWindowRad = (severity: WorldEventSeverity): number => {
+const getSeverityExtensionWindowRad = (
+  severity: WorldEventSeverity
+): number => {
   if (severity === "critical") {
     return 0.2;
   }
@@ -205,6 +209,13 @@ const getExtensionWindowRad = (severity: WorldEventSeverity): number => {
   }
 
   return 0.112;
+};
+
+const getExtensionWindowRad = (descriptor: ActivePulseDescriptor): number => {
+  const scaledWindowRad =
+    getSeverityExtensionWindowRad(descriptor.severity) * descriptor.windowScale;
+
+  return Math.max(0.048, Math.min(0.27, scaledWindowRad));
 };
 
 const resolveEventAnglesByEventId = (
@@ -251,11 +262,15 @@ const resolveActivePulseDescriptors = (
 
     const existingDescriptor = descriptorByEventId.get(pulse.eventId);
 
-    if (existingDescriptor === undefined || strength > existingDescriptor.strength) {
+    if (
+      existingDescriptor === undefined ||
+      strength > existingDescriptor.strength
+    ) {
       descriptorByEventId.set(pulse.eventId, {
         angleRad,
         strength,
         severity: pulse.severity,
+        windowScale: 1,
       });
     }
   }
@@ -272,7 +287,9 @@ const resolveActivePulseDescriptors = (
 const getPulseStrength = (pulse: DivergencePulse, timeMs: number): number => {
   const elapsedPulseMs = timeMs - pulse.startedAtMs;
 
-  return getPulseEnvelope(elapsedPulseMs) * PULSE_AMPLITUDE_SCALE[pulse.severity];
+  return (
+    getPulseEnvelope(elapsedPulseMs) * PULSE_AMPLITUDE_SCALE[pulse.severity]
+  );
 };
 
 type PrioritizedPulse = Readonly<{
@@ -329,72 +346,116 @@ const resolveRenderablePulses = (
     });
 };
 
-const compareEventsByPriority = (left: WorldEvent, right: WorldEvent): number => {
-  const severityDelta =
-    SEVERITY_RANK[right.severity] - SEVERITY_RANK[left.severity];
-
-  if (severityDelta !== 0) {
-    return severityDelta;
-  }
-
-  if (left.timestampMs !== right.timestampMs) {
-    return right.timestampMs - left.timestampMs;
-  }
-
-  return left.id.localeCompare(right.id);
-};
-
-const getInteractionBoostForEvent = (
-  eventId: string,
-  interaction: InteractionState
+const getClusterEnvelope = (
+  cluster: DivergenceCluster,
+  timeMs: number
 ): number => {
-  if (eventId === interaction.selectedEventId) {
-    return 1.45;
+  const elapsedMs = timeMs - cluster.startedAtMs;
+
+  if (elapsedMs <= 0) {
+    return 0;
   }
 
-  if (eventId === interaction.hoveredEventId) {
-    return 1.3;
+  if (elapsedMs <= cluster.attackMs) {
+    const attackProgress = elapsedMs / cluster.attackMs;
+
+    return attackProgress * attackProgress;
   }
 
-  if (eventId === interaction.hoverCandidateEventId) {
-    return 1.18;
+  const sustainEndMs = cluster.attackMs + cluster.holdMs;
+
+  if (elapsedMs <= sustainEndMs) {
+    return 1;
   }
 
-  return 1;
+  const decayProgress = (elapsedMs - sustainEndMs) / cluster.decayMs;
+
+  if (decayProgress >= 1) {
+    return 0;
+  }
+
+  return (1 - decayProgress) ** 2;
 };
 
-const resolveAmbientTearDescriptors = (
-  events: readonly WorldEvent[],
-  eventAnglesByEventId: ReadonlyMap<string, number>,
-  interaction: InteractionState,
-  elapsedMs: number
+const resolveClusterDescriptors = (
+  clusters: readonly DivergenceCluster[],
+  elapsedMs: number,
+  timeMs: number
 ): readonly ActivePulseDescriptor[] => {
   const elapsedSeconds = elapsedMs / 1000;
+  const clusterDescriptors: ActivePulseDescriptor[] = [];
 
-  return [...events]
-    .filter((event) => eventAnglesByEventId.has(event.id))
-    .sort(compareEventsByPriority)
-    .slice(0, MAX_AMBIENT_TEAR_SOURCES)
-    .map((event, index) => {
-      const angleRad = eventAnglesByEventId.get(event.id) ?? 0;
-      const rankFalloff = Math.max(0.48, 1 - index * 0.14);
-      const modulation =
-        0.84 +
-        0.16 *
-          Math.sin(
-            elapsedSeconds * (1.1 + index * 0.17) + angleRad * 1.9 + index * 0.44
-          );
+  for (const cluster of clusters) {
+    const clusterEnvelope = getClusterEnvelope(cluster, timeMs);
 
-      return {
-        angleRad,
-        severity: event.severity,
-        strength:
-          IDLE_TEAR_STRENGTH[event.severity] *
-          rankFalloff *
-          modulation *
-          getInteractionBoostForEvent(event.id, interaction),
-      };
+    if (clusterEnvelope <= 0) {
+      continue;
+    }
+
+    const ageSeconds = Math.max(0, (timeMs - cluster.startedAtMs) / 1000);
+    const angleRad = normalizeAngle(
+      cluster.centerAngleRad + cluster.driftRadPerSecond * ageSeconds
+    );
+    const baseWindowRad = getSeverityExtensionWindowRad(cluster.severity);
+    const flareModulation =
+      0.78 +
+      0.22 *
+        Math.sin(
+          elapsedSeconds *
+            CLUSTER_MODULATION_SPEED_SCALE *
+            cluster.flareSpeedHz *
+            TAU +
+            cluster.flarePhaseOffsetRad
+        );
+    const baseStrength = cluster.strength * clusterEnvelope * flareModulation;
+
+    if (baseStrength <= 0) {
+      continue;
+    }
+
+    clusterDescriptors.push({
+      angleRad,
+      strength: baseStrength,
+      severity: cluster.severity,
+      windowScale: Math.max(
+        0.7,
+        Math.min(1.65, cluster.widthRad / baseWindowRad)
+      ),
     });
+
+    for (const spike of cluster.spikes.slice(
+      0,
+      MAX_SPIKE_DESCRIPTORS_PER_CLUSTER
+    )) {
+      const spikeFlicker =
+        0.72 +
+        0.28 *
+          Math.sin(
+            elapsedSeconds *
+              CLUSTER_MODULATION_SPEED_SCALE *
+              spike.flickerHz *
+              TAU +
+              spike.phaseOffsetRad
+          );
+      const spikeStrength = baseStrength * spike.strengthScale * spikeFlicker;
+
+      if (spikeStrength <= 0) {
+        continue;
+      }
+
+      clusterDescriptors.push({
+        angleRad: normalizeAngle(angleRad + spike.angleOffsetRad),
+        strength: spikeStrength,
+        severity: cluster.severity,
+        windowScale: Math.max(
+          0.28,
+          Math.min(1.12, spike.widthRad / baseWindowRad)
+        ),
+      });
+    }
+  }
+
+  return clusterDescriptors;
 };
 
 const createContourSamples = (
@@ -403,6 +464,7 @@ const createContourSamples = (
   timeMs: number,
   pulses: readonly DivergencePulse[],
   pulseAngles: ReadonlyMap<string, number>,
+  extensions: readonly ActivePulseDescriptor[],
   sampleCount: number,
   entranceScale: number
 ): readonly ContourSample[] => {
@@ -457,6 +519,45 @@ const createContourSamples = (
 
       return sum + amplitude * influence * ripple * entranceScale;
     }, 0);
+    let extensionInfluenceEnergy = 0;
+    const rawExtensionOffset = extensions.reduce((sum, extension) => {
+      const angularDistance = Math.abs(
+        shortestAngularDistance(angleRad, extension.angleRad)
+      );
+      const extensionWindowRad = getExtensionWindowRad(extension);
+      const angularEnvelope = getRaisedCosineWindow(
+        angularDistance,
+        extensionWindowRad
+      );
+
+      if (angularEnvelope <= 0) {
+        return sum;
+      }
+
+      const shimmer =
+        0.7 +
+        0.3 *
+          Math.sin(
+            elapsedSeconds *
+              (0.34 + extension.windowScale * 0.18) *
+              CLUSTER_MODULATION_SPEED_SCALE +
+              extension.angleRad * 2.4
+          );
+      const influence =
+        angularEnvelope *
+        Math.min(1, extension.strength * EXTENSION_INFLUENCE_SCALE);
+      extensionInfluenceEnergy += influence;
+
+      return sum + extension.strength * influence * shimmer;
+    }, 0);
+    const extensionOffset =
+      viewport.outerRadius *
+      Math.min(
+        EXTENSION_OFFSET_CAP,
+        rawExtensionOffset * EXTENSION_OFFSET_SCALE
+      ) *
+      entranceScale;
+    pulseInfluence += Math.min(1.2, extensionInfluenceEnergy * 0.55);
     const grainOffset =
       pulseInfluence <= 0
         ? 0
@@ -484,6 +585,7 @@ const createContourSamples = (
         baseRadius +
         baselineOffset +
         pulseOffset +
+        extensionOffset +
         grainOffset +
         roughnessOffset,
       pulseInfluence: Math.min(1, pulseInfluence) * entranceScale,
@@ -561,10 +663,12 @@ const drawFlowCircleLanes = (
       { length: sampleCount + 1 },
       (_, index) => {
         const sample = samples[index];
-        const baseRadius = sample.radius + viewport.outerRadius * layer.baseOffsetFactor;
+        const baseRadius =
+          sample.radius + viewport.outerRadius * layer.baseOffsetFactor;
         const carrierEnvelope =
           0.4 +
-          ((Math.sin(sample.angleRad * 7.2 + elapsedSeconds * 0.4) + 1) / 2) * 0.6;
+          ((Math.sin(sample.angleRad * 7.2 + elapsedSeconds * 0.4) + 1) / 2) *
+            0.6;
         const waveA =
           (Math.sin(
             sample.angleRad * layer.crestFrequencyA +
@@ -575,10 +679,7 @@ const drawFlowCircleLanes = (
         const waveB =
           (Math.sin(
             sample.angleRad * layer.crestFrequencyB -
-              elapsedSeconds *
-                layer.driftCyclesPerSecond *
-                1.7 *
-                TAU +
+              elapsedSeconds * layer.driftCyclesPerSecond * 1.7 * TAU +
               layer.baseOffsetFactor * 180
           ) +
             1) /
@@ -587,7 +688,7 @@ const drawFlowCircleLanes = (
           const extensionDistance = Math.abs(
             shortestAngularDistance(sample.angleRad, extension.angleRad)
           );
-          const extensionWindowRad = getExtensionWindowRad(extension.severity);
+          const extensionWindowRad = getExtensionWindowRad(extension);
           const extensionEnvelope = getRaisedCosineWindow(
             extensionDistance,
             extensionWindowRad
@@ -600,18 +701,19 @@ const drawFlowCircleLanes = (
           return sum + extension.strength * extensionEnvelope;
         }, 0);
         const normalizedExtension = Math.pow(
-          Math.min(1, extensionStrength * 19.5),
+          Math.min(1, extensionStrength * 10.6),
           1.25
         );
-        const ridgeShape = Math.pow(waveA, 4) * 0.46 + Math.pow(waveB, 8) * 0.24;
+        const ridgeShape =
+          Math.pow(waveA, 4) * 0.46 + Math.pow(waveB, 8) * 0.24;
         const needleShape =
           Math.pow(Math.max(waveA, waveB), 14) *
-          (0.05 + normalizedExtension * 3.1);
+          (0.05 + normalizedExtension * 1.8);
         const jaggedness = ridgeShape + needleShape;
         const pulseBoost =
           0.58 +
           Math.pow(sample.pulseInfluence, 0.82) * 2.9 +
-          normalizedExtension * 5.8;
+          normalizedExtension * 3.1;
         const crestHeight =
           viewport.outerRadius *
           layer.amplitudeFactor *
@@ -619,7 +721,7 @@ const drawFlowCircleLanes = (
           jaggedness *
           pulseBoost;
         const cappedCrestHeight = Math.min(
-          viewport.outerRadius * 0.19,
+          viewport.outerRadius * 0.16,
           crestHeight
         );
 
@@ -632,9 +734,12 @@ const drawFlowCircleLanes = (
         };
       }
     );
-    const peakExtensionInfluence = mountainSamples.reduce((peak, mountainSample) => {
-      return Math.max(peak, mountainSample.extensionInfluence);
-    }, 0);
+    const peakExtensionInfluence = mountainSamples.reduce(
+      (peak, mountainSample) => {
+        return Math.max(peak, mountainSample.extensionInfluence);
+      },
+      0
+    );
     const layerFillAlpha = Math.min(
       0.34,
       layer.fillAlpha + peakExtensionInfluence * 0.13
@@ -714,9 +819,9 @@ const drawFlowCircleLanes = (
     context.stroke();
 
     for (const extension of extensions.slice(0, 4)) {
-      const extensionWindowRad = getExtensionWindowRad(extension.severity);
-      const accentAlpha = Math.min(0.84, 0.18 + extension.strength * 12.4);
-      const accentWidth = layer.lineWidth + 0.14 + extension.strength * 4.2;
+      const extensionWindowRad = getExtensionWindowRad(extension);
+      const accentAlpha = Math.min(0.78, 0.16 + extension.strength * 7.2);
+      const accentWidth = layer.lineWidth + 0.12 + extension.strength * 2.6;
       let segmentOpen = false;
 
       context.globalAlpha = accentAlpha;
@@ -777,6 +882,7 @@ export const drawDivergencePass = (input: DivergencePassInput): void => {
     interaction,
     events,
     pulses,
+    clusters,
     elapsedMs,
     timeMs,
     entranceScale,
@@ -798,17 +904,15 @@ export const drawDivergencePass = (input: DivergencePassInput): void => {
     eventAnglesByEventId,
     timeMs
   );
-  const ambientTearDescriptors = resolveAmbientTearDescriptors(
-    events,
-    eventAnglesByEventId,
-    interaction,
-    elapsedMs
+  const clusterDescriptors = resolveClusterDescriptors(
+    clusters,
+    elapsedMs,
+    timeMs
   );
-  const mountainExtensions = [...activePulseDescriptors, ...ambientTearDescriptors]
-    .sort((left, right) => {
-      return right.strength - left.strength;
-    })
-    .slice(0, MAX_MOUNTAIN_EXTENSION_SOURCES);
+  const mountainExtensions = [
+    ...activePulseDescriptors.slice(0, MAX_RENDERABLE_PULSE_EXTENSIONS),
+    ...clusterDescriptors,
+  ].slice(0, MAX_MOUNTAIN_EXTENSION_SOURCES);
   const resolvedEntranceScale = Math.max(0, Math.min(1, entranceScale));
   const samples = createContourSamples(
     viewport,
@@ -816,6 +920,7 @@ export const drawDivergencePass = (input: DivergencePassInput): void => {
     timeMs,
     renderablePulses,
     eventAnglesByEventId,
+    mountainExtensions,
     theme.divergenceSampleCount,
     resolvedEntranceScale
   );
