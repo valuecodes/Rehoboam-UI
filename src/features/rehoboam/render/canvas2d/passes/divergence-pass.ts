@@ -35,6 +35,8 @@ const CLUSTER_MODULATION_SPEED_SCALE = 0.52;
 const EXTENSION_INFLUENCE_SCALE = 15;
 const EXTENSION_OFFSET_SCALE = 1.05;
 const EXTENSION_OFFSET_CAP = 0.066;
+const BASELINE_WAVE_FREQUENCIES = [5, 9, 14] as const;
+const MOUNTAIN_CARRIER_FREQUENCY = 7;
 
 const SEVERITY_RANK: Readonly<Record<WorldEventSeverity, number>> = {
   low: 0,
@@ -475,13 +477,19 @@ const createContourSamples = (
   return Array.from({ length: samples + 1 }, (_, index) => {
     const angleRad = (index / samples) * TAU;
     const baselineOffset =
-      Math.sin(angleRad * 4.6 - elapsedSeconds * 0.42) *
+      Math.sin(
+        angleRad * BASELINE_WAVE_FREQUENCIES[0] - elapsedSeconds * 0.42
+      ) *
         viewport.outerRadius *
         0.0039 +
-      Math.sin(angleRad * 8.8 + elapsedSeconds * 0.74) *
+      Math.sin(
+        angleRad * BASELINE_WAVE_FREQUENCIES[1] + elapsedSeconds * 0.74
+      ) *
         viewport.outerRadius *
         0.0028 +
-      Math.sin(angleRad * 14.1 - elapsedSeconds * 1.05) *
+      Math.sin(
+        angleRad * BASELINE_WAVE_FREQUENCIES[2] - elapsedSeconds * 1.05
+      ) *
         viewport.outerRadius *
         0.0017;
 
@@ -644,6 +652,7 @@ const drawFlowCircleLanes = (
       }
     }
 
+    context.closePath();
     context.stroke();
   };
 
@@ -667,7 +676,11 @@ const drawFlowCircleLanes = (
           sample.radius + viewport.outerRadius * layer.baseOffsetFactor;
         const carrierEnvelope =
           0.4 +
-          ((Math.sin(sample.angleRad * 7.2 + elapsedSeconds * 0.4) + 1) / 2) *
+          ((Math.sin(
+            sample.angleRad * MOUNTAIN_CARRIER_FREQUENCY + elapsedSeconds * 0.4
+          ) +
+            1) /
+            2) *
             0.6;
         const waveA =
           (Math.sin(
@@ -816,6 +829,7 @@ const drawFlowCircleLanes = (
       }
     }
 
+    context.closePath();
     context.stroke();
 
     for (const extension of extensions.slice(0, 4)) {
