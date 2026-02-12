@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { animated, useSpring } from "react-spring";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { WorldEvent } from "../engine/types";
 import { polarToCartesian } from "../layout/polar";
@@ -23,29 +24,32 @@ type CalloutGeometry = Readonly<{
   event: WorldEvent;
   anchorX: number;
   anchorY: number;
-  elbowX: number;
-  elbowY: number;
-  lineEndX: number;
-  lineEndY: number;
   labelX: number;
   labelY: number;
   labelWidth: number;
-  leaderPath: string;
-  leaderLength: number;
+  textAlign: "left" | "right";
+  connectorPath: string;
+  framePoints: string;
+  timeMarginTop: number;
 }>;
 
-const LEADER_LINE_DRAW_MS = 200;
+type Point = Readonly<{
+  x: number;
+  y: number;
+}>;
+
+const V1_LINE_DELAY_MS = 1_000;
+const V1_LINE_DURATION_MS = 1_000;
+const V1_TEXT_DELAY_MS = 2_000;
+const V1_AUTO_CLOSE_MS = 5_000;
+const V1_CLEAR_CLOSE_MS = 3_200;
+const V1_DASH_LENGTH = 1_800;
+const V1_TEXT_TRACK_OPEN = -10;
+const V1_TEXT_TRACK_CLOSE = 10;
+const V1_TEXT_SHIFT_PX = 7;
 
 const clampNumber = (value: number, min: number, max: number): number => {
   return Math.min(max, Math.max(min, value));
-};
-
-const readNowMs = (): number => {
-  if (typeof performance.now === "function") {
-    return performance.now();
-  }
-
-  return Date.now();
 };
 
 const formatCalloutTime = (timestampMs: number): string => {
@@ -56,24 +60,26 @@ const formatCalloutTime = (timestampMs: number): string => {
 
 const getCalloutLocationText = (event: WorldEvent): string => {
   if (event.location !== undefined) {
-    return event.location.label.toUpperCase();
+    return event.location.label;
   }
 
-  return event.category.replace(/[_-]/gu, " ").toUpperCase();
+  return event.category.replace(/[_-]/gu, " ");
 };
 
-const getLeaderLength = (
-  anchorX: number,
-  anchorY: number,
-  elbowX: number,
-  elbowY: number,
-  lineEndX: number,
-  lineEndY: number
-): number => {
-  const segmentOneLength = Math.hypot(anchorX - elbowX, anchorY - elbowY);
-  const segmentTwoLength = Math.hypot(elbowX - lineEndX, elbowY - lineEndY);
+const getCalloutAddText = (event: WorldEvent): string => {
+  if (event.summary !== undefined && event.summary.trim().length > 0) {
+    return event.summary;
+  }
 
-  return segmentOneLength + segmentTwoLength;
+  return `${event.severity} / ${event.category}`;
+};
+
+const toPointList = (points: readonly Point[]): string => {
+  return points
+    .map((point) => {
+      return `${point.x} ${point.y}`;
+    })
+    .join(",");
 };
 
 const getCalloutGeometry = (
@@ -96,56 +102,89 @@ const getCalloutGeometry = (
     center
   );
   const margin = Math.max(12, instrumentSize.width * 0.02);
-  const labelWidth = clampNumber(
-    instrumentSize.width * 0.42,
-    220,
-    instrumentSize.width * 0.54
-  );
-  const labelHeight = clampNumber(
-    instrumentSize.height * 0.12,
-    58,
-    instrumentSize.height * 0.18
-  );
+  const maxPanelWidth = Math.max(180, instrumentSize.width - margin * 2);
+  const minPanelWidth = Math.min(260, maxPanelWidth);
+  const panelWidth = clampNumber(600, minPanelWidth, maxPanelWidth);
+  const maxPanelHeight = Math.max(120, instrumentSize.height - margin * 2);
+  const minPanelHeight = Math.min(120, maxPanelHeight);
+  const panelHeight = clampNumber(200, minPanelHeight, maxPanelHeight);
   const isRightSide = anchor.x >= center.x;
-  const horizontalGap = instrumentSize.width * 0.08;
-  const idealLabelX = isRightSide
-    ? anchor.x + horizontalGap
-    : anchor.x - labelWidth - horizontalGap;
-  const labelX = clampNumber(
-    idealLabelX,
+  const isLowerHalf = anchor.y >= center.y;
+  const rightPanelX = instrumentSize.width * 0.7;
+  const leftPanelX = instrumentSize.width * 0.1;
+  const prefersSingleSide = instrumentSize.width < 1_050;
+  const basePanelX =
+    prefersSingleSide || !isRightSide ? leftPanelX : rightPanelX;
+  const basePanelY = isLowerHalf
+    ? instrumentSize.height - panelHeight
+    : Math.max(30, margin);
+  const panelX = clampNumber(
+    basePanelX,
     margin,
-    instrumentSize.width - labelWidth - margin
+    instrumentSize.width - panelWidth - margin
   );
-  const idealLabelY = anchor.y - labelHeight - instrumentSize.height * 0.06;
-  const labelY = clampNumber(idealLabelY, margin, instrumentSize.height * 0.48);
-  const lineEndX = isRightSide ? labelX : labelX + labelWidth;
-  const lineEndY = labelY + labelHeight * 0.84;
-  const elbowDeltaX = Math.max(24, instrumentSize.width * 0.045);
-  const elbowX = anchor.x + (isRightSide ? elbowDeltaX : -elbowDeltaX);
-  const elbowY = anchor.y - Math.max(28, instrumentSize.height * 0.058);
-  const leaderPath = `M ${anchor.x} ${anchor.y} L ${elbowX} ${elbowY} L ${lineEndX} ${lineEndY}`;
-  const leaderLength = getLeaderLength(
-    anchor.x,
-    anchor.y,
-    elbowX,
-    elbowY,
-    lineEndX,
-    lineEndY
+  const panelY = clampNumber(
+    basePanelY,
+    margin,
+    instrumentSize.height - panelHeight - margin
   );
+  const isLeftLayout = panelX < center.x;
+  const isBottomLayout = panelY > center.y;
+  const cornerStep = 10;
+  const firstFrameX = panelX + (isLeftLayout ? 0 : panelWidth * (2 / 3));
+  const firstFrameY = panelY + (isBottomLayout ? 70 : 30);
+  const secondFrameX = firstFrameX + (isLeftLayout ? -cornerStep : cornerStep);
+  const secondFrameY = firstFrameY;
+  const thirdFrameX = firstFrameX + (isLeftLayout ? -cornerStep * 2 : cornerStep * 2);
+  const thirdFrameY = panelY + (isBottomLayout ? 60 : 40);
+  const fourthFrameX = thirdFrameX;
+  const fourthFrameY = panelY + (isBottomLayout ? 20 : 80);
+  const fifthFrameX = firstFrameX;
+  const fifthFrameY = panelY + (isBottomLayout ? 0 : 100);
+  const lineEndX = panelX + (isLeftLayout ? panelWidth * 0.5 : panelWidth / 6);
+  const lineEndY = fifthFrameY;
+  const framePointList: readonly Point[] = [
+    {
+      x: firstFrameX,
+      y: firstFrameY,
+    },
+    {
+      x: secondFrameX,
+      y: secondFrameY,
+    },
+    {
+      x: thirdFrameX,
+      y: thirdFrameY,
+    },
+    {
+      x: fourthFrameX,
+      y: fourthFrameY,
+    },
+    {
+      x: fifthFrameX,
+      y: fifthFrameY,
+    },
+    {
+      x: lineEndX,
+      y: lineEndY,
+    },
+  ];
+  const textAlign = panelX < center.x ? "left" : "right";
+  const labelX = panelX > center.x ? panelX - panelWidth / 3 : panelX;
+  const labelY = panelY;
+  const timeMarginTop = panelY < 300 ? 20 : 0;
 
   return {
     event: target.event,
     anchorX: anchor.x,
     anchorY: anchor.y,
-    elbowX,
-    elbowY,
-    lineEndX,
-    lineEndY,
-    labelX,
+    labelX: clampNumber(labelX, margin, instrumentSize.width - panelWidth - margin),
     labelY,
-    labelWidth,
-    leaderPath,
-    leaderLength,
+    labelWidth: panelWidth,
+    textAlign,
+    connectorPath: `M ${anchor.x} ${anchor.y} L ${lineEndX} ${lineEndY}`,
+    framePoints: toPointList(framePointList),
+    timeMarginTop,
   };
 };
 
@@ -153,52 +192,109 @@ export const CalloutOverlay = ({
   instrumentSize,
   target,
 }: CalloutOverlayProps) => {
-  const [leaderProgress, setLeaderProgress] = useState(0);
+  const [renderTarget, setRenderTarget] = useState<CalloutOverlayTarget | null>(
+    target
+  );
+  const renderTargetRef = useRef<CalloutOverlayTarget | null>(target);
+  const [open, setOpen] = useState<"open" | "close">("open");
+  const [animationKey, setAnimationKey] = useState(0);
   const geometry = useMemo(() => {
-    if (target === null) {
+    if (renderTarget === null) {
       return null;
     }
 
-    return getCalloutGeometry(instrumentSize, target);
-  }, [instrumentSize, target]);
+    return getCalloutGeometry(instrumentSize, renderTarget);
+  }, [instrumentSize, renderTarget]);
 
   useEffect(() => {
-    setLeaderProgress(0);
+    let clearHandle = 0;
+    let closeHandle = 0;
 
     if (target === null) {
-      return;
+      if (renderTargetRef.current === null) {
+        return;
+      }
+
+      setOpen("close");
+      clearHandle = window.setTimeout(() => {
+        renderTargetRef.current = null;
+        setRenderTarget(null);
+      }, V1_CLEAR_CLOSE_MS);
+
+      return () => {
+        if (clearHandle !== 0) {
+          window.clearTimeout(clearHandle);
+        }
+      };
     }
 
-    const startedAtMs = readNowMs();
-    let rafHandle = 0;
-
-    const tick = () => {
-      const nowMs = readNowMs();
-      const elapsedMs = nowMs - startedAtMs;
-      const nextProgress = clampNumber(elapsedMs / LEADER_LINE_DRAW_MS, 0, 1);
-
-      setLeaderProgress(nextProgress);
-
-      if (nextProgress < 1) {
-        rafHandle = window.requestAnimationFrame(tick);
-      }
-    };
-
-    rafHandle = window.requestAnimationFrame(tick);
+    renderTargetRef.current = target;
+    setRenderTarget(target);
+    setOpen("open");
+    setAnimationKey((currentKey) => {
+      return currentKey + 1;
+    });
+    closeHandle = window.setTimeout(() => {
+      setOpen("close");
+    }, V1_AUTO_CLOSE_MS);
 
     return () => {
-      if (rafHandle !== 0) {
-        window.cancelAnimationFrame(rafHandle);
+      if (clearHandle !== 0) {
+        window.clearTimeout(clearHandle);
+      }
+
+      if (closeHandle !== 0) {
+        window.clearTimeout(closeHandle);
       }
     };
   }, [target]);
 
-  if (geometry === null || target === null) {
+  const [lineSpring] = useSpring(
+    {
+      reset: true,
+      from: {
+        dashOffset: open === "open" ? -V1_DASH_LENGTH : 0,
+        nodeRadius: 0,
+        nodeOpacity: open === "open" ? 0 : 1,
+      },
+      to: {
+        dashOffset: open === "open" ? 0 : V1_DASH_LENGTH,
+        nodeRadius: 1.5,
+        nodeOpacity: open === "open" ? 1 : 0,
+      },
+      delay: V1_LINE_DELAY_MS,
+      config: { duration: V1_LINE_DURATION_MS },
+    },
+    [animationKey, open]
+  );
+  const [textSpring] = useSpring(
+    {
+      reset: true,
+      from: {
+        textOpacity: open === "open" ? 0 : 1,
+        textShiftY: open === "open" ? V1_TEXT_SHIFT_PX : 0,
+        textTracking: open === "open" ? V1_TEXT_TRACK_OPEN : 0,
+      },
+      to: {
+        textOpacity: open === "open" ? 1 : 0,
+        textShiftY: open === "open" ? 0 : V1_TEXT_SHIFT_PX,
+        textTracking: open === "open" ? 0 : V1_TEXT_TRACK_CLOSE,
+      },
+      delay: V1_TEXT_DELAY_MS,
+      config: { mass: 3, tension: 600, friction: 100 },
+    },
+    [animationKey, open]
+  );
+
+  if (geometry === null || renderTarget === null) {
     return null;
   }
 
-  const lineProgress = clampNumber(leaderProgress, 0, 1);
-  const textProgress = clampNumber((lineProgress - 0.35) / 0.65, 0, 1);
+  const locationText = getCalloutLocationText(geometry.event);
+  const titleSizePx = locationText.length < 30 ? 35 : 20;
+  const titleMarginTopPx = locationText.length < 30 ? 0 : 10;
+  const messageText = geometry.event.title;
+  const addText = getCalloutAddText(geometry.event);
 
   return (
     <>
@@ -207,57 +303,77 @@ export const CalloutOverlay = ({
         className="rehoboam-scene__overlay"
         viewBox={`0 0 ${instrumentSize.width} ${instrumentSize.height}`}
       >
-        <path
+        <animated.path
           className="rehoboam-scene__callout-line"
-          d={geometry.leaderPath}
+          d={geometry.connectorPath}
           style={{
-            strokeDasharray: `${geometry.leaderLength}`,
-            strokeDashoffset: `${geometry.leaderLength * (1 - lineProgress)}`,
+            strokeDasharray: V1_DASH_LENGTH,
+            strokeDashoffset: lineSpring.dashOffset,
           }}
         />
-        <circle
+        <animated.polyline
+          className="rehoboam-scene__callout-frame"
+          points={geometry.framePoints}
+          style={{
+            strokeDasharray: V1_DASH_LENGTH,
+            strokeDashoffset: lineSpring.dashOffset,
+          }}
+        />
+        <animated.circle
           className="rehoboam-scene__callout-node"
           cx={geometry.anchorX}
           cy={geometry.anchorY}
-          r={5}
+          r={lineSpring.nodeRadius}
           style={{
-            opacity: 0.4 + textProgress * 0.6,
+            opacity: lineSpring.nodeOpacity,
           }}
         />
-        <circle
+        <animated.circle
           className="rehoboam-scene__callout-node rehoboam-scene__callout-node--inner"
           cx={geometry.anchorX}
           cy={geometry.anchorY}
-          r={2}
+          r={lineSpring.nodeRadius.to((radius: number) => {
+            return Math.max(1, radius * 0.66);
+          })}
           style={{
-            opacity: 0.35 + textProgress * 0.65,
+            opacity: lineSpring.nodeOpacity,
           }}
         />
       </svg>
-      <div
+      <animated.div
         className="rehoboam-scene__callout"
         style={{
           left: geometry.labelX,
           top: geometry.labelY,
           width: geometry.labelWidth,
-          opacity: textProgress,
-          transform: `translate3d(0, ${(1 - textProgress) * 7}px, 0)`,
+          textAlign: geometry.textAlign,
+          opacity: textSpring.textOpacity,
+          letterSpacing: textSpring.textTracking.to((value: number) => `${value}px`),
+          transform: textSpring.textShiftY.to((shiftY: number) => {
+            return `translate3d(0, ${shiftY}px, 0)`;
+          }),
         }}
       >
-        <p className="rehoboam-scene__callout-time">
+        <p
+          className="rehoboam-scene__callout-time"
+          style={{
+            marginTop: geometry.timeMarginTop,
+          }}
+        >
           {formatCalloutTime(geometry.event.timestampMs)}
         </p>
-        <p className="rehoboam-scene__callout-title">
-          DIVERGENCE : {getCalloutLocationText(geometry.event)}
+        <p
+          className="rehoboam-scene__callout-title"
+          style={{
+            fontSize: `${titleSizePx}px`,
+            marginTop: `${titleMarginTopPx}px`,
+          }}
+        >
+          {locationText}
         </p>
-        <p className="rehoboam-scene__callout-subtitle">
-          {geometry.event.title.toUpperCase()}
-        </p>
-        <p className="rehoboam-scene__callout-meta">
-          {geometry.event.severity.toUpperCase()} /{" "}
-          {geometry.event.category.toUpperCase()}
-        </p>
-      </div>
+        <p className="rehoboam-scene__callout-subtitle">{messageText}</p>
+        <p className="rehoboam-scene__callout-meta">{addText}</p>
+      </animated.div>
     </>
   );
 };

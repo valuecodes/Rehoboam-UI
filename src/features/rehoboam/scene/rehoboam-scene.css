@@ -58,8 +58,16 @@
 .rehoboam-scene__callout-line {
   stroke: var(--rehoboam-line);
   stroke-width: 1;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  stroke-linecap: butt;
+  stroke-linejoin: miter;
+  fill: none;
+}
+
+.rehoboam-scene__callout-frame {
+  stroke: rgba(124, 124, 124, 0.84);
+  stroke-width: 2;
+  stroke-linecap: butt;
+  stroke-linejoin: miter;
   fill: none;
 }
 
@@ -76,10 +84,14 @@
 
 .rehoboam-scene__callout {
   position: absolute;
-  margin: 0;
+  margin: -40px 0 0;
+  height: 200px;
+  display: grid;
+  grid-template-rows: 45px 45px 33px;
+  overflow: hidden;
   color: var(--rehoboam-ink);
-  font-family: "Roboto Condensed", "Arial Narrow", "Segoe UI", sans-serif;
-  text-transform: uppercase;
+  font-family: Arial, Helvetica, sans-serif;
+  text-transform: none;
   pointer-events: none;
 }
 
@@ -89,38 +101,39 @@
 .rehoboam-scene__callout-meta {
   margin: 0;
   line-height: 1;
+  padding: 0;
 }
 
 .rehoboam-scene__callout-time {
-  font-size: clamp(0.72rem, 0.95vw, 1rem);
-  letter-spacing: 0.03em;
-  font-weight: 300;
-  white-space: nowrap;
-}
-
-.rehoboam-scene__callout-title {
-  margin-top: 2px;
-  font-size: clamp(1rem, 1.5vw, 1.56rem);
-  letter-spacing: 0.015em;
+  font-size: 30px;
+  color: rgb(97, 97, 97);
   font-weight: 400;
   white-space: nowrap;
 }
 
+.rehoboam-scene__callout-title {
+  font-size: 35px;
+  overflow: hidden;
+  margin: auto 0 0;
+  color: rgb(41, 41, 41);
+  font-weight: 600;
+}
+
 .rehoboam-scene__callout-subtitle {
-  margin-top: 3px;
-  font-size: clamp(0.82rem, 1.15vw, 1.2rem);
-  letter-spacing: 0.02em;
-  font-weight: 300;
-  opacity: 0.9;
+  margin-top: 0;
+  font-size: 25px;
+  color: rgb(97, 97, 97);
+  font-weight: 500;
   max-width: 100%;
-  line-height: 1.08;
+  line-height: 1.04;
 }
 
 .rehoboam-scene__callout-meta {
-  margin-top: 6px;
-  font-size: clamp(0.6rem, 0.78vw, 0.76rem);
-  letter-spacing: 0.12em;
-  opacity: 0.64;
+  margin-top: 0;
+  font-size: 24px;
+  color: rgb(97, 97, 97);
+  font-weight: 500;
+  line-height: 1.06;
 }
 
 .rehoboam-scene__event-panel {
