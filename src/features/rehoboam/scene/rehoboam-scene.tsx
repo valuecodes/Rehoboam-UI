@@ -46,7 +46,7 @@ import { resolveSceneQualityProfile } from "./quality";
 import "./rehoboam-scene.css";
 
 const LEADING_TIME_OFFSET_MS = 45 * 60 * 1000;
-const AUTO_EVENT_CYCLE_MS = 3200;
+const AUTO_EVENT_CYCLE_MS = 9000;
 
 const SEVERITY_RANK: Readonly<Record<WorldEventSeverity, number>> = {
   low: 0,
@@ -325,7 +325,7 @@ export const RehoboamScene = () => {
       angleRad: activeEventAngle.angleRad,
       anchorRadius: getMarkerAnchorRadius(instrumentSize),
     };
-  }, [activeEventAngle, instrumentSize]);
+  }, [activeEventAngle, instrumentSize.height, instrumentSize.width]);
 
   useEffect(() => {
     if (clockwiseEventCycleIds.length === 0) {
@@ -426,10 +426,25 @@ export const RehoboamScene = () => {
     engineRef.current = engine;
 
     const resizeToBounds = (width: number, height: number) => {
-      setInstrumentSize({ width, height });
+      const nextWidth = Math.max(0, Math.round(width));
+      const nextHeight = Math.max(0, Math.round(height));
+
+      setInstrumentSize((previousSize) => {
+        if (
+          previousSize.width === nextWidth &&
+          previousSize.height === nextHeight
+        ) {
+          return previousSize;
+        }
+
+        return {
+          width: nextWidth,
+          height: nextHeight,
+        };
+      });
       engine.resize({
-        width,
-        height,
+        width: nextWidth,
+        height: nextHeight,
         dpr: readDevicePixelRatio(),
       });
     };
