@@ -198,23 +198,34 @@ export const CalloutOverlay = ({
   const renderTargetRef = useRef<CalloutOverlayTarget | null>(target);
   const [open, setOpen] = useState<"open" | "close">("open");
   const [animationKey, setAnimationKey] = useState(0);
+  const targetEventId = target?.event.id ?? null;
+  const geometryTarget = target ?? renderTarget;
   const geometry = useMemo(() => {
-    if (renderTarget === null) {
+    if (geometryTarget === null) {
       return null;
     }
 
-    return getCalloutGeometry(instrumentSize, renderTarget);
-  }, [instrumentSize, renderTarget]);
+    return getCalloutGeometry(instrumentSize, geometryTarget);
+  }, [geometryTarget, instrumentSize]);
+
+  useEffect(() => {
+    if (target === null) {
+      return;
+    }
+
+    renderTargetRef.current = target;
+  }, [target]);
 
   useEffect(() => {
     let clearHandle = 0;
     let closeHandle = 0;
 
-    if (target === null) {
+    if (targetEventId === null) {
       if (renderTargetRef.current === null) {
         return;
       }
 
+      setRenderTarget(renderTargetRef.current);
       setOpen("close");
       clearHandle = window.setTimeout(() => {
         renderTargetRef.current = null;
@@ -228,8 +239,7 @@ export const CalloutOverlay = ({
       };
     }
 
-    renderTargetRef.current = target;
-    setRenderTarget(target);
+    setRenderTarget(null);
     setOpen("open");
     setAnimationKey((currentKey) => {
       return currentKey + 1;
@@ -239,15 +249,11 @@ export const CalloutOverlay = ({
     }, V1_AUTO_CLOSE_MS);
 
     return () => {
-      if (clearHandle !== 0) {
-        window.clearTimeout(clearHandle);
-      }
-
       if (closeHandle !== 0) {
         window.clearTimeout(closeHandle);
       }
     };
-  }, [target]);
+  }, [targetEventId]);
 
   const [lineSpring] = useSpring(
     {
@@ -286,7 +292,7 @@ export const CalloutOverlay = ({
     [animationKey, open]
   );
 
-  if (geometry === null || renderTarget === null) {
+  if (geometry === null || geometryTarget === null) {
     return null;
   }
 

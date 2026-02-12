@@ -68,6 +68,9 @@ export const createMockCanvasContext = (): MockCanvasContext => {
     lineTo: (x: number, y: number) => {
       pushCommand(`lineTo(${formatNumber(x)},${formatNumber(y)})`);
     },
+    closePath: () => {
+      pushCommand("closePath");
+    },
     arc: (
       x: number,
       y: number,

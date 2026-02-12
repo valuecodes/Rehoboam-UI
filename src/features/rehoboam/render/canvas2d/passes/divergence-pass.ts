@@ -34,7 +34,8 @@ const ACCENT_WAVE_COLOR = "#040404";
 const CLUSTER_MODULATION_SPEED_SCALE = 0.52;
 const EXTENSION_INFLUENCE_SCALE = 15;
 const EXTENSION_OFFSET_SCALE = 1.05;
-const EXTENSION_OFFSET_CAP = 0.066;
+const EXTENSION_OUTWARD_OFFSET_CAP = 0.043;
+const EXTENSION_INWARD_OFFSET_CAP = 0.04;
 const BASELINE_WAVE_FREQUENCIES = [5, 9, 14] as const;
 const MOUNTAIN_CARRIER_FREQUENCY = 7;
 
@@ -83,6 +84,11 @@ type ActivePulseDescriptor = Readonly<{
   strength: number;
   severity: WorldEventSeverity;
   windowScale: number;
+}>;
+
+type ExtensionOffsetResolution = Readonly<{
+  offset: number;
+  influenceEnergy: number;
 }>;
 
 type MountainWaveLayer = Readonly<{
@@ -460,6 +466,98 @@ const resolveClusterDescriptors = (
   return clusterDescriptors;
 };
 
+type ResolveExtensionOffsetInput = Readonly<{
+  angleRad: number;
+  elapsedSeconds: number;
+  extensions: readonly ActivePulseDescriptor[];
+  viewportOuterRadius: number;
+  entranceScale: number;
+}>;
+
+const resolveExtensionOffset = (
+  input: ResolveExtensionOffsetInput
+): ExtensionOffsetResolution => {
+  const {
+    angleRad,
+    elapsedSeconds,
+    extensions,
+    viewportOuterRadius,
+    entranceScale,
+  } = input;
+
+  let extensionInfluenceEnergy = 0;
+  let outwardOffset = 0;
+  let inwardOffset = 0;
+
+  for (const [index, extension] of extensions.entries()) {
+    const angularDistance = Math.abs(
+      shortestAngularDistance(angleRad, extension.angleRad)
+    );
+    const extensionWindowRad = getExtensionWindowRad(extension);
+    const angularEnvelope = getRaisedCosineWindow(
+      angularDistance,
+      extensionWindowRad
+    );
+
+    if (angularEnvelope <= 0) {
+      continue;
+    }
+
+    const shimmer =
+      0.7 +
+      0.3 *
+        Math.sin(
+          elapsedSeconds *
+            (0.34 + extension.windowScale * 0.18) *
+            CLUSTER_MODULATION_SPEED_SCALE +
+            extension.angleRad * 2.4
+        );
+    const influence =
+      angularEnvelope * Math.min(1, extension.strength * EXTENSION_INFLUENCE_SCALE);
+    extensionInfluenceEnergy += influence;
+    const outwardContribution = extension.strength * influence * shimmer;
+
+    const notchCarrier =
+      0.5 +
+      0.5 *
+        Math.sin(
+          angleRad * (21 + extension.windowScale * 4.6) -
+            elapsedSeconds * (1.4 + extension.windowScale * 0.18) +
+            extension.angleRad * 2.7 +
+            index * 0.64
+        );
+    const notchShape = Math.pow(notchCarrier, 2.45);
+    const inwardScale = 0.92 + extension.windowScale * 0.34;
+    const signedContribution =
+      outwardContribution - extension.strength * influence * inwardScale * notchShape;
+
+    if (signedContribution >= 0) {
+      outwardOffset += signedContribution;
+      continue;
+    }
+
+    inwardOffset += Math.abs(signedContribution);
+  }
+
+  const outwardSoftCapScale = 1 - Math.min(0.26, extensionInfluenceEnergy * 0.094);
+  const cappedOutwardOffset = Math.min(
+    EXTENSION_OUTWARD_OFFSET_CAP * outwardSoftCapScale,
+    outwardOffset * EXTENSION_OFFSET_SCALE
+  );
+  const cappedInwardOffset = Math.min(
+    EXTENSION_INWARD_OFFSET_CAP,
+    inwardOffset * EXTENSION_OFFSET_SCALE * 1.12
+  );
+
+  return {
+    offset:
+      viewportOuterRadius *
+      (cappedOutwardOffset - cappedInwardOffset) *
+      entranceScale,
+    influenceEnergy: extensionInfluenceEnergy,
+  };
+};
+
 const createContourSamples = (
   viewport: ViewportState,
   elapsedMs: number,
@@ -527,44 +625,14 @@ const createContourSamples = (
 
       return sum + amplitude * influence * ripple * entranceScale;
     }, 0);
-    let extensionInfluenceEnergy = 0;
-    const rawExtensionOffset = extensions.reduce((sum, extension) => {
-      const angularDistance = Math.abs(
-        shortestAngularDistance(angleRad, extension.angleRad)
-      );
-      const extensionWindowRad = getExtensionWindowRad(extension);
-      const angularEnvelope = getRaisedCosineWindow(
-        angularDistance,
-        extensionWindowRad
-      );
-
-      if (angularEnvelope <= 0) {
-        return sum;
-      }
-
-      const shimmer =
-        0.7 +
-        0.3 *
-          Math.sin(
-            elapsedSeconds *
-              (0.34 + extension.windowScale * 0.18) *
-              CLUSTER_MODULATION_SPEED_SCALE +
-              extension.angleRad * 2.4
-          );
-      const influence =
-        angularEnvelope *
-        Math.min(1, extension.strength * EXTENSION_INFLUENCE_SCALE);
-      extensionInfluenceEnergy += influence;
-
-      return sum + extension.strength * influence * shimmer;
-    }, 0);
-    const extensionOffset =
-      viewport.outerRadius *
-      Math.min(
-        EXTENSION_OFFSET_CAP,
-        rawExtensionOffset * EXTENSION_OFFSET_SCALE
-      ) *
-      entranceScale;
+    const { offset: extensionOffset, influenceEnergy: extensionInfluenceEnergy } =
+      resolveExtensionOffset({
+        angleRad,
+        elapsedSeconds,
+        extensions,
+        viewportOuterRadius: viewport.outerRadius,
+        entranceScale,
+      });
     pulseInfluence += Math.min(1.2, extensionInfluenceEnergy * 0.55);
     const grainOffset =
       pulseInfluence <= 0
