@@ -513,7 +513,8 @@ const resolveExtensionOffset = (
             extension.angleRad * 2.4
         );
     const influence =
-      angularEnvelope * Math.min(1, extension.strength * EXTENSION_INFLUENCE_SCALE);
+      angularEnvelope *
+      Math.min(1, extension.strength * EXTENSION_INFLUENCE_SCALE);
     extensionInfluenceEnergy += influence;
     const outwardContribution = extension.strength * influence * shimmer;
 
@@ -529,7 +530,8 @@ const resolveExtensionOffset = (
     const notchShape = Math.pow(notchCarrier, 2.45);
     const inwardScale = 0.92 + extension.windowScale * 0.34;
     const signedContribution =
-      outwardContribution - extension.strength * influence * inwardScale * notchShape;
+      outwardContribution -
+      extension.strength * influence * inwardScale * notchShape;
 
     if (signedContribution >= 0) {
       outwardOffset += signedContribution;
@@ -539,7 +541,8 @@ const resolveExtensionOffset = (
     inwardOffset += Math.abs(signedContribution);
   }
 
-  const outwardSoftCapScale = 1 - Math.min(0.26, extensionInfluenceEnergy * 0.094);
+  const outwardSoftCapScale =
+    1 - Math.min(0.26, extensionInfluenceEnergy * 0.094);
   const cappedOutwardOffset = Math.min(
     EXTENSION_OUTWARD_OFFSET_CAP * outwardSoftCapScale,
     outwardOffset * EXTENSION_OFFSET_SCALE
@@ -625,14 +628,16 @@ const createContourSamples = (
 
       return sum + amplitude * influence * ripple * entranceScale;
     }, 0);
-    const { offset: extensionOffset, influenceEnergy: extensionInfluenceEnergy } =
-      resolveExtensionOffset({
-        angleRad,
-        elapsedSeconds,
-        extensions,
-        viewportOuterRadius: viewport.outerRadius,
-        entranceScale,
-      });
+    const {
+      offset: extensionOffset,
+      influenceEnergy: extensionInfluenceEnergy,
+    } = resolveExtensionOffset({
+      angleRad,
+      elapsedSeconds,
+      extensions,
+      viewportOuterRadius: viewport.outerRadius,
+      entranceScale,
+    });
     pulseInfluence += Math.min(1.2, extensionInfluenceEnergy * 0.55);
     const grainOffset =
       pulseInfluence <= 0

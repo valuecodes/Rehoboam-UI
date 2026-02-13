@@ -467,8 +467,8 @@ describe("drawDivergencePass", () => {
       });
 
     expect(localRadiusDeltas.length).toBeGreaterThan(0);
-    expect(Math.min(...localRadiusDeltas.map((sample) => sample.deltaRadius))).toBeLessThan(
-      -VIEWPORT.outerRadius * 0.0018
-    );
+    expect(
+      Math.min(...localRadiusDeltas.map((sample) => sample.deltaRadius))
+    ).toBeLessThan(-VIEWPORT.outerRadius * 0.0018);
   });
 });

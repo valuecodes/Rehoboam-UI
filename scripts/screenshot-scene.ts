@@ -159,7 +159,11 @@ const parseIntegerOption = (
 
   const parsed = Number(value);
 
-  if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed < minimum) {
+  if (
+    !Number.isFinite(parsed) ||
+    !Number.isInteger(parsed) ||
+    parsed < minimum
+  ) {
     throw new Error(
       `${optionName} must be an integer greater than or equal to ${minimum}.`
     );

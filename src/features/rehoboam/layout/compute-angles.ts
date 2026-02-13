@@ -26,10 +26,7 @@ export type TimeWindowAngleOptions = Readonly<{
   windowMs?: number;
 }>;
 
-export type EventAngleDistributionMode =
-  | "adaptive"
-  | "time-window"
-  | "ordered";
+export type EventAngleDistributionMode = "adaptive" | "time-window" | "ordered";
 
 export type ComputeAnglesOptions = TimeWindowAngleOptions &
   Readonly<{

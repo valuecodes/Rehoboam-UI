@@ -1,26 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type {
-  KeyboardEvent as ReactKeyboardEvent,
-  PointerEvent as ReactPointerEvent,
-} from "react";
 
 import { refreshEventsFromSource } from "../data/bootstrap";
 import { loadPersistedEvents } from "../data/persistence";
 import { createMockEventSource } from "../data/source";
 import { DEFAULT_DPR_CAP, DEFAULT_THEME } from "../engine/defaults";
-import {
-  applyHoverDwellTick,
-  clearInteractionSelection,
-  createInitialInteractionState,
-  DEFAULT_HOVER_DWELL_MS,
-  pickMarkerHitTarget,
-  updateInteractionForClick,
-  updateInteractionForPointerDown,
-  updateInteractionForPointerLeave,
-  updateInteractionForPointerMove,
-  updateInteractionForPointerUp,
-} from "../engine/input";
-import type { MarkerHitTarget } from "../engine/input";
+import { createInitialInteractionState } from "../engine/input";
 import { createRehoboamEngine } from "../engine/rehoboam-engine";
 import type {
   InteractionState,
@@ -33,14 +17,11 @@ import {
   DEFAULT_MAX_VISIBLE_EVENT_COUNT,
 } from "../layout/compute-angles";
 import type { ComputedEventAngle } from "../layout/compute-angles";
-import type { CartesianCoordinate } from "../layout/polar";
-import { polarToCartesian } from "../layout/polar";
 import { CalloutOverlay } from "../overlay/callout-overlay";
 import type {
   CalloutOverlayTarget,
   InstrumentSize,
 } from "../overlay/callout-overlay";
-import { EventListPanel } from "../overlay/event-list-panel";
 import { resolveSceneQualityProfile } from "./quality";
 
 import "./rehoboam-scene.css";
@@ -82,14 +63,6 @@ const readDeviceMemoryGiB = (): number | null => {
   }
 
   return value;
-};
-
-const readNowMs = (): number => {
-  if (typeof performance.now === "function") {
-    return performance.now();
-  }
-
-  return Date.now();
 };
 
 const compareEventAnglesByPriority = (
@@ -177,68 +150,17 @@ const getClockwiseEventCycleIds = (
 
 const resolveActiveEventId = (
   eventAngles: readonly ComputedEventAngle[],
-  selectedEventId: string | null,
-  hoveredEventId: string | null,
   autoEventId: string | null
 ): string | null => {
-  for (const candidateEventId of [selectedEventId, hoveredEventId, autoEventId]) {
-    if (candidateEventId === null) {
-      continue;
-    }
-
-    if (findEventAngleByEventId(eventAngles, candidateEventId) !== null) {
-      return candidateEventId;
+  if (autoEventId !== null) {
+    if (findEventAngleByEventId(eventAngles, autoEventId) !== null) {
+      return autoEventId;
     }
   }
 
-  return [...eventAngles].sort(compareEventAnglesByPriority)[0]?.event.id ?? null;
-};
-
-const toMarkerHitTargets = (
-  eventAngles: readonly ComputedEventAngle[],
-  instrumentSize: InstrumentSize
-): readonly MarkerHitTarget[] => {
-  if (instrumentSize.width <= 0 || instrumentSize.height <= 0) {
-    return [];
-  }
-
-  const center = {
-    x: instrumentSize.width / 2,
-    y: instrumentSize.height / 2,
-  };
-  const anchorRadius = getMarkerAnchorRadius(instrumentSize);
-  const hitRadiusPx = Math.max(
-    24,
-    Math.min(instrumentSize.width, instrumentSize.height) * 0.03
+  return (
+    [...eventAngles].sort(compareEventAnglesByPriority)[0]?.event.id ?? null
   );
-
-  return eventAngles.map((eventAngle) => {
-    const position = polarToCartesian(
-      {
-        radius: anchorRadius,
-        angleRad: eventAngle.angleRad,
-      },
-      center
-    );
-
-    return {
-      eventId: eventAngle.event.id,
-      eventIds: eventAngle.eventIds,
-      position,
-      hitRadiusPx,
-    };
-  });
-};
-
-const getPointerPosition = (
-  event: ReactPointerEvent<HTMLElement>
-): CartesianCoordinate => {
-  const bounds = event.currentTarget.getBoundingClientRect();
-
-  return {
-    x: event.clientX - bounds.left,
-    y: event.clientY - bounds.top,
-  };
 };
 
 export const RehoboamScene = () => {
@@ -250,9 +172,6 @@ export const RehoboamScene = () => {
     height: 0,
   });
   const [events, setEvents] = useState<readonly WorldEvent[]>([]);
-  const [interaction, setInteraction] = useState<InteractionState>(() => {
-    return createInitialInteractionState();
-  });
   const [autoEventId, setAutoEventId] = useState<string | null>(null);
   const eventSource = useMemo(() => createMockEventSource(), []);
   const qualityProfile = useMemo(() => {
@@ -273,44 +192,23 @@ export const RehoboamScene = () => {
   const clockwiseEventCycleIds = useMemo(() => {
     return getClockwiseEventCycleIds(eventAngles);
   }, [eventAngles]);
-  const markerHitTargets = useMemo(() => {
-    return toMarkerHitTargets(eventAngles, instrumentSize);
-  }, [eventAngles, instrumentSize]);
   const activeEventId = useMemo(() => {
-    return resolveActiveEventId(
-      eventAngles,
-      interaction.selectedEventId,
-      interaction.hoveredEventId,
-      autoEventId
-    );
-  }, [
-    autoEventId,
-    eventAngles,
-    interaction.hoveredEventId,
-    interaction.selectedEventId,
-  ]);
+    return resolveActiveEventId(eventAngles, autoEventId);
+  }, [autoEventId, eventAngles]);
   const activeEventAngle = useMemo(() => {
     return resolveActiveEventAngle(eventAngles, activeEventId);
   }, [activeEventId, eventAngles]);
-  const interactionForRender = useMemo<InteractionState>(() => {
-    if (activeEventId === null) {
-      return interaction;
-    }
-
-    if (
-      interaction.selectedEventId !== null ||
-      interaction.hoveredEventId !== null
-    ) {
-      return interaction;
-    }
-
+  const engineInteraction = useMemo<InteractionState>(() => {
     return {
-      ...interaction,
+      pointer: null,
+      isPointerDown: false,
+      isDragging: false,
       hoverCandidateEventId: null,
       hoveredEventId: activeEventId,
+      selectedEventId: null,
       hoverStartedAtMs: null,
     };
-  }, [activeEventId, interaction]);
+  }, [activeEventId]);
   const activeCalloutTarget = useMemo<CalloutOverlayTarget | null>(() => {
     if (
       activeEventAngle === null ||
@@ -334,19 +232,7 @@ export const RehoboamScene = () => {
       return;
     }
 
-    if (
-      interaction.selectedEventId !== null ||
-      interaction.hoveredEventId !== null ||
-      interaction.hoverCandidateEventId !== null ||
-      interaction.isPointerDown
-    ) {
-      return;
-    }
-
-    if (
-      autoEventId === null ||
-      !clockwiseEventCycleIds.includes(autoEventId)
-    ) {
+    if (autoEventId === null || !clockwiseEventCycleIds.includes(autoEventId)) {
       setAutoEventId(clockwiseEventCycleIds[0]);
 
       return;
@@ -361,14 +247,7 @@ export const RehoboamScene = () => {
     return () => {
       window.clearTimeout(timeoutHandle);
     };
-  }, [
-    autoEventId,
-    clockwiseEventCycleIds,
-    interaction.hoverCandidateEventId,
-    interaction.hoveredEventId,
-    interaction.isPointerDown,
-    interaction.selectedEventId,
-  ]);
+  }, [autoEventId, clockwiseEventCycleIds]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -476,8 +355,8 @@ export const RehoboamScene = () => {
       return;
     }
 
-    engine.setInteraction(interactionForRender);
-  }, [interactionForRender]);
+    engine.setInteraction(engineInteraction);
+  }, [engineInteraction]);
 
   useEffect(() => {
     const engine = engineRef.current;
@@ -489,170 +368,23 @@ export const RehoboamScene = () => {
     engine.setEvents(events);
   }, [events]);
 
-  useEffect(() => {
-    if (
-      interaction.hoverCandidateEventId === null ||
-      interaction.hoverStartedAtMs === null ||
-      interaction.hoveredEventId !== null ||
-      interaction.selectedEventId !== null
-    ) {
-      return;
-    }
-
-    const elapsedMs = readNowMs() - interaction.hoverStartedAtMs;
-    const remainingMs = Math.max(0, DEFAULT_HOVER_DWELL_MS - elapsedMs);
-
-    const timeoutHandle = window.setTimeout(() => {
-      setInteraction((previousInteraction) => {
-        return applyHoverDwellTick({
-          interaction: previousInteraction,
-          timeMs: readNowMs(),
-          hoverDwellMs: DEFAULT_HOVER_DWELL_MS,
-        });
-      });
-    }, remainingMs);
-
-    return () => {
-      window.clearTimeout(timeoutHandle);
-    };
-  }, [interaction]);
-
-  const handlePointerMove = (event: ReactPointerEvent<HTMLElement>) => {
-    if (!event.isPrimary) {
-      return;
-    }
-
-    const pointerPosition = getPointerPosition(event);
-    const markerTarget = pickMarkerHitTarget(pointerPosition, markerHitTargets);
-
-    setInteraction((previousInteraction) => {
-      return updateInteractionForPointerMove({
-        interaction: previousInteraction,
-        pointer: {
-          position: pointerPosition,
-          isPrimary: event.isPrimary,
-        },
-        markerEventId: markerTarget?.eventId ?? null,
-        timeMs: readNowMs(),
-        hoverDwellMs: DEFAULT_HOVER_DWELL_MS,
-      });
-    });
-  };
-
-  const handlePointerDown = (event: ReactPointerEvent<HTMLElement>) => {
-    if (!event.isPrimary) {
-      return;
-    }
-
-    event.currentTarget.setPointerCapture(event.pointerId);
-
-    const pointerPosition = getPointerPosition(event);
-
-    setInteraction((previousInteraction) => {
-      return updateInteractionForPointerDown({
-        interaction: previousInteraction,
-        pointer: {
-          position: pointerPosition,
-          isPrimary: event.isPrimary,
-        },
-      });
-    });
-  };
-
-  const handlePointerUp = (event: ReactPointerEvent<HTMLElement>) => {
-    if (!event.isPrimary) {
-      return;
-    }
-
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-
-    const pointerPosition = getPointerPosition(event);
-    const markerTarget = pickMarkerHitTarget(pointerPosition, markerHitTargets);
-
-    setInteraction((previousInteraction) => {
-      const interactionAfterPointerUp = updateInteractionForPointerUp({
-        interaction: previousInteraction,
-        pointer: {
-          position: pointerPosition,
-          isPrimary: event.isPrimary,
-        },
-      });
-
-      return updateInteractionForClick({
-        interaction: interactionAfterPointerUp,
-        markerEventId: markerTarget?.eventId ?? null,
-      });
-    });
-  };
-
-  const handlePointerLeave = () => {
-    setInteraction((previousInteraction) => {
-      return updateInteractionForPointerLeave(previousInteraction);
-    });
-  };
-
-  const handleKeyDown = (event: ReactKeyboardEvent<HTMLElement>) => {
-    if (event.key !== "Escape") {
-      return;
-    }
-
-    setInteraction((previousInteraction) => {
-      return clearInteractionSelection(previousInteraction);
-    });
-  };
-
-  const handlePanelSelection = (eventId: string) => {
-    setInteraction((previousInteraction) => {
-      return {
-        ...previousInteraction,
-        selectedEventId: eventId,
-        hoverCandidateEventId: null,
-        hoveredEventId: null,
-        hoverStartedAtMs: null,
-      };
-    });
-    setAutoEventId(eventId);
-  };
-
-  const handlePanelSelectionClear = () => {
-    setInteraction((previousInteraction) => {
-      return clearInteractionSelection(previousInteraction);
-    });
-  };
-
   return (
     <main className="rehoboam-scene">
-      <div className="rehoboam-scene__layout">
-        <section
-          aria-label="Rehoboam V2 scene container"
-          className="rehoboam-scene__instrument"
-          onKeyDown={handleKeyDown}
-          onPointerDown={handlePointerDown}
-          onPointerLeave={handlePointerLeave}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          ref={instrumentRef}
-          tabIndex={0}
-        >
-          <canvas
-            aria-hidden
-            className="rehoboam-scene__canvas"
-            ref={canvasRef}
-          />
-          <CalloutOverlay
-            instrumentSize={instrumentSize}
-            target={activeCalloutTarget}
-          />
-        </section>
-        <EventListPanel
-          activeEventId={activeEventId}
-          eventAngles={eventAngles}
-          onClearSelection={handlePanelSelectionClear}
-          onSelectEvent={handlePanelSelection}
+      <section
+        aria-label="Rehoboam V2 scene container"
+        className="rehoboam-scene__instrument"
+        ref={instrumentRef}
+      >
+        <canvas
+          aria-hidden
+          className="rehoboam-scene__canvas"
+          ref={canvasRef}
         />
-      </div>
+        <CalloutOverlay
+          instrumentSize={instrumentSize}
+          target={activeCalloutTarget}
+        />
+      </section>
     </main>
   );
 };
