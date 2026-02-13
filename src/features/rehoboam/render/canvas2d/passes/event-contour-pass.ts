@@ -182,7 +182,8 @@ const createContourSamples = (
               target.eventAngle.angleRad * 1.4 +
               target.rank * 0.36
           );
-      const clusterScale = 1 + Math.min(target.eventAngle.clusterSize, 6) * 0.12;
+      const clusterScale =
+        1 + Math.min(target.eventAngle.clusterSize, 6) * 0.12;
       const amplitude =
         target.eventAngle.markerHeight *
         viewport.outerRadius *

@@ -1,5 +1,5 @@
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { animated, useSpring } from "react-spring";
-import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { WorldEvent } from "../engine/types";
 import { polarToCartesian } from "../layout/polar";
@@ -135,7 +135,8 @@ const getCalloutGeometry = (
   const firstFrameY = panelY + (isBottomLayout ? 70 : 30);
   const secondFrameX = firstFrameX + (isLeftLayout ? -cornerStep : cornerStep);
   const secondFrameY = firstFrameY;
-  const thirdFrameX = firstFrameX + (isLeftLayout ? -cornerStep * 2 : cornerStep * 2);
+  const thirdFrameX =
+    firstFrameX + (isLeftLayout ? -cornerStep * 2 : cornerStep * 2);
   const thirdFrameY = panelY + (isBottomLayout ? 60 : 40);
   const fourthFrameX = thirdFrameX;
   const fourthFrameY = panelY + (isBottomLayout ? 20 : 80);
@@ -178,7 +179,11 @@ const getCalloutGeometry = (
     event: target.event,
     anchorX: anchor.x,
     anchorY: anchor.y,
-    labelX: clampNumber(labelX, margin, instrumentSize.width - panelWidth - margin),
+    labelX: clampNumber(
+      labelX,
+      margin,
+      instrumentSize.width - panelWidth - margin
+    ),
     labelY,
     labelWidth: panelWidth,
     textAlign,
@@ -188,198 +193,198 @@ const getCalloutGeometry = (
   };
 };
 
-export const CalloutOverlay = ({
-  instrumentSize,
-  target,
-}: CalloutOverlayProps) => {
-  const [renderTarget, setRenderTarget] = useState<CalloutOverlayTarget | null>(
-    target
-  );
-  const renderTargetRef = useRef<CalloutOverlayTarget | null>(target);
-  const [open, setOpen] = useState<"open" | "close">("open");
-  const [animationKey, setAnimationKey] = useState(0);
-  const targetEventId = target?.event.id ?? null;
-  const geometryTarget = target ?? renderTarget;
-  const geometry = useMemo(() => {
-    if (geometryTarget === null) {
-      return null;
-    }
+export const CalloutOverlay = memo(
+  ({ instrumentSize, target }: CalloutOverlayProps) => {
+    const [renderTarget, setRenderTarget] =
+      useState<CalloutOverlayTarget | null>(target);
+    const renderTargetRef = useRef<CalloutOverlayTarget | null>(target);
+    const [open, setOpen] = useState<"open" | "close">("open");
+    const [animationKey, setAnimationKey] = useState(0);
+    const targetEventId = target?.event.id ?? null;
+    const geometryTarget = target ?? renderTarget;
+    const geometry = useMemo(() => {
+      if (geometryTarget === null) {
+        return null;
+      }
 
-    return getCalloutGeometry(instrumentSize, geometryTarget);
-  }, [geometryTarget, instrumentSize]);
+      return getCalloutGeometry(instrumentSize, geometryTarget);
+    }, [geometryTarget, instrumentSize]);
 
-  useEffect(() => {
-    if (target === null) {
-      return;
-    }
-
-    renderTargetRef.current = target;
-  }, [target]);
-
-  useEffect(() => {
-    let clearHandle = 0;
-    let closeHandle = 0;
-
-    if (targetEventId === null) {
-      if (renderTargetRef.current === null) {
+    useEffect(() => {
+      if (target === null) {
         return;
       }
 
-      setRenderTarget(renderTargetRef.current);
-      setOpen("close");
-      clearHandle = window.setTimeout(() => {
-        renderTargetRef.current = null;
-        setRenderTarget(null);
-      }, V1_CLEAR_CLOSE_MS);
+      renderTargetRef.current = target;
+    }, [target]);
+
+    useEffect(() => {
+      let clearHandle = 0;
+      let closeHandle = 0;
+
+      if (targetEventId === null) {
+        if (renderTargetRef.current === null) {
+          return;
+        }
+
+        setRenderTarget(renderTargetRef.current);
+        setOpen("close");
+        clearHandle = window.setTimeout(() => {
+          renderTargetRef.current = null;
+          setRenderTarget(null);
+        }, V1_CLEAR_CLOSE_MS);
+
+        return () => {
+          if (clearHandle !== 0) {
+            window.clearTimeout(clearHandle);
+          }
+        };
+      }
+
+      setRenderTarget(null);
+      setOpen("open");
+      setAnimationKey((currentKey) => {
+        return currentKey + 1;
+      });
+      closeHandle = window.setTimeout(() => {
+        setOpen("close");
+      }, V1_AUTO_CLOSE_MS);
 
       return () => {
-        if (clearHandle !== 0) {
-          window.clearTimeout(clearHandle);
+        if (closeHandle !== 0) {
+          window.clearTimeout(closeHandle);
         }
       };
+    }, [targetEventId]);
+
+    const [lineSpring] = useSpring(
+      {
+        reset: true,
+        from: {
+          dashOffset: open === "open" ? -V1_DASH_LENGTH : 0,
+          nodeRadius: 0,
+          nodeOpacity: open === "open" ? 0 : 1,
+        },
+        to: {
+          dashOffset: open === "open" ? 0 : V1_DASH_LENGTH,
+          nodeRadius: 1.5,
+          nodeOpacity: open === "open" ? 1 : 0,
+        },
+        delay: V1_LINE_DELAY_MS,
+        config: { duration: V1_LINE_DURATION_MS },
+      },
+      [animationKey, open]
+    );
+    const [textSpring] = useSpring(
+      {
+        reset: true,
+        from: {
+          textOpacity: open === "open" ? 0 : 1,
+          textShiftY: open === "open" ? V1_TEXT_SHIFT_PX : 0,
+          textTracking: open === "open" ? V1_TEXT_TRACK_OPEN : 0,
+        },
+        to: {
+          textOpacity: open === "open" ? 1 : 0,
+          textShiftY: open === "open" ? 0 : V1_TEXT_SHIFT_PX,
+          textTracking: open === "open" ? 0 : V1_TEXT_TRACK_CLOSE,
+        },
+        delay: V1_TEXT_DELAY_MS,
+        config: { mass: 3, tension: 600, friction: 100 },
+      },
+      [animationKey, open]
+    );
+
+    if (geometry === null || geometryTarget === null) {
+      return null;
     }
 
-    setRenderTarget(null);
-    setOpen("open");
-    setAnimationKey((currentKey) => {
-      return currentKey + 1;
-    });
-    closeHandle = window.setTimeout(() => {
-      setOpen("close");
-    }, V1_AUTO_CLOSE_MS);
+    const locationText = getCalloutLocationText(geometry.event);
+    const titleSizePx = locationText.length < 30 ? 35 : 20;
+    const titleMarginTopPx = locationText.length < 30 ? 0 : 10;
+    const messageText = geometry.event.title;
+    const addText = getCalloutAddText(geometry.event);
 
-    return () => {
-      if (closeHandle !== 0) {
-        window.clearTimeout(closeHandle);
-      }
-    };
-  }, [targetEventId]);
-
-  const [lineSpring] = useSpring(
-    {
-      reset: true,
-      from: {
-        dashOffset: open === "open" ? -V1_DASH_LENGTH : 0,
-        nodeRadius: 0,
-        nodeOpacity: open === "open" ? 0 : 1,
-      },
-      to: {
-        dashOffset: open === "open" ? 0 : V1_DASH_LENGTH,
-        nodeRadius: 1.5,
-        nodeOpacity: open === "open" ? 1 : 0,
-      },
-      delay: V1_LINE_DELAY_MS,
-      config: { duration: V1_LINE_DURATION_MS },
-    },
-    [animationKey, open]
-  );
-  const [textSpring] = useSpring(
-    {
-      reset: true,
-      from: {
-        textOpacity: open === "open" ? 0 : 1,
-        textShiftY: open === "open" ? V1_TEXT_SHIFT_PX : 0,
-        textTracking: open === "open" ? V1_TEXT_TRACK_OPEN : 0,
-      },
-      to: {
-        textOpacity: open === "open" ? 1 : 0,
-        textShiftY: open === "open" ? 0 : V1_TEXT_SHIFT_PX,
-        textTracking: open === "open" ? 0 : V1_TEXT_TRACK_CLOSE,
-      },
-      delay: V1_TEXT_DELAY_MS,
-      config: { mass: 3, tension: 600, friction: 100 },
-    },
-    [animationKey, open]
-  );
-
-  if (geometry === null || geometryTarget === null) {
-    return null;
+    return (
+      <>
+        <svg
+          aria-hidden
+          className="rehoboam-scene__overlay"
+          viewBox={`0 0 ${instrumentSize.width} ${instrumentSize.height}`}
+        >
+          <animated.path
+            className="rehoboam-scene__callout-line"
+            d={geometry.connectorPath}
+            style={{
+              strokeDasharray: V1_DASH_LENGTH,
+              strokeDashoffset: lineSpring.dashOffset,
+            }}
+          />
+          <animated.polyline
+            className="rehoboam-scene__callout-frame"
+            points={geometry.framePoints}
+            style={{
+              strokeDasharray: V1_DASH_LENGTH,
+              strokeDashoffset: lineSpring.dashOffset,
+            }}
+          />
+          <animated.circle
+            className="rehoboam-scene__callout-node"
+            cx={geometry.anchorX}
+            cy={geometry.anchorY}
+            r={lineSpring.nodeRadius}
+            style={{
+              opacity: lineSpring.nodeOpacity,
+            }}
+          />
+          <animated.circle
+            className="rehoboam-scene__callout-node rehoboam-scene__callout-node--inner"
+            cx={geometry.anchorX}
+            cy={geometry.anchorY}
+            r={lineSpring.nodeRadius.to((radius: number) => {
+              return Math.max(1, radius * 0.66);
+            })}
+            style={{
+              opacity: lineSpring.nodeOpacity,
+            }}
+          />
+        </svg>
+        <animated.div
+          className="rehoboam-scene__callout"
+          style={{
+            left: geometry.labelX,
+            top: geometry.labelY,
+            width: geometry.labelWidth,
+            textAlign: geometry.textAlign,
+            opacity: textSpring.textOpacity,
+            letterSpacing: textSpring.textTracking.to(
+              (value: number) => `${value}px`
+            ),
+            transform: textSpring.textShiftY.to((shiftY: number) => {
+              return `translate3d(0, ${shiftY}px, 0)`;
+            }),
+          }}
+        >
+          <p
+            className="rehoboam-scene__callout-time"
+            style={{
+              marginTop: geometry.timeMarginTop,
+            }}
+          >
+            {formatCalloutTime(geometry.event.timestampMs)}
+          </p>
+          <p
+            className="rehoboam-scene__callout-title"
+            style={{
+              fontSize: `${titleSizePx}px`,
+              marginTop: `${titleMarginTopPx}px`,
+            }}
+          >
+            {locationText}
+          </p>
+          <p className="rehoboam-scene__callout-subtitle">{messageText}</p>
+          <p className="rehoboam-scene__callout-meta">{addText}</p>
+        </animated.div>
+      </>
+    );
   }
-
-  const locationText = getCalloutLocationText(geometry.event);
-  const titleSizePx = locationText.length < 30 ? 35 : 20;
-  const titleMarginTopPx = locationText.length < 30 ? 0 : 10;
-  const messageText = geometry.event.title;
-  const addText = getCalloutAddText(geometry.event);
-
-  return (
-    <>
-      <svg
-        aria-hidden
-        className="rehoboam-scene__overlay"
-        viewBox={`0 0 ${instrumentSize.width} ${instrumentSize.height}`}
-      >
-        <animated.path
-          className="rehoboam-scene__callout-line"
-          d={geometry.connectorPath}
-          style={{
-            strokeDasharray: V1_DASH_LENGTH,
-            strokeDashoffset: lineSpring.dashOffset,
-          }}
-        />
-        <animated.polyline
-          className="rehoboam-scene__callout-frame"
-          points={geometry.framePoints}
-          style={{
-            strokeDasharray: V1_DASH_LENGTH,
-            strokeDashoffset: lineSpring.dashOffset,
-          }}
-        />
-        <animated.circle
-          className="rehoboam-scene__callout-node"
-          cx={geometry.anchorX}
-          cy={geometry.anchorY}
-          r={lineSpring.nodeRadius}
-          style={{
-            opacity: lineSpring.nodeOpacity,
-          }}
-        />
-        <animated.circle
-          className="rehoboam-scene__callout-node rehoboam-scene__callout-node--inner"
-          cx={geometry.anchorX}
-          cy={geometry.anchorY}
-          r={lineSpring.nodeRadius.to((radius: number) => {
-            return Math.max(1, radius * 0.66);
-          })}
-          style={{
-            opacity: lineSpring.nodeOpacity,
-          }}
-        />
-      </svg>
-      <animated.div
-        className="rehoboam-scene__callout"
-        style={{
-          left: geometry.labelX,
-          top: geometry.labelY,
-          width: geometry.labelWidth,
-          textAlign: geometry.textAlign,
-          opacity: textSpring.textOpacity,
-          letterSpacing: textSpring.textTracking.to((value: number) => `${value}px`),
-          transform: textSpring.textShiftY.to((shiftY: number) => {
-            return `translate3d(0, ${shiftY}px, 0)`;
-          }),
-        }}
-      >
-        <p
-          className="rehoboam-scene__callout-time"
-          style={{
-            marginTop: geometry.timeMarginTop,
-          }}
-        >
-          {formatCalloutTime(geometry.event.timestampMs)}
-        </p>
-        <p
-          className="rehoboam-scene__callout-title"
-          style={{
-            fontSize: `${titleSizePx}px`,
-            marginTop: `${titleMarginTopPx}px`,
-          }}
-        >
-          {locationText}
-        </p>
-        <p className="rehoboam-scene__callout-subtitle">{messageText}</p>
-        <p className="rehoboam-scene__callout-meta">{addText}</p>
-      </animated.div>
-    </>
-  );
-};
+);

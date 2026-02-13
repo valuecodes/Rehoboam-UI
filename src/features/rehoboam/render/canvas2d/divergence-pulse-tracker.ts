@@ -78,7 +78,9 @@ export const createDivergencePulseTracker = (
       return left.id.localeCompare(right.id);
     });
     const shouldSuppressInitialPulses =
-      !emitInitialPulses && !hasInitializedWithEvents && sortedEvents.length > 0;
+      !emitInitialPulses &&
+      !hasInitializedWithEvents &&
+      sortedEvents.length > 0;
     const nextPulses: DivergencePulse[] = [];
 
     for (const event of sortedEvents) {
