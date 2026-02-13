@@ -1,10 +1,13 @@
+import { extname } from "node:path";
 import { $, parseArgv, ProcessOutput } from "zx";
 
 type CliOptions = {
   baseUrl: string | undefined;
+  count: string | undefined;
   headed: boolean;
   headless: boolean;
   height: string | undefined;
+  intervalMs: string | undefined;
   output: string | undefined;
   settleMs: string | undefined;
   showHelp: boolean;
@@ -19,6 +22,8 @@ Usage:
 
 Options:
   --output <path>       Base output path (default: .tmp/screenshots/current-codex-auto.png)
+  --count <number>      Number of captures to take (default: 1)
+  --interval-ms <ms>    Delay between captures in ms (default: 1000)
   --width <number>      Viewport width (default: 1365)
   --height <number>     Viewport height (default: 1024)
   --settle-ms <number>  Delay after selector visibility (default: 200)
@@ -29,6 +34,8 @@ Options:
 
 Environment variable equivalents:
   SCREENSHOT_OUTPUT_BASE
+  SCREENSHOT_CAPTURE_COUNT
+  SCREENSHOT_CAPTURE_INTERVAL_MS
   SCREENSHOT_VIEWPORT_WIDTH
   SCREENSHOT_VIEWPORT_HEIGHT
   SCREENSHOT_SETTLE_MS
@@ -38,6 +45,8 @@ Environment variable equivalents:
 
 const VALUE_OPTIONS = new Set([
   "--output",
+  "--count",
+  "--interval-ms",
   "--width",
   "--height",
   "--settle-ms",
@@ -109,7 +118,15 @@ const parseArgs = (argv: readonly string[]): CliOptions => {
     {
       alias: { h: "help" },
       boolean: ["help", "headed", "headless"],
-      string: ["output", "width", "height", "settle-ms", "base-url"],
+      string: [
+        "output",
+        "count",
+        "interval-ms",
+        "width",
+        "height",
+        "settle-ms",
+        "base-url",
+      ],
       parseBoolean: true,
       camelCase: true,
     },
@@ -118,14 +135,55 @@ const parseArgs = (argv: readonly string[]): CliOptions => {
 
   return {
     baseUrl: readOptionalString("--base-url", parsed.baseUrl),
+    count: readOptionalString("--count", parsed.count),
     headed: parsed.headed === true,
     headless: parsed.headless === true,
     height: readOptionalString("--height", parsed.height),
+    intervalMs: readOptionalString("--interval-ms", parsed.intervalMs),
     output: readOptionalString("--output", parsed.output),
     settleMs: readOptionalString("--settle-ms", parsed.settleMs),
     showHelp: parsed.help === true,
     width: readOptionalString("--width", parsed.width),
   };
+};
+
+const parseIntegerOption = (
+  optionName: string,
+  value: string | undefined,
+  fallback: number,
+  minimum: number
+): number => {
+  if (value === undefined) {
+    return fallback;
+  }
+
+  const parsed = Number(value);
+
+  if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed < minimum) {
+    throw new Error(
+      `${optionName} must be an integer greater than or equal to ${minimum}.`
+    );
+  }
+
+  return parsed;
+};
+
+const resolveOutputPath = (
+  outputPath: string,
+  captureIndex: number,
+  captureCount: number
+): string => {
+  if (captureCount <= 1) {
+    return outputPath;
+  }
+
+  const extension = extname(outputPath);
+  const outputWithoutExtension =
+    extension === "" ? outputPath : outputPath.slice(0, -extension.length);
+  const indexWidth = Math.max(2, String(captureCount).length);
+  const captureNumber = String(captureIndex + 1).padStart(indexWidth, "0");
+
+  return `${outputWithoutExtension}.${captureNumber}${extension}`;
 };
 
 const options = parseArgs(process.argv.slice(2));
@@ -135,7 +193,30 @@ if (options.showHelp) {
   process.exit(0);
 }
 
-const commandEnv: NodeJS.ProcessEnv = {
+const captureCount = parseIntegerOption(
+  "--count",
+  options.count ?? process.env.SCREENSHOT_CAPTURE_COUNT,
+  1,
+  1
+);
+const captureIntervalMs = parseIntegerOption(
+  "--interval-ms",
+  options.intervalMs ?? process.env.SCREENSHOT_CAPTURE_INTERVAL_MS,
+  1000,
+  0
+);
+const baseSettleMs = parseIntegerOption(
+  "--settle-ms",
+  options.settleMs ?? process.env.SCREENSHOT_SETTLE_MS,
+  200,
+  0
+);
+const outputBasePath =
+  options.output ??
+  process.env.SCREENSHOT_OUTPUT_BASE ??
+  ".tmp/screenshots/current-codex-auto.png";
+
+const sharedCommandEnv: NodeJS.ProcessEnv = {
   ...process.env,
   ...(options.baseUrl === undefined
     ? {}
@@ -145,32 +226,43 @@ const commandEnv: NodeJS.ProcessEnv = {
   ...(options.height === undefined
     ? {}
     : { SCREENSHOT_VIEWPORT_HEIGHT: options.height }),
-  ...(options.output === undefined
-    ? {}
-    : { SCREENSHOT_OUTPUT_BASE: options.output }),
-  ...(options.settleMs === undefined
-    ? {}
-    : { SCREENSHOT_SETTLE_MS: options.settleMs }),
   ...(options.width === undefined
     ? {}
     : { SCREENSHOT_VIEWPORT_WIDTH: options.width }),
 };
 
-const run = $({
-  env: commandEnv,
-  stdio: "inherit",
-});
+for (let captureIndex = 0; captureIndex < captureCount; captureIndex += 1) {
+  const captureOutputPath = resolveOutputPath(
+    outputBasePath,
+    captureIndex,
+    captureCount
+  );
+  const captureSettleMs = baseSettleMs + captureIndex * captureIntervalMs;
 
-try {
-  if (options.headed) {
-    await run`pnpm exec playwright test -c playwright.config.ts --headed`;
-  } else {
-    await run`pnpm exec playwright test -c playwright.config.ts`;
-  }
-} catch (error) {
-  if (error instanceof ProcessOutput) {
-    process.exit(error.exitCode ?? 1);
-  }
+  console.log(
+    `Capturing screenshot ${captureIndex + 1}/${captureCount}: ${captureOutputPath} (settle ${captureSettleMs}ms)`
+  );
 
-  throw error;
+  const run = $({
+    env: {
+      ...sharedCommandEnv,
+      SCREENSHOT_OUTPUT_BASE: captureOutputPath,
+      SCREENSHOT_SETTLE_MS: String(captureSettleMs),
+    },
+    stdio: "inherit",
+  });
+
+  try {
+    if (options.headed) {
+      await run`pnpm exec playwright test -c playwright.config.ts --headed`;
+    } else {
+      await run`pnpm exec playwright test -c playwright.config.ts`;
+    }
+  } catch (error) {
+    if (error instanceof ProcessOutput) {
+      process.exit(error.exitCode ?? 1);
+    }
+
+    throw error;
+  }
 }

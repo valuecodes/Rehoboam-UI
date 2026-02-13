@@ -1,0 +1,4 @@
+interface:
+  display_name: "Scene UI Validator"
+  short_description: "Validate Rehoboam scene animation and UI quality"
+  default_prompt: "Validate Rehoboam animation and UI quality by running screenshot captures and reviewing the outputs."
