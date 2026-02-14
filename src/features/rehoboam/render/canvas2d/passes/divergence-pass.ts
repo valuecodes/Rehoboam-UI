@@ -45,6 +45,14 @@ const CORE_CONTOUR_INWARD_DELTA_GAIN = 0.8;
 const CORE_CONTOUR_INWARD_PULSE_DELTA_GAIN = 0.32;
 const CORE_CONTOUR_MAX_OUTWARD_FACTOR = 0.0065;
 const CORE_CONTOUR_MAX_INWARD_FACTOR = 0.03;
+const SEAM_UNDERPAINT_MIN_WIDTH_FACTOR = 0.004;
+const SEAM_UNDERPAINT_BASE_OUTER_FACTOR = 0.0065;
+const SEAM_UNDERPAINT_EXTENSION_GAIN_FACTOR = 0.008;
+const SEAM_UNDERPAINT_EXTENSION_CAP_FACTOR = 0.015;
+const SEAM_UNDERPAINT_CREST_GAIN = 0.18;
+const SEAM_UNDERPAINT_CREST_CAP_FACTOR = 0.012;
+const SEAM_UNDERPAINT_GRADIENT_INNER_OFFSET_FACTOR = 0.013;
+const SEAM_UNDERPAINT_GRADIENT_OUTER_OFFSET_FACTOR = 0.056;
 const BOTTOM_WAVE_DARKEN_WINDOW_RAD = Math.PI * 0.84;
 const BOTTOM_WAVE_DARKEN_THRESHOLD = 0.18;
 
@@ -68,6 +76,9 @@ const PULSE_WINDOW_RAD: Readonly<Record<WorldEventSeverity, number>> = {
   high: 0.142,
   critical: 0.17,
 };
+const UINT32_RANGE = 0x1_0000_0000;
+const FNV_OFFSET_BASIS = 0x811c9dc5;
+const FNV_PRIME = 0x01000193;
 
 export type DivergencePassInput = Readonly<{
   context: CanvasRenderingContext2D;
@@ -93,6 +104,7 @@ type ActivePulseDescriptor = Readonly<{
   strength: number;
   severity: WorldEventSeverity;
   windowScale: number;
+  phaseOffsetRad: number;
 }>;
 
 type ExtensionOffsetResolution = Readonly<{
@@ -252,6 +264,21 @@ const getExtensionWindowRad = (descriptor: ActivePulseDescriptor): number => {
   return Math.max(0.048, Math.min(0.27, scaledWindowRad));
 };
 
+const hashStringToUnitInterval = (value: string): number => {
+  let hash = FNV_OFFSET_BASIS;
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, FNV_PRIME);
+  }
+
+  return (hash >>> 0) / UINT32_RANGE;
+};
+
+const resolveStablePhaseOffsetRad = (key: string): number => {
+  return hashStringToUnitInterval(key) * TAU;
+};
+
 const resolveEventAnglesByEventId = (
   events: readonly WorldEvent[]
 ): ReadonlyMap<string, number> => {
@@ -305,6 +332,7 @@ const resolveActivePulseDescriptors = (
         strength,
         severity: pulse.severity,
         windowScale: 1,
+        phaseOffsetRad: resolveStablePhaseOffsetRad(`pulse:${pulse.eventId}`),
       });
     }
   }
@@ -455,12 +483,12 @@ const resolveClusterDescriptors = (
         0.7,
         Math.min(1.65, cluster.widthRad / baseWindowRad)
       ),
+      phaseOffsetRad: resolveStablePhaseOffsetRad(`cluster:${cluster.id}`),
     });
 
-    for (const spike of cluster.spikes.slice(
-      0,
-      MAX_SPIKE_DESCRIPTORS_PER_CLUSTER
-    )) {
+    for (const [spikeIndex, spike] of cluster.spikes
+      .slice(0, MAX_SPIKE_DESCRIPTORS_PER_CLUSTER)
+      .entries()) {
       const spikeFlicker =
         0.72 +
         0.28 *
@@ -484,6 +512,9 @@ const resolveClusterDescriptors = (
         windowScale: Math.max(
           0.28,
           Math.min(1.12, spike.widthRad / baseWindowRad)
+        ),
+        phaseOffsetRad: resolveStablePhaseOffsetRad(
+          `cluster:${cluster.id}:spike:${spikeIndex}`
         ),
       });
     }
@@ -515,7 +546,7 @@ const resolveExtensionOffset = (
   let outwardOffset = 0;
   let inwardOffset = 0;
 
-  for (const [index, extension] of extensions.entries()) {
+  for (const extension of extensions) {
     const angularDistance = Math.abs(
       shortestAngularDistance(angleRad, extension.angleRad)
     );
@@ -551,7 +582,7 @@ const resolveExtensionOffset = (
           angleRad * (21 + extension.windowScale * 4.6) -
             elapsedSeconds * (1.4 + extension.windowScale * 0.18) +
             extension.angleRad * 2.7 +
-            index * 0.64
+            extension.phaseOffsetRad
         );
     const notchShape = Math.pow(notchCarrier, 2.45);
     const inwardScale = 0.92 + extension.windowScale * 0.34;
@@ -959,11 +990,14 @@ const drawFlowCircleLanes = (
   context.lineDashOffset = 0;
   context.lineJoin = "round";
   context.lineCap = "round";
-  const contourPoints = samples.map((sample) => {
+  const coreContourRadii = samples.map((sample) => {
+    return resolveCoreContourRadius(sample, viewport);
+  });
+  const contourPoints = samples.map((sample, index) => {
     const coreRadius = resolveCoreContourRadius(sample, viewport);
     const point = polarToCartesian(
       {
-        radius: coreRadius,
+        radius: coreContourRadii[index] ?? coreRadius,
         angleRad: sample.angleRad,
       },
       viewport.center
@@ -974,6 +1008,96 @@ const drawFlowCircleLanes = (
       y: point.y,
     };
   });
+  const drawCoreSeamUnderpaint = (
+    mountainSamples: readonly MountainWaveSample[]
+  ): void => {
+    if (mountainSamples.length === 0 || contourPoints.length <= 1) {
+      return;
+    }
+
+    const seamOuterPoints = mountainSamples.map((mountainSample, index) => {
+      const coreContourRadius =
+        coreContourRadii[index] ?? viewport.outerRadius * CORE_RING_RADIUS_FACTOR;
+      const extensionLift = Math.min(
+        viewport.outerRadius * SEAM_UNDERPAINT_EXTENSION_CAP_FACTOR,
+        mountainSample.extensionInfluence *
+          viewport.outerRadius *
+          SEAM_UNDERPAINT_EXTENSION_GAIN_FACTOR
+      );
+      const crestLift = Math.min(
+        viewport.outerRadius * SEAM_UNDERPAINT_CREST_CAP_FACTOR,
+        mountainSample.crestHeight * SEAM_UNDERPAINT_CREST_GAIN
+      );
+      const targetOuterRadius =
+        mountainSample.baseRadius +
+        viewport.outerRadius * SEAM_UNDERPAINT_BASE_OUTER_FACTOR +
+        extensionLift +
+        crestLift;
+      const minimumOuterRadius =
+        coreContourRadius +
+        viewport.outerRadius * SEAM_UNDERPAINT_MIN_WIDTH_FACTOR;
+      const outerRadius = Math.max(minimumOuterRadius, targetOuterRadius);
+      const point = polarToCartesian(
+        {
+          radius: outerRadius,
+          angleRad: mountainSample.angleRad,
+        },
+        viewport.center
+      );
+
+      return {
+        x: point.x,
+        y: point.y,
+      };
+    });
+
+    const gradientInnerRadius =
+      viewport.outerRadius *
+      Math.max(
+        0,
+        CORE_RING_RADIUS_FACTOR - SEAM_UNDERPAINT_GRADIENT_INNER_OFFSET_FACTOR
+      );
+    const gradientOuterRadius =
+      viewport.outerRadius *
+      (CORE_RING_RADIUS_FACTOR + SEAM_UNDERPAINT_GRADIENT_OUTER_OFFSET_FACTOR);
+
+    if (gradientOuterRadius <= gradientInnerRadius) {
+      return;
+    }
+
+    const maybeContext = context as CanvasRenderingContext2D & {
+      createRadialGradient?: CanvasRenderingContext2D["createRadialGradient"];
+    };
+
+    if (typeof maybeContext.createRadialGradient !== "function") {
+      context.globalAlpha = 0.22;
+      context.fillStyle = BASE_WAVE_COLOR;
+      context.beginPath();
+      traceClosedBandFillPath(context, seamOuterPoints, contourPoints);
+      context.fill("evenodd");
+
+      return;
+    }
+
+    const seamGradient = maybeContext.createRadialGradient(
+      viewport.center.x,
+      viewport.center.y,
+      gradientInnerRadius,
+      viewport.center.x,
+      viewport.center.y,
+      gradientOuterRadius
+    );
+    seamGradient.addColorStop(0, "rgba(4, 4, 4, 0)");
+    seamGradient.addColorStop(0.38, "rgba(4, 4, 4, 0.42)");
+    seamGradient.addColorStop(0.7, "rgba(16, 16, 16, 0.2)");
+    seamGradient.addColorStop(1, "rgba(16, 16, 16, 0)");
+
+    context.globalAlpha = 1;
+    context.fillStyle = seamGradient;
+    context.beginPath();
+    traceClosedBandFillPath(context, seamOuterPoints, contourPoints);
+    context.fill("evenodd");
+  };
 
   const strokeCoreContour = (
     lineWidth: number,
@@ -999,7 +1123,7 @@ const drawFlowCircleLanes = (
     BASE_WAVE_COLOR
   );
 
-  for (const layer of MOUNTAIN_WAVE_LAYERS) {
+  for (const [layerIndex, layer] of MOUNTAIN_WAVE_LAYERS.entries()) {
     const mountainSamples: MountainWaveSample[] = Array.from(
       { length: sampleCount + 1 },
       (_, index) => {
@@ -1122,6 +1246,10 @@ const drawFlowCircleLanes = (
         y: basePoint.y,
       };
     });
+
+    if (layerIndex === 0) {
+      drawCoreSeamUnderpaint(mountainSamples);
+    }
 
     context.fillStyle = BASE_WAVE_COLOR;
     context.globalAlpha = layerFillAlpha;

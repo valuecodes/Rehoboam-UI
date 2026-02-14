@@ -7,8 +7,8 @@ export type WorldEventCategory = string;
 
 export type WorldEventLocation = Readonly<{
   label: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
 }>;
 
 export type WorldEvent = Readonly<{

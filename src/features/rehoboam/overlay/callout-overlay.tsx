@@ -24,6 +24,7 @@ type CalloutGeometry = Readonly<{
   event: WorldEvent;
   anchorX: number;
   anchorY: number;
+  connectorAngleRad: number;
   labelX: number;
   labelY: number;
   labelWidth: number;
@@ -47,31 +48,48 @@ const V1_DASH_LENGTH = 1_800;
 const V1_TEXT_TRACK_OPEN = -10;
 const V1_TEXT_TRACK_CLOSE = 10;
 const V1_TEXT_SHIFT_PX = 7;
+const CALLOUT_HEXAGON_RADIUS_PX = 8;
+const CALLOUT_HEXAGON_INNER_RADIUS_PX = 4.8;
+const TOP_LAYOUT_THIRD_FRAME_OFFSET_PX = 52;
+const TOP_LAYOUT_FOURTH_FRAME_OFFSET_PX = 104;
+const TOP_LAYOUT_FIFTH_FRAME_OFFSET_PX = 124;
 
 const clampNumber = (value: number, min: number, max: number): number => {
   return Math.min(max, Math.max(min, value));
 };
 
-const formatCalloutTime = (timestampMs: number): string => {
-  const isoTime = new Date(timestampMs).toISOString().slice(11, 19);
+const formatCalloutDate = (timestampMs: number): string => {
+  const date = new Date(timestampMs);
+  const month = `${date.getUTCMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getUTCDate()}`.padStart(2, "0");
+  const year = `${date.getUTCFullYear()}`.slice(-2);
 
-  return isoTime.replace(/:/gu, ".");
+  return `${month}.${day}.${year}`;
+};
+
+const toCityLabel = (locationLabel: string): string => {
+  const [city] = locationLabel.split(",");
+  const normalizedCity = city.trim();
+
+  if (normalizedCity.length > 0) {
+    return normalizedCity;
+  }
+
+  return locationLabel.trim();
 };
 
 const getCalloutLocationText = (event: WorldEvent): string => {
   if (event.location !== undefined) {
-    return event.location.label;
+    return toCityLabel(event.location.label);
   }
 
-  return event.category.replace(/[_-]/gu, " ");
+  return "Unknown location";
 };
 
-const getCalloutAddText = (event: WorldEvent): string => {
-  if (event.summary !== undefined && event.summary.trim().length > 0) {
-    return event.summary;
-  }
+const getCalloutDivergenceText = (event: WorldEvent): string => {
+  const locationText = getCalloutLocationText(event).toUpperCase();
 
-  return `${event.severity} / ${event.category}`;
+  return `DIVERGENCE: ${locationText}`;
 };
 
 const toPointList = (points: readonly Point[]): string => {
@@ -80,6 +98,24 @@ const toPointList = (points: readonly Point[]): string => {
       return `${point.x} ${point.y}`;
     })
     .join(",");
+};
+
+const toRegularPolygonPoints = (
+  center: Point,
+  sideCount: number,
+  radius: number,
+  rotationRad = 0
+): string => {
+  const points = Array.from({ length: sideCount }, (_value, index) => {
+    const angleRad = (Math.PI * 2 * index) / sideCount + rotationRad;
+
+    return {
+      x: center.x + Math.cos(angleRad) * radius,
+      y: center.y + Math.sin(angleRad) * radius,
+    };
+  });
+
+  return toPointList(points);
 };
 
 const getCalloutGeometry = (
@@ -137,13 +173,16 @@ const getCalloutGeometry = (
   const secondFrameY = firstFrameY;
   const thirdFrameX =
     firstFrameX + (isLeftLayout ? -cornerStep * 2 : cornerStep * 2);
-  const thirdFrameY = panelY + (isBottomLayout ? 60 : 40);
+  const thirdFrameY = panelY + (isBottomLayout ? 60 : TOP_LAYOUT_THIRD_FRAME_OFFSET_PX);
   const fourthFrameX = thirdFrameX;
-  const fourthFrameY = panelY + (isBottomLayout ? 20 : 80);
+  const fourthFrameY =
+    panelY + (isBottomLayout ? 20 : TOP_LAYOUT_FOURTH_FRAME_OFFSET_PX);
   const fifthFrameX = firstFrameX;
-  const fifthFrameY = panelY + (isBottomLayout ? 0 : 100);
+  const fifthFrameY =
+    panelY + (isBottomLayout ? 0 : TOP_LAYOUT_FIFTH_FRAME_OFFSET_PX);
   const lineEndX = panelX + (isLeftLayout ? panelWidth * 0.5 : panelWidth / 6);
   const lineEndY = fifthFrameY;
+  const connectorAngleRad = Math.atan2(lineEndY - anchor.y, lineEndX - anchor.x);
   const framePointList: readonly Point[] = [
     {
       x: firstFrameX,
@@ -179,6 +218,7 @@ const getCalloutGeometry = (
     event: target.event,
     anchorX: anchor.x,
     anchorY: anchor.y,
+    connectorAngleRad,
     labelX: clampNumber(
       labelX,
       margin,
@@ -262,12 +302,10 @@ export const CalloutOverlay = memo(
         reset: true,
         from: {
           dashOffset: open === "open" ? -V1_DASH_LENGTH : 0,
-          nodeRadius: 0,
           nodeOpacity: open === "open" ? 0 : 1,
         },
         to: {
           dashOffset: open === "open" ? 0 : V1_DASH_LENGTH,
-          nodeRadius: 1.5,
           nodeOpacity: open === "open" ? 1 : 0,
         },
         delay: V1_LINE_DELAY_MS,
@@ -298,11 +336,21 @@ export const CalloutOverlay = memo(
       return null;
     }
 
-    const locationText = getCalloutLocationText(geometry.event);
-    const titleSizePx = locationText.length < 30 ? 35 : 20;
-    const titleMarginTopPx = locationText.length < 30 ? 0 : 10;
-    const messageText = geometry.event.title;
-    const addText = getCalloutAddText(geometry.event);
+    const divergenceText = getCalloutDivergenceText(geometry.event);
+    const titleText = geometry.event.title.toUpperCase();
+    const markerCenter = { x: geometry.anchorX, y: geometry.anchorY };
+    const calloutHexagonPoints = toRegularPolygonPoints(
+      markerCenter,
+      6,
+      CALLOUT_HEXAGON_RADIUS_PX,
+      geometry.connectorAngleRad
+    );
+    const calloutHexagonInnerPoints = toRegularPolygonPoints(
+      markerCenter,
+      6,
+      CALLOUT_HEXAGON_INNER_RADIUS_PX,
+      geometry.connectorAngleRad
+    );
 
     return (
       <>
@@ -327,22 +375,16 @@ export const CalloutOverlay = memo(
               strokeDashoffset: lineSpring.dashOffset,
             }}
           />
-          <animated.circle
-            className="rehoboam-scene__callout-node"
-            cx={geometry.anchorX}
-            cy={geometry.anchorY}
-            r={lineSpring.nodeRadius}
+          <animated.polygon
+            className="rehoboam-scene__callout-hexagon"
+            points={calloutHexagonPoints}
             style={{
               opacity: lineSpring.nodeOpacity,
             }}
           />
-          <animated.circle
-            className="rehoboam-scene__callout-node rehoboam-scene__callout-node--inner"
-            cx={geometry.anchorX}
-            cy={geometry.anchorY}
-            r={lineSpring.nodeRadius.to((radius: number) => {
-              return Math.max(1, radius * 0.66);
-            })}
+          <animated.polygon
+            className="rehoboam-scene__callout-hexagon rehoboam-scene__callout-hexagon--inner"
+            points={calloutHexagonInnerPoints}
             style={{
               opacity: lineSpring.nodeOpacity,
             }}
@@ -370,19 +412,10 @@ export const CalloutOverlay = memo(
               marginTop: geometry.timeMarginTop,
             }}
           >
-            {formatCalloutTime(geometry.event.timestampMs)}
+            {formatCalloutDate(geometry.event.timestampMs)}
           </p>
-          <p
-            className="rehoboam-scene__callout-title"
-            style={{
-              fontSize: `${titleSizePx}px`,
-              marginTop: `${titleMarginTopPx}px`,
-            }}
-          >
-            {locationText}
-          </p>
-          <p className="rehoboam-scene__callout-subtitle">{messageText}</p>
-          <p className="rehoboam-scene__callout-meta">{addText}</p>
+          <p className="rehoboam-scene__callout-title">{divergenceText}</p>
+          <p className="rehoboam-scene__callout-subtitle">{titleText}</p>
         </animated.div>
       </>
     );

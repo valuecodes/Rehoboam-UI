@@ -1,76 +1,58 @@
 [
   {
-    "id": "wire-001",
-    "title": "PACIFIC GRID LOAD SPIKE",
-    "timestamp": "2026-02-08T06:00:00.000Z",
-    "severity": "high",
-    "category": "infrastructure",
-    "source": "mock-wire",
-    "summary": "Load balancing systems report sustained stress across the western corridor.",
-    "location": {
-      "label": "Los Angeles, US",
-      "latitude": 34.0522,
-      "longitude": -118.2437
-    }
+    "id": "dotcom-bubble-burst",
+    "date": "2000-03-10",
+    "title": "Dot-com bubble burst",
+    "location": "New York",
+    "severity": "high"
   },
   {
-    "title": "Northern corridor weather front",
-    "publishedAt": "2026-02-08T06:35:00.000Z",
-    "severity": 0.34,
-    "category": "climate",
-    "source": "mock-wire"
+    "id": "global-financial-crisis",
+    "date": "2008-09-15",
+    "title": "Global financial crisis escalation",
+    "location": "New York",
+    "severity": "critical"
   },
   {
-    "title": "Orbital launch window slips 15 minutes",
-    "publishedAt": "2026-02-08T07:20:00.000Z",
-    "severity": "medium",
-    "type": "space",
-    "source": "mock-wire"
+    "id": "eurozone-debt-crisis",
+    "date": "2010-05-02",
+    "title": "Eurozone debt crisis",
+    "location": "Brussels",
+    "severity": "high"
   },
   {
-    "title": "Orbital launch window slips 15 minutes",
-    "publishedAt": "2026-02-08T07:20:00.000Z",
-    "severity": "high",
-    "type": "space",
-    "source": "mock-wire",
-    "summary": "Telemetry checks delayed ignition sequence.",
-    "updatedAt": "2026-02-08T07:26:00.000Z"
+    "id": "oil-price-crash",
+    "date": "2014-11-27",
+    "title": "Oil price crash",
+    "location": "Vienna",
+    "severity": "medium"
   },
   {
-    "headline": "Subsea relay anomaly detected",
-    "timestampMs": 1770537600000,
-    "severityLabel": "critical",
-    "kind": "telecom",
-    "source": "mock-watch",
-    "description": "Regional packet loss exceeds expected variance."
+    "id": "covid-pandemic",
+    "date": "2020-03-11",
+    "title": "COVID-19 global pandemic",
+    "location": "Geneva",
+    "severity": "critical"
   },
   {
-    "eventId": "relay-echo-4",
-    "name": "Subsea relay anomaly detected",
-    "timestampMs": 1770537600000,
-    "severity": 0.95,
-    "category": "telecom",
-    "source": "mock-watch",
-    "updatedAtMs": 1770537960000
+    "id": "supply-chain-crunch",
+    "date": "2021-10-01",
+    "title": "Global supply chain crunch",
+    "location": "Shanghai",
+    "severity": "high"
   },
   {
-    "title": "Cross-border payment rail latency",
-    "time": "2026-02-08T08:10:00.000Z",
-    "severity": "low",
-    "category": "finance",
-    "source": "mock-wire",
-    "geo": {
-      "place": "Frankfurt, DE",
-      "lat": 50.1109,
-      "lng": 8.6821
-    }
+    "id": "ukraine-war",
+    "date": "2022-02-24",
+    "title": "Russia-Ukraine war escalation",
+    "location": "Kyiv",
+    "severity": "critical"
   },
   {
-    "title": "Emergency routing protocol initiated",
-    "timestamp": "2026-02-08T08:55:00.000Z",
-    "severity": "critical",
-    "category": "system",
-    "source": "mock-core",
-    "summary": "Core failsafe path activated for traffic containment."
+    "id": "red-sea-shipping-crisis",
+    "date": "2024-01-15",
+    "title": "Red Sea shipping crisis",
+    "location": "Suez",
+    "severity": "high"
   }
 ]

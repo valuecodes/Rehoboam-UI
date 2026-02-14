@@ -50,4 +50,23 @@ describe("normalizeEvent", () => {
       category: "general",
     });
   });
+
+  it("accepts the simplified fixture schema with date + location strings", () => {
+    const normalized = normalizeEvent({
+      id: "ukraine-war",
+      date: "2022-02-24",
+      title: "Russia launches full-scale invasion of Ukraine",
+      location: "Kyiv, UA",
+      severity: "critical",
+    });
+
+    expect(normalized.title).toBe(
+      "Russia launches full-scale invasion of Ukraine"
+    );
+    expect(normalized.timestampMs).toBe(Date.parse("2022-02-24"));
+    expect(normalized.location).toStrictEqual({
+      label: "Kyiv, UA",
+    });
+    expect(normalized.severity).toBe("critical");
+  });
 });
