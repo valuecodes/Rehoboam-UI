@@ -53,13 +53,17 @@ const V1_TEXT_SHIFT_PX = 7;
 const CALLOUT_ENDPOINT_OUTER_RADIUS_PX = 6;
 const CALLOUT_ENDPOINT_INNER_RADIUS_PX = 2.25;
 const TOP_LAYOUT_TIME_MARGIN_PX = 10;
-const TOP_LAYOUT_LINE_END_LEFT_RATIO = 0.62;
-const TOP_LAYOUT_LINE_END_RIGHT_RATIO = 0.38;
-const BOTTOM_LAYOUT_LINE_END_LEFT_RATIO = 0.62;
-const BOTTOM_LAYOUT_LINE_END_RIGHT_RATIO = 0.38;
+const RIGHT_LAYOUT_FRAME_START_RATIO = 2 / 3;
+const TOP_LAYOUT_HEADER_LINE_LENGTH_RATIO = 0.53;
+const BOTTOM_LAYOUT_HEADER_LINE_LENGTH_RATIO = 0.53;
+const TOP_LAYOUT_FIRST_FRAME_OFFSET_PX = 30;
+const BOTTOM_LAYOUT_FIRST_FRAME_OFFSET_PX = 55;
 const TOP_LAYOUT_THIRD_FRAME_OFFSET_PX = 40;
 const TOP_LAYOUT_FOURTH_FRAME_OFFSET_PX = 60;
 const TOP_LAYOUT_FIFTH_FRAME_OFFSET_PX = 75;
+const BOTTOM_LAYOUT_THIRD_FRAME_OFFSET_PX = 40;
+const BOTTOM_LAYOUT_FOURTH_FRAME_OFFSET_PX = 20;
+const BOTTOM_LAYOUT_FIFTH_FRAME_OFFSET_PX = 0;
 const CALLOUT_DEBUG_QUERY_KEY = "callout-debug";
 const CALLOUT_DEBUG_HALF_QUERY_KEY = "callout-debug-half";
 const CALLOUT_DEBUG_SIDE_QUERY_KEY = "callout-debug-side";
@@ -229,28 +233,39 @@ const getCalloutGeometry = (
   const isLeftLayout = panelX < center.x;
   const isBottomLayout = panelY > center.y;
   const cornerStep = 10;
-  const firstFrameX = panelX + (isLeftLayout ? 0 : panelWidth * (2 / 3));
-  const firstFrameY = panelY + (isBottomLayout ? 70 : 30);
+  const firstFrameX =
+    panelX + (isLeftLayout ? 0 : panelWidth * RIGHT_LAYOUT_FRAME_START_RATIO);
+  const firstFrameY =
+    panelY +
+    (isBottomLayout
+      ? BOTTOM_LAYOUT_FIRST_FRAME_OFFSET_PX
+      : TOP_LAYOUT_FIRST_FRAME_OFFSET_PX);
   const secondFrameX = firstFrameX + (isLeftLayout ? -cornerStep : cornerStep);
   const secondFrameY = firstFrameY;
   const thirdFrameX =
     firstFrameX + (isLeftLayout ? -cornerStep * 2 : cornerStep * 2);
   const thirdFrameY =
-    panelY + (isBottomLayout ? 60 : TOP_LAYOUT_THIRD_FRAME_OFFSET_PX);
+    panelY +
+    (isBottomLayout
+      ? BOTTOM_LAYOUT_THIRD_FRAME_OFFSET_PX
+      : TOP_LAYOUT_THIRD_FRAME_OFFSET_PX);
   const fourthFrameX = thirdFrameX;
   const fourthFrameY =
-    panelY + (isBottomLayout ? 20 : TOP_LAYOUT_FOURTH_FRAME_OFFSET_PX);
+    panelY +
+    (isBottomLayout
+      ? BOTTOM_LAYOUT_FOURTH_FRAME_OFFSET_PX
+      : TOP_LAYOUT_FOURTH_FRAME_OFFSET_PX);
   const fifthFrameX = firstFrameX;
   const fifthFrameY =
-    panelY + (isBottomLayout ? 0 : TOP_LAYOUT_FIFTH_FRAME_OFFSET_PX);
-  const lineEndRatio = isBottomLayout
-    ? isLeftLayout
-      ? BOTTOM_LAYOUT_LINE_END_LEFT_RATIO
-      : BOTTOM_LAYOUT_LINE_END_RIGHT_RATIO
-    : isLeftLayout
-      ? TOP_LAYOUT_LINE_END_LEFT_RATIO
-      : TOP_LAYOUT_LINE_END_RIGHT_RATIO;
-  const lineEndX = panelX + panelWidth * lineEndRatio;
+    panelY +
+    (isBottomLayout
+      ? BOTTOM_LAYOUT_FIFTH_FRAME_OFFSET_PX
+      : TOP_LAYOUT_FIFTH_FRAME_OFFSET_PX);
+  const lineLengthRatio = isBottomLayout
+    ? BOTTOM_LAYOUT_HEADER_LINE_LENGTH_RATIO
+    : TOP_LAYOUT_HEADER_LINE_LENGTH_RATIO;
+  const lineLength = panelWidth * lineLengthRatio;
+  const lineEndX = firstFrameX + (isLeftLayout ? lineLength : -lineLength);
   const lineEndY = fifthFrameY;
   const framePointList: readonly Point[] = [
     {

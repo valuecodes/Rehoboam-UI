@@ -1,6 +1,25 @@
 import { createSeededRng } from "../../../shared/utils/seeded-rng";
 import type { ComputedEventAngle } from "../layout/compute-angles";
 
+const compareEventAnglesByTimestamp = (
+  left: ComputedEventAngle,
+  right: ComputedEventAngle
+): number => {
+  if (left.event.timestampMs !== right.event.timestampMs) {
+    return left.event.timestampMs - right.event.timestampMs;
+  }
+
+  return left.event.id.localeCompare(right.event.id);
+};
+
+export const getChronologicalCycleIds = (
+  eventAngles: readonly ComputedEventAngle[]
+): readonly string[] => {
+  return [...eventAngles]
+    .sort(compareEventAnglesByTimestamp)
+    .map((eventAngle) => eventAngle.event.id);
+};
+
 const compareEventAnglesForCycle = (
   left: ComputedEventAngle,
   right: ComputedEventAngle
