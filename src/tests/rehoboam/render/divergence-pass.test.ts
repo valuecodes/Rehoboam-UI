@@ -224,6 +224,24 @@ const getFirstContourPoints = (
     });
 };
 
+const getFirstFillPathCommands = (
+  commands: readonly string[]
+): readonly string[] => {
+  const firstFillIndex = commands.indexOf("fill");
+
+  if (firstFillIndex === -1) {
+    return [];
+  }
+
+  const fillPathStartIndex = commands.lastIndexOf("beginPath", firstFillIndex);
+
+  if (fillPathStartIndex === -1) {
+    return [];
+  }
+
+  return commands.slice(fillPathStartIndex + 1, firstFillIndex);
+};
+
 const resolveRadiusRange = (points: readonly ContourPoint[]): RadiusRange => {
   if (points.length === 0) {
     throw new Error("No contour points were recorded.");
@@ -385,6 +403,34 @@ describe("drawDivergencePass", () => {
     }).length;
 
     expect(fillCommandCount).toBeGreaterThan(0);
+  });
+
+  it("fills full mountain bands using two closed loops", () => {
+    const context = createMockCanvasContext();
+
+    drawDivergencePass({
+      context: context.context,
+      viewport: VIEWPORT,
+      theme: DEFAULT_THEME,
+      interaction: createInitialInteractionState(),
+      events: EVENTS,
+      pulses: [],
+      clusters: [],
+      elapsedMs: 3_000,
+      timeMs: 3_000,
+      entranceScale: 1,
+    });
+
+    const firstFillPathCommands = getFirstFillPathCommands(context.commands);
+    const closePathCount = firstFillPathCommands.filter((command) => {
+      return command === "closePath";
+    }).length;
+    const moveToCount = firstFillPathCommands.filter((command) => {
+      return command.startsWith("moveTo(");
+    }).length;
+
+    expect(closePathCount).toBe(2);
+    expect(moveToCount).toBe(2);
   });
 
   it("uses quality-adjusted divergence sample count", () => {

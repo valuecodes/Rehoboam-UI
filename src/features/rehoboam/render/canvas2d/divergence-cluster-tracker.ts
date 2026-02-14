@@ -1,11 +1,36 @@
 import { createSeededRng } from "../../../../shared/utils/seeded-rng";
 import type { SeededRng, SeedInput } from "../../../../shared/utils/seeded-rng";
 import type { WorldEventSeverity } from "../../engine/types";
-import { shortestAngularDistance, TAU } from "../../layout/polar";
+import {
+  normalizeAngle,
+  shortestAngularDistance,
+  TAU,
+} from "../../layout/polar";
 
 const DEFAULT_CLUSTER_SEED_PREFIX = "rehoboam-v2-divergence-clusters";
-const DEFAULT_MIN_ACTIVE_CLUSTERS = 3;
-const DEFAULT_MAX_ACTIVE_CLUSTERS = 4;
+const DEFAULT_MIN_ACTIVE_CLUSTERS = 2;
+const DEFAULT_MAX_ACTIVE_CLUSTERS = 3;
+const DEFAULT_HOTSPOT_MIN_COUNT = 1;
+const DEFAULT_HOTSPOT_MAX_COUNT = 2;
+const HOTSPOT_CANDIDATE_COUNT = 10;
+const HOTSPOT_EXPLORATION_CANDIDATE_COUNT = 6;
+const HOTSPOT_SPAWN_SPREAD_RANGE_RAD: readonly [number, number] = [0.04, 0.26];
+const HOTSPOT_SPAWN_BIAS_WEIGHT = 1.04;
+const HOTSPOT_FREE_SPAWN_PROBABILITY = 0.16;
+const HOTSPOT_DRIFT_RANGE_RAD_PER_SECOND: readonly [number, number] = [
+  -0.018, 0.018,
+];
+const HOTSPOT_WOBBLE_AMPLITUDE_RANGE_RAD: readonly [number, number] = [
+  0.03, 0.11,
+];
+const HOTSPOT_WOBBLE_HZ_RANGE: readonly [number, number] = [0.03, 0.12];
+const HOTSPOT_RETARGET_OFFSET_RANGE_RAD: readonly [number, number] = [
+  0.42, 1.4,
+];
+const HOTSPOT_RETARGET_DELAY_RANGE_MS: readonly [number, number] = [
+  8_500, 14_000,
+];
+const HOTSPOT_WEIGHT_JITTER_RANGE: readonly [number, number] = [-0.18, 0.18];
 
 type ClusterArchetype = Readonly<{
   spawnWeight: number;
@@ -25,41 +50,41 @@ const CLUSTER_ARCHETYPES: readonly ClusterArchetype[] = [
   {
     spawnWeight: 0.52,
     severity: "medium",
-    widthRadRange: [0.064, 0.112],
-    strengthRange: [0.0046, 0.0088],
+    widthRadRange: [0.078, 0.136],
+    strengthRange: [0.0061, 0.0112],
     attackMsRange: [480, 920],
-    holdMsRange: [12_000, 18_500],
-    decayMsRange: [4_200, 6_800],
+    holdMsRange: [14_500, 22_000],
+    decayMsRange: [6_100, 9_200],
     driftRadPerSecondRange: [-0.006, 0.006],
-    spikeCountRange: [2, 5],
-    spikeStrengthRange: [1.2, 1.9],
-    spikeWidthScaleRange: [0.18, 0.42],
+    spikeCountRange: [3, 6],
+    spikeStrengthRange: [1.28, 2.05],
+    spikeWidthScaleRange: [0.17, 0.4],
   },
   {
     spawnWeight: 0.34,
     severity: "high",
-    widthRadRange: [0.112, 0.172],
-    strengthRange: [0.0072, 0.0124],
+    widthRadRange: [0.142, 0.216],
+    strengthRange: [0.0108, 0.0178],
     attackMsRange: [520, 980],
-    holdMsRange: [13_500, 20_500],
-    decayMsRange: [4_800, 7_500],
+    holdMsRange: [17_500, 26_000],
+    decayMsRange: [7_800, 11_800],
     driftRadPerSecondRange: [-0.0045, 0.0045],
-    spikeCountRange: [3, 6],
-    spikeStrengthRange: [1.35, 2.3],
-    spikeWidthScaleRange: [0.14, 0.34],
+    spikeCountRange: [4, 7],
+    spikeStrengthRange: [1.7, 2.7],
+    spikeWidthScaleRange: [0.11, 0.3],
   },
   {
     spawnWeight: 0.14,
     severity: "critical",
-    widthRadRange: [0.152, 0.262],
-    strengthRange: [0.0108, 0.0184],
+    widthRadRange: [0.194, 0.33],
+    strengthRange: [0.0168, 0.0282],
     attackMsRange: [560, 1_100],
-    holdMsRange: [15_000, 23_000],
-    decayMsRange: [5_400, 8_800],
+    holdMsRange: [20_000, 31_000],
+    decayMsRange: [9_600, 14_500],
     driftRadPerSecondRange: [-0.0038, 0.0038],
-    spikeCountRange: [3, 7],
-    spikeStrengthRange: [1.6, 2.8],
-    spikeWidthScaleRange: [0.11, 0.3],
+    spikeCountRange: [4, 8],
+    spikeStrengthRange: [2.05, 3.3],
+    spikeWidthScaleRange: [0.09, 0.24],
   },
 ] as const;
 
@@ -85,6 +110,15 @@ export type DivergenceCluster = Readonly<{
   flareSpeedHz: number;
   flarePhaseOffsetRad: number;
   spikes: readonly DivergenceClusterSpike[];
+}>;
+
+type ClusterHotspot = Readonly<{
+  anchorAngleRad: number;
+  driftRadPerSecond: number;
+  wobbleAmplitudeRad: number;
+  wobbleHz: number;
+  phaseOffsetRad: number;
+  spawnWeight: number;
 }>;
 
 export type DivergenceClusterTracker = Readonly<{
@@ -159,28 +193,237 @@ const pickClusterArchetype = (random: SeededRng): ClusterArchetype => {
   return CLUSTER_ARCHETYPES[CLUSTER_ARCHETYPES.length - 1];
 };
 
-const resolveSpawnAngleRad = (
+const normalizeSpawnWeights = (
+  hotspots: readonly ClusterHotspot[]
+): readonly ClusterHotspot[] => {
+  const totalWeight = hotspots.reduce((sum, hotspot) => {
+    return sum + hotspot.spawnWeight;
+  }, 0);
+
+  if (totalWeight <= 0) {
+    return hotspots.map((hotspot) => {
+      return {
+        ...hotspot,
+        spawnWeight: 1 / hotspots.length,
+      };
+    });
+  }
+
+  return hotspots.map((hotspot) => {
+    return {
+      ...hotspot,
+      spawnWeight: hotspot.spawnWeight / totalWeight,
+    };
+  });
+};
+
+const createClusterHotspots = (
+  random: SeededRng
+): readonly ClusterHotspot[] => {
+  const hotspotCount = random.nextInt(
+    DEFAULT_HOTSPOT_MIN_COUNT,
+    DEFAULT_HOTSPOT_MAX_COUNT + 1
+  );
+  const primaryAnchor = random.nextFloat(0, TAU);
+  const anchorAngles: number[] = [primaryAnchor];
+
+  if (hotspotCount > 1) {
+    anchorAngles.push(
+      normalizeAngle(primaryAnchor + random.nextFloat(1.05, 2.25))
+    );
+  }
+
+  const hotspots = anchorAngles.map((anchorAngleRad, index) => {
+    const rawWeight =
+      index === 0 ? random.nextFloat(0.58, 0.82) : random.nextFloat(0.32, 0.56);
+
+    return {
+      anchorAngleRad,
+      driftRadPerSecond: randomFromRange(
+        random,
+        HOTSPOT_DRIFT_RANGE_RAD_PER_SECOND
+      ),
+      wobbleAmplitudeRad: randomFromRange(
+        random,
+        HOTSPOT_WOBBLE_AMPLITUDE_RANGE_RAD
+      ),
+      wobbleHz: randomFromRange(random, HOTSPOT_WOBBLE_HZ_RANGE),
+      phaseOffsetRad: random.nextFloat(0, TAU),
+      spawnWeight: rawWeight,
+    };
+  });
+
+  return normalizeSpawnWeights(hotspots);
+};
+
+const resolveNextHotspotRetargetAtMs = (
   random: SeededRng,
+  timeMs: number
+): number => {
+  return timeMs + randomFromRange(random, HOTSPOT_RETARGET_DELAY_RANGE_MS);
+};
+
+const retargetHotspots = (
+  random: SeededRng,
+  hotspots: readonly ClusterHotspot[],
+  timeMs: number
+): readonly ClusterHotspot[] => {
+  const nextHotspots = hotspots.map((hotspot) => {
+    const currentAngleRad = resolveHotspotAngleRad(hotspot, timeMs);
+    const offsetDirection = random.next() < 0.5 ? -1 : 1;
+    const angleOffset =
+      offsetDirection *
+      randomFromRange(random, HOTSPOT_RETARGET_OFFSET_RANGE_RAD);
+    const nextWeight = Math.max(
+      0.12,
+      hotspot.spawnWeight + randomFromRange(random, HOTSPOT_WEIGHT_JITTER_RANGE)
+    );
+
+    return {
+      anchorAngleRad: normalizeAngle(currentAngleRad + angleOffset),
+      driftRadPerSecond: randomFromRange(
+        random,
+        HOTSPOT_DRIFT_RANGE_RAD_PER_SECOND
+      ),
+      wobbleAmplitudeRad: randomFromRange(
+        random,
+        HOTSPOT_WOBBLE_AMPLITUDE_RANGE_RAD
+      ),
+      wobbleHz: randomFromRange(random, HOTSPOT_WOBBLE_HZ_RANGE),
+      phaseOffsetRad: random.nextFloat(0, TAU),
+      spawnWeight: nextWeight,
+    };
+  });
+
+  return normalizeSpawnWeights(nextHotspots);
+};
+
+const resolveHotspotAngleRad = (
+  hotspot: ClusterHotspot,
+  timeMs: number
+): number => {
+  const elapsedSeconds = timeMs / 1000;
+  const wobbleOffset =
+    Math.sin(elapsedSeconds * hotspot.wobbleHz * TAU + hotspot.phaseOffsetRad) *
+    hotspot.wobbleAmplitudeRad;
+
+  return normalizeAngle(
+    hotspot.anchorAngleRad +
+      hotspot.driftRadPerSecond * elapsedSeconds +
+      wobbleOffset
+  );
+};
+
+const pickHotspot = (
+  random: SeededRng,
+  hotspots: readonly ClusterHotspot[]
+): ClusterHotspot => {
+  const pick = random.nextFloat(0, 1);
+  let cumulative = 0;
+
+  for (const hotspot of hotspots) {
+    cumulative += hotspot.spawnWeight;
+
+    if (pick <= cumulative) {
+      return hotspot;
+    }
+  }
+
+  return hotspots[hotspots.length - 1];
+};
+
+const getNearestClusterClearanceRad = (
+  angleRad: number,
   clusters: readonly DivergenceCluster[]
 ): number => {
   if (clusters.length === 0) {
+    return Math.PI;
+  }
+
+  return clusters.reduce((nearest, cluster) => {
+    const angularDistance = Math.abs(
+      shortestAngularDistance(angleRad, cluster.centerAngleRad)
+    );
+    const clearance = angularDistance - cluster.widthRad * 0.72;
+
+    return Math.min(nearest, clearance);
+  }, Math.PI);
+};
+
+const getNearestHotspotDistanceRad = (
+  angleRad: number,
+  hotspots: readonly ClusterHotspot[],
+  timeMs: number
+): number => {
+  if (hotspots.length === 0) {
+    return Math.PI;
+  }
+
+  return hotspots.reduce((nearestDistance, hotspot) => {
+    const hotspotAngleRad = resolveHotspotAngleRad(hotspot, timeMs);
+    const angularDistance = Math.abs(
+      shortestAngularDistance(angleRad, hotspotAngleRad)
+    );
+
+    return Math.min(nearestDistance, angularDistance);
+  }, Math.PI);
+};
+
+const createHotspotCandidateAngleRad = (
+  random: SeededRng,
+  hotspots: readonly ClusterHotspot[],
+  timeMs: number
+): number => {
+  if (random.next() < HOTSPOT_FREE_SPAWN_PROBABILITY) {
     return random.nextFloat(0, TAU);
   }
 
-  let bestCandidate = random.nextFloat(0, TAU);
+  const hotspot = pickHotspot(random, hotspots);
+  const hotspotAngleRad = resolveHotspotAngleRad(hotspot, timeMs);
+  const spreadRad = randomFromRange(random, HOTSPOT_SPAWN_SPREAD_RANGE_RAD);
+  const centeredJitter =
+    (random.nextFloat(-1, 1) + random.nextFloat(-1, 1)) * 0.5;
+
+  return normalizeAngle(hotspotAngleRad + centeredJitter * spreadRad);
+};
+
+const resolveSpawnAngleRad = (
+  random: SeededRng,
+  clusters: readonly DivergenceCluster[],
+  hotspots: readonly ClusterHotspot[],
+  timeMs: number
+): number => {
+  if (hotspots.length === 0) {
+    return random.nextFloat(0, TAU);
+  }
+
+  let bestCandidate = createHotspotCandidateAngleRad(random, hotspots, timeMs);
   let bestScore = Number.NEGATIVE_INFINITY;
 
-  for (let index = 0; index < 9; index += 1) {
-    const candidate = random.nextFloat(0, TAU);
-    const nearestClearance = clusters.reduce((nearest, cluster) => {
-      const angularDistance = Math.abs(
-        shortestAngularDistance(candidate, cluster.centerAngleRad)
-      );
-      const clearance = angularDistance - cluster.widthRad * 0.72;
-
-      return Math.min(nearest, clearance);
-    }, Math.PI);
-    const score = nearestClearance + random.nextFloat(-0.008, 0.008);
+  for (
+    let index = 0;
+    index < HOTSPOT_CANDIDATE_COUNT + HOTSPOT_EXPLORATION_CANDIDATE_COUNT;
+    index += 1
+  ) {
+    const useExplorationCandidate = index >= HOTSPOT_CANDIDATE_COUNT;
+    const candidate = useExplorationCandidate
+      ? random.nextFloat(0, TAU)
+      : createHotspotCandidateAngleRad(random, hotspots, timeMs);
+    const nearestClearance = getNearestClusterClearanceRad(candidate, clusters);
+    const nearestHotspotDistance = getNearestHotspotDistanceRad(
+      candidate,
+      hotspots,
+      timeMs
+    );
+    const hotspotAffinity =
+      1 - Math.min(1, nearestHotspotDistance / Math.max(0.14, Math.PI * 0.23));
+    const overlapPenalty =
+      nearestClearance >= -0.02 ? 0 : Math.abs(nearestClearance) * 2.4;
+    const score =
+      hotspotAffinity * HOTSPOT_SPAWN_BIAS_WEIGHT +
+      nearestClearance * 0.34 -
+      overlapPenalty +
+      random.nextFloat(-0.012, 0.012);
 
     if (score > bestScore) {
       bestScore = score;
@@ -206,7 +449,7 @@ const createClusterSpikes = (
       angleOffsetRad: random.nextFloat(-maxOffsetRad, maxOffsetRad),
       widthRad: Math.max(0.03, Math.min(0.24, widthRad * widthScale)),
       strengthScale: randomFromRange(random, archetype.spikeStrengthRange),
-      flickerHz: random.nextFloat(0.12, 0.58),
+      flickerHz: random.nextFloat(0.24, 0.92),
       phaseOffsetRad: random.nextFloat(0, TAU),
     };
   }).sort((left, right) => {
@@ -218,7 +461,8 @@ const createCluster = (
   random: SeededRng,
   clusterId: number,
   timeMs: number,
-  existingClusters: readonly DivergenceCluster[]
+  existingClusters: readonly DivergenceCluster[],
+  hotspots: readonly ClusterHotspot[]
 ): DivergenceCluster => {
   const archetype = pickClusterArchetype(random);
   const widthRad = randomFromRange(random, archetype.widthRadRange);
@@ -226,7 +470,12 @@ const createCluster = (
 
   return {
     id: `cluster-${clusterId}`,
-    centerAngleRad: resolveSpawnAngleRad(random, existingClusters),
+    centerAngleRad: resolveSpawnAngleRad(
+      random,
+      existingClusters,
+      hotspots,
+      timeMs
+    ),
     widthRad,
     strength: randomFromRange(random, archetype.strengthRange),
     severity: archetype.severity,
@@ -238,7 +487,7 @@ const createCluster = (
       random,
       archetype.driftRadPerSecondRange
     ),
-    flareSpeedHz: random.nextFloat(0.04, 0.14),
+    flareSpeedHz: random.nextFloat(0.08, 0.22),
     flarePhaseOffsetRad: random.nextFloat(0, TAU),
     spikes,
   };
@@ -255,8 +504,8 @@ const resolveSpawnDelayMs = (
     1,
     Math.max(0, (activeClusterCount - minActiveClusters) / span)
   );
-  const minDelayMs = 3_400 + density * 2_400;
-  const maxDelayMs = 8_500 + density * 5_000;
+  const minDelayMs = 2_200 + density * 1_600;
+  const maxDelayMs = 5_600 + density * 3_800;
 
   return random.nextFloat(minDelayMs, maxDelayMs);
 };
@@ -275,9 +524,11 @@ export const createDivergenceClusterTracker = (
   );
 
   let random = createSeededRng(seed);
+  let hotspots = createClusterHotspots(random);
   let nextClusterId = 0;
   let clusters: readonly DivergenceCluster[] = [];
   let nextSpawnAtMs = 0;
+  let nextHotspotRetargetAtMs = 0;
   let hasInitialized = false;
 
   const spawnCluster = (
@@ -288,7 +539,8 @@ export const createDivergenceClusterTracker = (
       random,
       nextClusterId,
       timeMs,
-      existingClusters
+      existingClusters,
+      hotspots
     );
     nextClusterId += 1;
 
@@ -343,8 +595,18 @@ export const createDivergenceClusterTracker = (
       hasInitialized = true;
       ensureMinimumClusters(timeMs, true);
       scheduleNextSpawn(timeMs + random.nextFloat(1_400, 3_600));
+      nextHotspotRetargetAtMs = resolveNextHotspotRetargetAtMs(random, timeMs);
 
       return;
+    }
+
+    if (timeMs >= nextHotspotRetargetAtMs) {
+      hotspots = retargetHotspots(random, hotspots, timeMs);
+      nextHotspotRetargetAtMs = resolveNextHotspotRetargetAtMs(random, timeMs);
+      nextSpawnAtMs = Math.min(
+        nextSpawnAtMs,
+        timeMs + random.nextFloat(700, 1800)
+      );
     }
 
     ensureMinimumClusters(timeMs, false);
@@ -371,9 +633,11 @@ export const createDivergenceClusterTracker = (
 
   const reset: DivergenceClusterTracker["reset"] = () => {
     random = createSeededRng(seed);
+    hotspots = createClusterHotspots(random);
     nextClusterId = 0;
     clusters = [];
     nextSpawnAtMs = 0;
+    nextHotspotRetargetAtMs = 0;
     hasInitialized = false;
   };
 
