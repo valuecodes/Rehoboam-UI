@@ -517,4 +517,20 @@ describe("drawDivergencePass", () => {
       Math.min(...localRadiusDeltas.map((sample) => sample.deltaRadius))
     ).toBeLessThan(-VIEWPORT.outerRadius * 0.0018);
   });
+
+  it("keeps contour geometry stable when cluster order changes", () => {
+    const forwardClusters = DENSE_CLUSTERS.slice(0, 2);
+    const reversedClusters = [...forwardClusters].reverse();
+    const forwardPoints = renderContourPoints(forwardClusters);
+    const reversedPoints = renderContourPoints(reversedClusters);
+
+    expect(forwardPoints.length).toBe(reversedPoints.length);
+
+    for (const [index, forwardPoint] of forwardPoints.entries()) {
+      const reversedPoint = reversedPoints[index];
+
+      expect(forwardPoint.angleRad).toBeCloseTo(reversedPoint.angleRad, 8);
+      expect(forwardPoint.radius).toBeCloseTo(reversedPoint.radius, 8);
+    }
+  });
 });

@@ -211,20 +211,15 @@ const normalizeLocation = (
     readProperty(record, ["geo"]),
   ]);
 
-  if (!isRecord(rawLocation)) {
-    return undefined;
+  const stringLocationLabel = toTrimmedString(rawLocation);
+
+  if (stringLocationLabel !== undefined) {
+    return {
+      label: stringLocationLabel,
+    };
   }
 
-  const latitude = firstDefined([
-    toFiniteNumber(readProperty(rawLocation, ["latitude"])),
-    toFiniteNumber(readProperty(rawLocation, ["lat"])),
-  ]);
-  const longitude = firstDefined([
-    toFiniteNumber(readProperty(rawLocation, ["longitude"])),
-    toFiniteNumber(readProperty(rawLocation, ["lng"])),
-  ]);
-
-  if (latitude === undefined || longitude === undefined) {
+  if (!isRecord(rawLocation)) {
     return undefined;
   }
 
@@ -235,12 +230,24 @@ const normalizeLocation = (
       toTrimmedString(readProperty(rawLocation, ["name"])),
       toTrimmedString(readProperty(record, ["locationLabel"])),
     ]) ?? "Unknown location";
+  const latitude = firstDefined([
+    toFiniteNumber(readProperty(rawLocation, ["latitude"])),
+    toFiniteNumber(readProperty(rawLocation, ["lat"])),
+  ]);
+  const longitude = firstDefined([
+    toFiniteNumber(readProperty(rawLocation, ["longitude"])),
+    toFiniteNumber(readProperty(rawLocation, ["lng"])),
+  ]);
 
-  return {
-    label,
-    latitude,
-    longitude,
-  };
+  if (latitude !== undefined && longitude !== undefined) {
+    return {
+      label,
+      latitude,
+      longitude,
+    };
+  }
+
+  return { label };
 };
 
 const buildStableEventId = (
