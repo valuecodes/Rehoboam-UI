@@ -24,7 +24,6 @@ type CalloutGeometry = Readonly<{
   event: WorldEvent;
   anchorX: number;
   anchorY: number;
-  connectorAngleRad: number;
   labelX: number;
   labelY: number;
   labelWidth: number;
@@ -39,6 +38,9 @@ type Point = Readonly<{
   y: number;
 }>;
 
+type CalloutDebugLock = "top" | "bottom";
+type CalloutDebugSideLock = "left" | "right";
+
 const V1_LINE_DELAY_MS = 1_000;
 const V1_LINE_DURATION_MS = 1_000;
 const V1_TEXT_DELAY_MS = 2_000;
@@ -48,11 +50,19 @@ const V1_DASH_LENGTH = 1_800;
 const V1_TEXT_TRACK_OPEN = -10;
 const V1_TEXT_TRACK_CLOSE = 10;
 const V1_TEXT_SHIFT_PX = 7;
-const CALLOUT_HEXAGON_RADIUS_PX = 8;
-const CALLOUT_HEXAGON_INNER_RADIUS_PX = 4.8;
-const TOP_LAYOUT_THIRD_FRAME_OFFSET_PX = 52;
-const TOP_LAYOUT_FOURTH_FRAME_OFFSET_PX = 104;
-const TOP_LAYOUT_FIFTH_FRAME_OFFSET_PX = 124;
+const CALLOUT_ENDPOINT_OUTER_RADIUS_PX = 6;
+const CALLOUT_ENDPOINT_INNER_RADIUS_PX = 2.25;
+const TOP_LAYOUT_TIME_MARGIN_PX = 10;
+const TOP_LAYOUT_LINE_END_LEFT_RATIO = 0.62;
+const TOP_LAYOUT_LINE_END_RIGHT_RATIO = 0.38;
+const BOTTOM_LAYOUT_LINE_END_LEFT_RATIO = 0.62;
+const BOTTOM_LAYOUT_LINE_END_RIGHT_RATIO = 0.38;
+const TOP_LAYOUT_THIRD_FRAME_OFFSET_PX = 40;
+const TOP_LAYOUT_FOURTH_FRAME_OFFSET_PX = 60;
+const TOP_LAYOUT_FIFTH_FRAME_OFFSET_PX = 75;
+const CALLOUT_DEBUG_QUERY_KEY = "callout-debug";
+const CALLOUT_DEBUG_HALF_QUERY_KEY = "callout-debug-half";
+const CALLOUT_DEBUG_SIDE_QUERY_KEY = "callout-debug-side";
 
 const clampNumber = (value: number, min: number, max: number): number => {
   return Math.min(max, Math.max(min, value));
@@ -86,12 +96,6 @@ const getCalloutLocationText = (event: WorldEvent): string => {
   return "Unknown location";
 };
 
-const getCalloutDivergenceText = (event: WorldEvent): string => {
-  const locationText = getCalloutLocationText(event).toUpperCase();
-
-  return `DIVERGENCE: ${locationText}`;
-};
-
 const toPointList = (points: readonly Point[]): string => {
   return points
     .map((point) => {
@@ -100,27 +104,72 @@ const toPointList = (points: readonly Point[]): string => {
     .join(",");
 };
 
-const toRegularPolygonPoints = (
-  center: Point,
-  sideCount: number,
-  radius: number,
-  rotationRad = 0
-): string => {
-  const points = Array.from({ length: sideCount }, (_value, index) => {
-    const angleRad = (Math.PI * 2 * index) / sideCount + rotationRad;
+const isDebugFlagEnabled = (value: string | null): boolean => {
+  if (value === null) {
+    return false;
+  }
 
-    return {
-      x: center.x + Math.cos(angleRad) * radius,
-      y: center.y + Math.sin(angleRad) * radius,
-    };
-  });
+  return ["1", "true", "on", "yes"].includes(value);
+};
 
-  return toPointList(points);
+const getCalloutDebugLock = (): CalloutDebugLock | null => {
+  const searchParams = new URLSearchParams(window.location.search);
+  const calloutDebugValue = searchParams
+    .get(CALLOUT_DEBUG_QUERY_KEY)
+    ?.trim()
+    .toLowerCase();
+
+  if (calloutDebugValue === "top") {
+    return "top";
+  }
+
+  if (calloutDebugValue === "bottom") {
+    return "bottom";
+  }
+
+  if (!isDebugFlagEnabled(calloutDebugValue ?? null)) {
+    return null;
+  }
+
+  const calloutDebugHalfValue = searchParams
+    .get(CALLOUT_DEBUG_HALF_QUERY_KEY)
+    ?.trim()
+    .toLowerCase();
+
+  if (calloutDebugHalfValue === "bottom") {
+    return "bottom";
+  }
+
+  if (calloutDebugHalfValue === "top") {
+    return "top";
+  }
+
+  return "top";
+};
+
+const getCalloutDebugSideLock = (): CalloutDebugSideLock | null => {
+  const searchParams = new URLSearchParams(window.location.search);
+  const calloutDebugSideValue = searchParams
+    .get(CALLOUT_DEBUG_SIDE_QUERY_KEY)
+    ?.trim()
+    .toLowerCase();
+
+  if (calloutDebugSideValue === "left") {
+    return "left";
+  }
+
+  if (calloutDebugSideValue === "right") {
+    return "right";
+  }
+
+  return null;
 };
 
 const getCalloutGeometry = (
   instrumentSize: InstrumentSize,
-  target: CalloutOverlayTarget
+  target: CalloutOverlayTarget,
+  debugLock: CalloutDebugLock | null,
+  debugSideLock: CalloutDebugSideLock | null
 ): CalloutGeometry | null => {
   if (instrumentSize.width <= 0 || instrumentSize.height <= 0) {
     return null;
@@ -149,11 +198,24 @@ const getCalloutGeometry = (
   const rightPanelX = instrumentSize.width * 0.7;
   const leftPanelX = instrumentSize.width * 0.1;
   const prefersSingleSide = instrumentSize.width < 1_050;
-  const basePanelX =
-    prefersSingleSide || !isRightSide ? leftPanelX : rightPanelX;
-  const basePanelY = isLowerHalf
+  const lockedToTop = debugLock === "top";
+  const lockedToBottom = debugLock === "bottom";
+  const lockedToLeft = debugSideLock === "left";
+  const hasVerticalDebugLock = lockedToTop || lockedToBottom;
+  const basePanelX = hasVerticalDebugLock
+    ? lockedToLeft
+      ? leftPanelX
+      : rightPanelX
+    : prefersSingleSide || !isRightSide
+      ? leftPanelX
+      : rightPanelX;
+  const basePanelY = lockedToBottom
     ? instrumentSize.height - panelHeight
-    : Math.max(30, margin);
+    : lockedToTop
+      ? Math.max(30, margin)
+      : isLowerHalf
+        ? instrumentSize.height - panelHeight
+        : Math.max(30, margin);
   const panelX = clampNumber(
     basePanelX,
     margin,
@@ -173,16 +235,23 @@ const getCalloutGeometry = (
   const secondFrameY = firstFrameY;
   const thirdFrameX =
     firstFrameX + (isLeftLayout ? -cornerStep * 2 : cornerStep * 2);
-  const thirdFrameY = panelY + (isBottomLayout ? 60 : TOP_LAYOUT_THIRD_FRAME_OFFSET_PX);
+  const thirdFrameY =
+    panelY + (isBottomLayout ? 60 : TOP_LAYOUT_THIRD_FRAME_OFFSET_PX);
   const fourthFrameX = thirdFrameX;
   const fourthFrameY =
     panelY + (isBottomLayout ? 20 : TOP_LAYOUT_FOURTH_FRAME_OFFSET_PX);
   const fifthFrameX = firstFrameX;
   const fifthFrameY =
     panelY + (isBottomLayout ? 0 : TOP_LAYOUT_FIFTH_FRAME_OFFSET_PX);
-  const lineEndX = panelX + (isLeftLayout ? panelWidth * 0.5 : panelWidth / 6);
+  const lineEndRatio = isBottomLayout
+    ? isLeftLayout
+      ? BOTTOM_LAYOUT_LINE_END_LEFT_RATIO
+      : BOTTOM_LAYOUT_LINE_END_RIGHT_RATIO
+    : isLeftLayout
+      ? TOP_LAYOUT_LINE_END_LEFT_RATIO
+      : TOP_LAYOUT_LINE_END_RIGHT_RATIO;
+  const lineEndX = panelX + panelWidth * lineEndRatio;
   const lineEndY = fifthFrameY;
-  const connectorAngleRad = Math.atan2(lineEndY - anchor.y, lineEndX - anchor.x);
   const framePointList: readonly Point[] = [
     {
       x: firstFrameX,
@@ -212,13 +281,12 @@ const getCalloutGeometry = (
   const textAlign = panelX < center.x ? "left" : "right";
   const labelX = panelX > center.x ? panelX - panelWidth / 3 : panelX;
   const labelY = panelY;
-  const timeMarginTop = panelY < 300 ? 20 : 0;
+  const timeMarginTop = panelY < 300 ? TOP_LAYOUT_TIME_MARGIN_PX : 0;
 
   return {
     event: target.event,
     anchorX: anchor.x,
     anchorY: anchor.y,
-    connectorAngleRad,
     labelX: clampNumber(
       labelX,
       margin,
@@ -235,30 +303,85 @@ const getCalloutGeometry = (
 
 export const CalloutOverlay = memo(
   ({ instrumentSize, target }: CalloutOverlayProps) => {
+    const calloutDebugLock = useMemo(() => {
+      return getCalloutDebugLock();
+    }, []);
+    const isCalloutDebugMode = calloutDebugLock !== null;
+    const calloutDebugSideLock = useMemo(() => {
+      if (!isCalloutDebugMode) {
+        return null;
+      }
+
+      return getCalloutDebugSideLock();
+    }, [isCalloutDebugMode]);
+    const [debugLockedTarget, setDebugLockedTarget] =
+      useState<CalloutOverlayTarget | null>(() => {
+        if (!isCalloutDebugMode) {
+          return null;
+        }
+
+        return target;
+      });
     const [renderTarget, setRenderTarget] =
       useState<CalloutOverlayTarget | null>(target);
     const renderTargetRef = useRef<CalloutOverlayTarget | null>(target);
     const [open, setOpen] = useState<"open" | "close">("open");
     const [animationKey, setAnimationKey] = useState(0);
     const targetEventId = target?.event.id ?? null;
-    const geometryTarget = target ?? renderTarget;
+    const geometryTarget = isCalloutDebugMode
+      ? debugLockedTarget
+      : (target ?? renderTarget);
     const geometry = useMemo(() => {
       if (geometryTarget === null) {
         return null;
       }
 
-      return getCalloutGeometry(instrumentSize, geometryTarget);
-    }, [geometryTarget, instrumentSize]);
+      return getCalloutGeometry(
+        instrumentSize,
+        geometryTarget,
+        calloutDebugLock,
+        calloutDebugSideLock
+      );
+    }, [
+      calloutDebugLock,
+      calloutDebugSideLock,
+      geometryTarget,
+      instrumentSize,
+    ]);
 
     useEffect(() => {
+      if (!isCalloutDebugMode) {
+        if (debugLockedTarget !== null) {
+          setDebugLockedTarget(null);
+        }
+
+        return;
+      }
+
       if (target === null) {
         return;
       }
 
-      renderTargetRef.current = target;
-    }, [target]);
+      if (debugLockedTarget === null) {
+        setDebugLockedTarget(target);
+      }
+    }, [debugLockedTarget, isCalloutDebugMode, target]);
 
     useEffect(() => {
+      if (isCalloutDebugMode || target === null) {
+        return;
+      }
+
+      renderTargetRef.current = target;
+    }, [isCalloutDebugMode, target]);
+
+    useEffect(() => {
+      if (isCalloutDebugMode) {
+        setOpen("open");
+
+        return;
+      }
+
       let clearHandle = 0;
       let closeHandle = 0;
 
@@ -295,7 +418,7 @@ export const CalloutOverlay = memo(
           window.clearTimeout(closeHandle);
         }
       };
-    }, [targetEventId]);
+    }, [isCalloutDebugMode, targetEventId]);
 
     const [lineSpring] = useSpring(
       {
@@ -336,21 +459,9 @@ export const CalloutOverlay = memo(
       return null;
     }
 
-    const divergenceText = getCalloutDivergenceText(geometry.event);
+    const locationText = getCalloutLocationText(geometry.event).toUpperCase();
+    const divergenceLabelText = "DIVERGENCE :";
     const titleText = geometry.event.title.toUpperCase();
-    const markerCenter = { x: geometry.anchorX, y: geometry.anchorY };
-    const calloutHexagonPoints = toRegularPolygonPoints(
-      markerCenter,
-      6,
-      CALLOUT_HEXAGON_RADIUS_PX,
-      geometry.connectorAngleRad
-    );
-    const calloutHexagonInnerPoints = toRegularPolygonPoints(
-      markerCenter,
-      6,
-      CALLOUT_HEXAGON_INNER_RADIUS_PX,
-      geometry.connectorAngleRad
-    );
 
     return (
       <>
@@ -364,7 +475,7 @@ export const CalloutOverlay = memo(
             d={geometry.connectorPath}
             style={{
               strokeDasharray: V1_DASH_LENGTH,
-              strokeDashoffset: lineSpring.dashOffset,
+              strokeDashoffset: isCalloutDebugMode ? 0 : lineSpring.dashOffset,
             }}
           />
           <animated.polyline
@@ -372,21 +483,25 @@ export const CalloutOverlay = memo(
             points={geometry.framePoints}
             style={{
               strokeDasharray: V1_DASH_LENGTH,
-              strokeDashoffset: lineSpring.dashOffset,
+              strokeDashoffset: isCalloutDebugMode ? 0 : lineSpring.dashOffset,
             }}
           />
-          <animated.polygon
-            className="rehoboam-scene__callout-hexagon"
-            points={calloutHexagonPoints}
+          <animated.circle
+            className="rehoboam-scene__callout-endpoint-ring"
+            cx={geometry.anchorX}
+            cy={geometry.anchorY}
+            r={CALLOUT_ENDPOINT_OUTER_RADIUS_PX}
             style={{
-              opacity: lineSpring.nodeOpacity,
+              opacity: isCalloutDebugMode ? 1 : lineSpring.nodeOpacity,
             }}
           />
-          <animated.polygon
-            className="rehoboam-scene__callout-hexagon rehoboam-scene__callout-hexagon--inner"
-            points={calloutHexagonInnerPoints}
+          <animated.circle
+            className="rehoboam-scene__callout-endpoint-dot"
+            cx={geometry.anchorX}
+            cy={geometry.anchorY}
+            r={CALLOUT_ENDPOINT_INNER_RADIUS_PX}
             style={{
-              opacity: lineSpring.nodeOpacity,
+              opacity: isCalloutDebugMode ? 1 : lineSpring.nodeOpacity,
             }}
           />
         </svg>
@@ -397,13 +512,15 @@ export const CalloutOverlay = memo(
             top: geometry.labelY,
             width: geometry.labelWidth,
             textAlign: geometry.textAlign,
-            opacity: textSpring.textOpacity,
-            letterSpacing: textSpring.textTracking.to(
-              (value: number) => `${value}px`
-            ),
-            transform: textSpring.textShiftY.to((shiftY: number) => {
-              return `translate3d(0, ${shiftY}px, 0)`;
-            }),
+            opacity: isCalloutDebugMode ? 1 : textSpring.textOpacity,
+            letterSpacing: isCalloutDebugMode
+              ? "0"
+              : textSpring.textTracking.to((value: number) => `${value}px`),
+            transform: isCalloutDebugMode
+              ? "translate3d(0, 0, 0)"
+              : textSpring.textShiftY.to((shiftY: number) => {
+                  return `translate3d(0, ${shiftY}px, 0)`;
+                }),
           }}
         >
           <p
@@ -414,7 +531,14 @@ export const CalloutOverlay = memo(
           >
             {formatCalloutDate(geometry.event.timestampMs)}
           </p>
-          <p className="rehoboam-scene__callout-title">{divergenceText}</p>
+          <p className="rehoboam-scene__callout-title">
+            <span className="rehoboam-scene__callout-title-label">
+              {divergenceLabelText}
+            </span>
+            <span className="rehoboam-scene__callout-title-location">
+              {locationText}
+            </span>
+          </p>
           <p className="rehoboam-scene__callout-subtitle">{titleText}</p>
         </animated.div>
       </>

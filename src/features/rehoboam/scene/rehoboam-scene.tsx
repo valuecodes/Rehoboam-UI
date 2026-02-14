@@ -22,6 +22,7 @@ import type {
   CalloutOverlayTarget,
   InstrumentSize,
 } from "../overlay/callout-overlay";
+import { getRandomizedQuadrantCycleIds } from "./event-cycle";
 import { resolveSceneQualityProfile } from "./quality";
 
 import "./rehoboam-scene.css";
@@ -134,20 +135,6 @@ const resolveActiveEventAngle = (
   return [...eventAngles].sort(compareEventAnglesByPriority)[0] ?? null;
 };
 
-const getClockwiseEventCycleIds = (
-  eventAngles: readonly ComputedEventAngle[]
-): readonly string[] => {
-  return [...eventAngles]
-    .sort((left, right) => {
-      if (left.angleRad !== right.angleRad) {
-        return left.angleRad - right.angleRad;
-      }
-
-      return left.event.id.localeCompare(right.event.id);
-    })
-    .map((eventAngle) => eventAngle.event.id);
-};
-
 const resolveActiveEventId = (
   eventAngles: readonly ComputedEventAngle[],
   autoEventId: string | null
@@ -189,8 +176,8 @@ export const RehoboamScene = () => {
       distributionMode: "ordered",
     });
   }, [events]);
-  const clockwiseEventCycleIds = useMemo(() => {
-    return getClockwiseEventCycleIds(eventAngles);
+  const autoCycleEventIds = useMemo(() => {
+    return getRandomizedQuadrantCycleIds(eventAngles);
   }, [eventAngles]);
   const activeEventId = useMemo(() => {
     return resolveActiveEventId(eventAngles, autoEventId);
@@ -226,28 +213,28 @@ export const RehoboamScene = () => {
   }, [activeEventAngle, instrumentSize.height, instrumentSize.width]);
 
   useEffect(() => {
-    if (clockwiseEventCycleIds.length === 0) {
+    if (autoCycleEventIds.length === 0) {
       setAutoEventId(null);
 
       return;
     }
 
-    if (autoEventId === null || !clockwiseEventCycleIds.includes(autoEventId)) {
-      setAutoEventId(clockwiseEventCycleIds[0]);
+    if (autoEventId === null || !autoCycleEventIds.includes(autoEventId)) {
+      setAutoEventId(autoCycleEventIds[0]);
 
       return;
     }
 
-    const currentIndex = clockwiseEventCycleIds.indexOf(autoEventId);
+    const currentIndex = autoCycleEventIds.indexOf(autoEventId);
     const timeoutHandle = window.setTimeout(() => {
-      const nextIndex = (currentIndex + 1) % clockwiseEventCycleIds.length;
-      setAutoEventId(clockwiseEventCycleIds[nextIndex]);
+      const nextIndex = (currentIndex + 1) % autoCycleEventIds.length;
+      setAutoEventId(autoCycleEventIds[nextIndex]);
     }, AUTO_EVENT_CYCLE_MS);
 
     return () => {
       window.clearTimeout(timeoutHandle);
     };
-  }, [autoEventId, clockwiseEventCycleIds]);
+  }, [autoEventId, autoCycleEventIds]);
 
   useEffect(() => {
     let isCancelled = false;

@@ -1,3 +1,14 @@
+:root {
+  --hud-font:
+    "Barlow Condensed", system-ui, -apple-system, "Segoe UI", Roboto, Arial,
+    sans-serif;
+  --hud-strong: rgba(10, 10, 10, 0.95);
+  --hud-time: rgba(88, 88, 88, 0.95);
+  --hud-mid: rgba(110, 110, 110, 0.9);
+  --hud-soft: rgba(150, 150, 150, 0.84);
+  --hud-line: rgba(192, 192, 192, 0.74);
+}
+
 body {
   margin: 0;
   font-family:
