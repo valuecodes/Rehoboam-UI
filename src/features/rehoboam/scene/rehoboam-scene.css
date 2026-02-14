@@ -2,7 +2,8 @@
   --rehoboam-bg-start: #f1f1ef;
   --rehoboam-bg-end: #e7e7e4;
   --rehoboam-ink: #1a1a1a;
-  --rehoboam-line: rgba(24, 24, 24, 0.34);
+  --rehoboam-line: var(--hud-line);
+  font-family: var(--hud-font);
   min-height: 100dvh;
   width: 100%;
   box-sizing: border-box;
@@ -47,43 +48,43 @@
 
 .rehoboam-scene__callout-line {
   stroke: var(--rehoboam-line);
-  stroke-width: 1;
+  stroke-width: 1.2;
   stroke-linecap: butt;
   stroke-linejoin: miter;
   fill: none;
 }
 
 .rehoboam-scene__callout-frame {
-  stroke: rgba(124, 124, 124, 0.84);
-  stroke-width: 2;
+  stroke: var(--hud-line);
+  stroke-width: 1.2;
   stroke-linecap: butt;
   stroke-linejoin: miter;
   fill: none;
 }
 
-.rehoboam-scene__callout-hexagon {
-  stroke: var(--rehoboam-line);
-  stroke-width: 1;
-  fill: rgba(255, 255, 255, 0.64);
+.rehoboam-scene__callout-endpoint-ring {
+  stroke: var(--hud-line);
+  stroke-width: 1.2;
+  fill: transparent;
   stroke-linejoin: miter;
 }
 
-.rehoboam-scene__callout-hexagon--inner {
-  fill: rgba(26, 26, 26, 0.7);
-  stroke: transparent;
+.rehoboam-scene__callout-endpoint-dot {
+  fill: rgba(255, 255, 255, 0.9);
+  stroke: none;
 }
 
 .rehoboam-scene__callout {
   position: absolute;
-  margin: -24px 0 0;
-  min-height: 144px;
+  margin: -30px 0 0;
+  height: 110px;
   display: grid;
   grid-template-rows: auto auto auto;
-  row-gap: 2px;
+  row-gap: 0;
   overflow: hidden;
   color: var(--rehoboam-ink);
-  font-family: "Roboto Condensed", "Arial Narrow", sans-serif;
-  text-transform: none;
+  font-family: var(--hud-font);
+  text-transform: uppercase;
   pointer-events: none;
 }
 
@@ -91,37 +92,50 @@
 .rehoboam-scene__callout-title,
 .rehoboam-scene__callout-subtitle {
   margin: 0;
-  line-height: 1;
+  line-height: 0.94;
   padding: 0;
 }
 
 .rehoboam-scene__callout-time {
-  font-size: clamp(16px, 1.35vw, 22px);
-  color: rgb(97, 97, 97);
-  font-weight: 500;
+  font-size: clamp(21px, 1.75vw, 26px);
+  color: var(--hud-time);
+  font-weight: 400;
+  letter-spacing: 0.01em;
   white-space: nowrap;
 }
 
 .rehoboam-scene__callout-title {
-  font-size: clamp(22px, 1.95vw, 32px);
+  font-size: clamp(24px, 2.15vw, 35px);
   overflow: hidden;
   margin: 0;
-  color: rgb(41, 41, 41);
+  color: var(--hud-strong);
   font-weight: 500;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.006em;
   white-space: nowrap;
   text-overflow: ellipsis;
   text-transform: uppercase;
 }
 
+.rehoboam-scene__callout-title-label {
+  color: var(--hud-strong);
+  font-weight: 500;
+}
+
+.rehoboam-scene__callout-title-location {
+  color: var(--hud-soft);
+  font-weight: 400;
+  margin-inline-start: 0.35ch;
+}
+
 .rehoboam-scene__callout-subtitle {
   font-size: clamp(16px, 1.45vw, 24px);
-  color: rgb(97, 97, 97);
-  font-weight: 500;
+  color: var(--hud-mid);
+  font-weight: 400;
   max-width: 100%;
-  letter-spacing: 0.008em;
-  line-height: 1.08;
-  margin-bottom: 12px;
+  letter-spacing: 0.03em;
+  line-height: 0.94;
+  margin-top: -2px;
+  margin-bottom: 6px;
   text-transform: uppercase;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -146,7 +160,7 @@
   margin: 0;
   color: rgba(16, 16, 16, 0.45);
   text-align: center;
-  font-family: "Roboto Condensed", "Arial Narrow", sans-serif;
+  font-family: var(--hud-font);
   font-size: clamp(0.62rem, 0.78vw, 0.8rem);
   letter-spacing: 0.18em;
   pointer-events: none;
