@@ -88,9 +88,17 @@
   pointer-events: none;
 }
 
+.rehoboam-scene__callout--intro {
+  margin: 0;
+  height: auto;
+  row-gap: 0;
+  text-align: left;
+}
+
 .rehoboam-scene__callout-time,
 .rehoboam-scene__callout-title,
-.rehoboam-scene__callout-subtitle {
+.rehoboam-scene__callout-subtitle,
+.rehoboam-scene__callout-boot {
   margin: 0;
   line-height: 0.94;
   padding: 0;
@@ -99,8 +107,7 @@
 .rehoboam-scene__callout-time {
   font-size: clamp(21px, 1.75vw, 26px);
   color: var(--hud-time);
-  font-weight: 400;
-  letter-spacing: 0.01em;
+  font-weight: 500;
   white-space: nowrap;
 }
 
@@ -109,8 +116,7 @@
   overflow: hidden;
   margin: 0;
   color: var(--hud-strong);
-  font-weight: 500;
-  letter-spacing: 0.006em;
+  font-weight: 400;
   white-space: nowrap;
   text-overflow: ellipsis;
   text-transform: uppercase;
@@ -118,7 +124,7 @@
 
 .rehoboam-scene__callout-title-label {
   color: var(--hud-strong);
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .rehoboam-scene__callout-title-location {
@@ -132,21 +138,53 @@
   color: var(--hud-mid);
   font-weight: 400;
   max-width: 100%;
-  letter-spacing: 0.03em;
   line-height: 0.94;
   margin-top: -2px;
   margin-bottom: 6px;
   text-transform: uppercase;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.rehoboam-scene__callout-time--intro {
+  font-size: 35px;
+  font-weight: 500;
+  line-height: 0.9;
+}
+
+.rehoboam-scene__callout-title--intro {
+  font-size: 35px;
+  font-weight: 400;
+  white-space: nowrap;
+  margin-top: 4px;
+}
+
+.rehoboam-scene__callout-subtitle--intro {
+  font-size: 34px;
+  font-weight: 400;
+  white-space: nowrap;
+  margin: 0;
+  line-height: 0.95;
+  display: block;
+}
+
+.rehoboam-scene__callout-boot--intro {
+  font-size: 26px;
+  color: var(--hud-font);
+  white-space: nowrap;
 }
 
 @media (max-width: 700px) {
   .rehoboam-scene__callout {
     transform: scale(0.86);
     transform-origin: top left;
+  }
+
+  .rehoboam-scene__callout--intro {
+    transform: none;
   }
 
   .rehoboam-scene__callout-subtitle {
@@ -162,6 +200,5 @@
   text-align: center;
   font-family: var(--hud-font);
   font-size: clamp(0.62rem, 0.78vw, 0.8rem);
-  letter-spacing: 0.18em;
   pointer-events: none;
 }

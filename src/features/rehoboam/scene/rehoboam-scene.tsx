@@ -23,12 +23,53 @@ import type {
   CalloutOverlayTarget,
   InstrumentSize,
 } from "../overlay/callout-overlay";
+import { IntroCalloutOverlay } from "../overlay/intro-callout-overlay";
 import { getChronologicalCycleIds } from "./event-cycle";
 import { resolveSceneQualityProfile } from "./quality";
 
 import "./rehoboam-scene.css";
 
 const LEADING_TIME_OFFSET_MS = 45 * 60 * 1000;
+const INTRO_DEBUG_QUERY_KEY = "intro-debug";
+const CALLOUT_DEBUG_QUERY_KEYS = [
+  "callout-debug",
+  "callout-debug-half",
+  "callout-debug-side",
+] as const;
+
+type OverlayDebugState = Readonly<{
+  hasCalloutDebugQuery: boolean;
+  isIntroDebugMode: boolean;
+}>;
+
+const isDebugFlagEnabled = (value: string | null): boolean => {
+  if (value === null) {
+    return false;
+  }
+
+  const normalizedValue = value.trim().toLowerCase();
+
+  if (normalizedValue.length === 0) {
+    return true;
+  }
+
+  return ["1", "true", "on", "yes"].includes(normalizedValue);
+};
+
+const readOverlayDebugState = (): OverlayDebugState => {
+  const searchParams = new URLSearchParams(window.location.search);
+  const hasCalloutDebugQuery = CALLOUT_DEBUG_QUERY_KEYS.some((queryKey) => {
+    return searchParams.has(queryKey);
+  });
+  const isIntroDebugMode =
+    !hasCalloutDebugQuery &&
+    isDebugFlagEnabled(searchParams.get(INTRO_DEBUG_QUERY_KEY));
+
+  return {
+    hasCalloutDebugQuery,
+    isIntroDebugMode,
+  };
+};
 
 const readDevicePixelRatio = (): number => {
   const value = window.devicePixelRatio;
@@ -147,6 +188,9 @@ const pickRandomClusterTarget = (
 };
 
 export const RehoboamScene = () => {
+  const overlayDebugState = useMemo(() => {
+    return readOverlayDebugState();
+  }, []);
   const instrumentRef = useRef<HTMLElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const engineRef = useRef<RehoboamEngine | null>(null);
@@ -155,6 +199,9 @@ export const RehoboamScene = () => {
     height: 0,
   });
   const [events, setEvents] = useState<readonly WorldEvent[]>([]);
+  const [isIntroComplete, setIsIntroComplete] = useState(() => {
+    return overlayDebugState.hasCalloutDebugQuery;
+  });
   const [autoEventId, setAutoEventId] = useState<string | null>(null);
   const [activeClusterTarget, setActiveClusterTarget] =
     useState<DivergenceCalloutTarget | null>(null);
@@ -287,6 +334,9 @@ export const RehoboamScene = () => {
   const handleCalloutCycleComplete = useCallback(() => {
     advanceCalloutClusterTarget();
   }, [advanceCalloutClusterTarget]);
+  const shouldRenderIntro =
+    !overlayDebugState.hasCalloutDebugQuery &&
+    (overlayDebugState.isIntroDebugMode || !isIntroComplete);
 
   useEffect(() => {
     let isCancelled = false;
@@ -420,12 +470,22 @@ export const RehoboamScene = () => {
           className="rehoboam-scene__canvas"
           ref={canvasRef}
         />
-        <CalloutOverlay
-          cycleToken={calloutCycleToken}
-          instrumentSize={instrumentSize}
-          target={activeCalloutTarget}
-          onCycleComplete={handleCalloutCycleComplete}
-        />
+        {shouldRenderIntro ? (
+          <IntroCalloutOverlay
+            debugMode={overlayDebugState.isIntroDebugMode}
+            instrumentSize={instrumentSize}
+            onComplete={() => {
+              setIsIntroComplete(true);
+            }}
+          />
+        ) : (
+          <CalloutOverlay
+            cycleToken={calloutCycleToken}
+            instrumentSize={instrumentSize}
+            target={activeCalloutTarget}
+            onCycleComplete={handleCalloutCycleComplete}
+          />
+        )}
       </section>
     </main>
   );
