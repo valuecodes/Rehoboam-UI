@@ -39,7 +39,7 @@ const createInMemoryEventStore = (
 };
 
 describe("data/bootstrap", () => {
-  it("merges new/updated events from refresh and persists merged snapshot", async () => {
+  it("replaces stale cached events with refreshed source snapshot", async () => {
     const existingEvents: readonly WorldEvent[] = [
       createEvent({
         id: "event-1",
@@ -47,6 +47,12 @@ describe("data/bootstrap", () => {
         severity: "medium",
         category: "infrastructure",
         updatedAtMs: 1_770_500_001_000,
+      }),
+      createEvent({
+        id: "event-stale",
+        title: "Stale cached event",
+        severity: "low",
+        category: "legacy",
       }),
     ];
     const source: RehoboamEventSource = {
@@ -71,7 +77,7 @@ describe("data/bootstrap", () => {
     };
     const store = createInMemoryEventStore(undefined);
 
-    const merged = await refreshEventsFromSource({
+    const refreshed = await refreshEventsFromSource({
       existingEvents,
       source,
       persistence: {
@@ -82,12 +88,13 @@ describe("data/bootstrap", () => {
       store,
     });
 
-    expect(merged).toHaveLength(2);
-    expect(merged.find((event) => event.id === "event-1")?.severity).toBe(
+    expect(refreshed).toHaveLength(2);
+    expect(refreshed.find((event) => event.id === "event-1")?.severity).toBe(
       "critical"
     );
-    expect(merged.find((event) => event.id === "event-2")).toBeDefined();
-    expect(persisted).toStrictEqual(merged);
+    expect(refreshed.find((event) => event.id === "event-2")).toBeDefined();
+    expect(refreshed.find((event) => event.id === "event-stale")).toBeUndefined();
+    expect(persisted).toStrictEqual(refreshed);
   });
 
   it("keeps cached snapshot when refresh source throws", async () => {

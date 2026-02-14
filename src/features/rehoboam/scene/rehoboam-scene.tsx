@@ -10,7 +10,6 @@ import type {
   InteractionState,
   RehoboamEngine,
   WorldEvent,
-  WorldEventSeverity,
 } from "../engine/types";
 import {
   computeAngles,
@@ -29,13 +28,6 @@ import "./rehoboam-scene.css";
 
 const LEADING_TIME_OFFSET_MS = 45 * 60 * 1000;
 const AUTO_EVENT_CYCLE_MS = 9000;
-
-const SEVERITY_RANK: Readonly<Record<WorldEventSeverity, number>> = {
-  low: 0,
-  medium: 1,
-  high: 2,
-  critical: 3,
-};
 
 const readDevicePixelRatio = (): number => {
   const value = window.devicePixelRatio;
@@ -66,19 +58,12 @@ const readDeviceMemoryGiB = (): number | null => {
   return value;
 };
 
-const compareEventAnglesByPriority = (
+const compareEventAnglesByTimestamp = (
   left: ComputedEventAngle,
   right: ComputedEventAngle
 ): number => {
-  const severityDelta =
-    SEVERITY_RANK[right.event.severity] - SEVERITY_RANK[left.event.severity];
-
-  if (severityDelta !== 0) {
-    return severityDelta;
-  }
-
   if (left.event.timestampMs !== right.event.timestampMs) {
-    return right.event.timestampMs - left.event.timestampMs;
+    return left.event.timestampMs - right.event.timestampMs;
   }
 
   return left.event.id.localeCompare(right.event.id);
@@ -132,7 +117,7 @@ const resolveActiveEventAngle = (
     }
   }
 
-  return [...eventAngles].sort(compareEventAnglesByPriority)[0] ?? null;
+  return [...eventAngles].sort(compareEventAnglesByTimestamp)[0] ?? null;
 };
 
 const resolveActiveEventId = (
@@ -146,7 +131,7 @@ const resolveActiveEventId = (
   }
 
   return (
-    [...eventAngles].sort(compareEventAnglesByPriority)[0]?.event.id ?? null
+    [...eventAngles].sort(compareEventAnglesByTimestamp)[0]?.event.id ?? null
   );
 };
 
@@ -246,13 +231,13 @@ export const RehoboamScene = () => {
         setEvents(cachedEvents);
       }
 
-      const mergedEvents = await refreshEventsFromSource({
+      const refreshedEvents = await refreshEventsFromSource({
         existingEvents: cachedEvents,
         source: eventSource,
       });
 
       if (!isCancelled) {
-        setEvents(mergedEvents);
+        setEvents(refreshedEvents);
       }
     };
 

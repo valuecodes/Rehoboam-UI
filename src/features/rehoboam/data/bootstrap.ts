@@ -46,17 +46,12 @@ export const refreshEventsFromSource = async (
       options.source,
       options.pipeline
     );
-    const mergedSnapshot = mergeEventSnapshots(
-      existingSnapshot,
-      refreshedSnapshot,
-      options.pipeline
-    );
-    await savePersistedEvents(mergedSnapshot, {
+    await savePersistedEvents(refreshedSnapshot, {
       ...(options.persistence ?? {}),
       pipeline: options.pipeline,
     });
 
-    return mergedSnapshot;
+    return refreshedSnapshot;
   } catch {
     return existingSnapshot;
   }
