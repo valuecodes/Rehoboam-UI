@@ -18,6 +18,8 @@ export type CalloutOverlayTarget = Readonly<{
 export type CalloutOverlayProps = Readonly<{
   instrumentSize: InstrumentSize;
   target: CalloutOverlayTarget | null;
+  onCycleComplete?: () => void;
+  cycleToken?: number;
 }>;
 
 type CalloutGeometry = Readonly<{
@@ -317,7 +319,12 @@ const getCalloutGeometry = (
 };
 
 export const CalloutOverlay = memo(
-  ({ instrumentSize, target }: CalloutOverlayProps) => {
+  ({
+    instrumentSize,
+    target,
+    onCycleComplete,
+    cycleToken = 0,
+  }: CalloutOverlayProps) => {
     const calloutDebugLock = useMemo(() => {
       return getCalloutDebugLock();
     }, []);
@@ -399,6 +406,7 @@ export const CalloutOverlay = memo(
 
       let clearHandle = 0;
       let closeHandle = 0;
+      let cycleCompleteHandle = 0;
 
       if (targetEventId === null) {
         if (renderTargetRef.current === null) {
@@ -426,14 +434,21 @@ export const CalloutOverlay = memo(
       });
       closeHandle = window.setTimeout(() => {
         setOpen("close");
+        cycleCompleteHandle = window.setTimeout(() => {
+          onCycleComplete?.();
+        }, V1_CLEAR_CLOSE_MS);
       }, V1_AUTO_CLOSE_MS);
 
       return () => {
         if (closeHandle !== 0) {
           window.clearTimeout(closeHandle);
         }
+
+        if (cycleCompleteHandle !== 0) {
+          window.clearTimeout(cycleCompleteHandle);
+        }
       };
-    }, [isCalloutDebugMode, targetEventId]);
+    }, [cycleToken, isCalloutDebugMode, onCycleComplete, target]);
 
     const [lineSpring] = useSpring(
       {
