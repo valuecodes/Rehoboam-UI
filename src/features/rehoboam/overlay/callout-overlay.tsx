@@ -543,9 +543,6 @@ export const CalloutOverlay = memo(
             width: geometry.labelWidth,
             textAlign: geometry.textAlign,
             opacity: isCalloutDebugMode ? 1 : textSpring.textOpacity,
-            letterSpacing: isCalloutDebugMode
-              ? "0"
-              : textSpring.textTracking.to((value: number) => `${value}px`),
             transform: isCalloutDebugMode
               ? "translate3d(0, 0, 0)"
               : textSpring.textShiftY.to((shiftY: number) => {
