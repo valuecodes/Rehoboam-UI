@@ -85,10 +85,21 @@ export type RehoboamRendererFrame = Readonly<{
   deltaMs: number;
 }>;
 
+export type DivergenceCalloutTarget = Readonly<{
+  id: string;
+  angleRad: number;
+  strength: number;
+}>;
+
+export type RehoboamRenderSnapshot = Readonly<{
+  timeMs: number;
+  divergenceCalloutTargets: readonly DivergenceCalloutTarget[];
+}>;
+
 export type RehoboamRenderer = Readonly<{
   resize: (viewport: ViewportState) => void;
   setTheme: (theme: RehoboamTheme) => void;
-  render: (frame: RehoboamRendererFrame) => void;
+  render: (frame: RehoboamRendererFrame) => RehoboamRenderSnapshot;
   destroy: () => void;
 }>;
 
@@ -119,4 +130,5 @@ export type RehoboamEngineOptions = Readonly<{
   requestAnimationFrame?: (callback: FrameRequestCallback) => number;
   cancelAnimationFrame?: (handle: number) => void;
   rendererFactory?: RehoboamRendererFactory;
+  onRenderSnapshot?: (snapshot: RehoboamRenderSnapshot) => void;
 }>;

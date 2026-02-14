@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { refreshEventsFromSource } from "../data/bootstrap";
 import { loadPersistedEvents } from "../data/persistence";
@@ -7,8 +7,10 @@ import { DEFAULT_DPR_CAP, DEFAULT_THEME } from "../engine/defaults";
 import { createInitialInteractionState } from "../engine/input";
 import { createRehoboamEngine } from "../engine/rehoboam-engine";
 import type {
+  DivergenceCalloutTarget,
   InteractionState,
   RehoboamEngine,
+  RehoboamRenderSnapshot,
   WorldEvent,
 } from "../engine/types";
 import {
@@ -21,13 +23,12 @@ import type {
   CalloutOverlayTarget,
   InstrumentSize,
 } from "../overlay/callout-overlay";
-import { getRandomizedQuadrantCycleIds } from "./event-cycle";
+import { getChronologicalCycleIds } from "./event-cycle";
 import { resolveSceneQualityProfile } from "./quality";
 
 import "./rehoboam-scene.css";
 
 const LEADING_TIME_OFFSET_MS = 45 * 60 * 1000;
-const AUTO_EVENT_CYCLE_MS = 9000;
 
 const readDevicePixelRatio = (): number => {
   const value = window.devicePixelRatio;
@@ -88,19 +89,6 @@ const getMarkerAnchorRadius = (instrumentSize: InstrumentSize): number => {
   return outerRadius * 0.84;
 };
 
-const findEventAngleByEventId = (
-  eventAngles: readonly ComputedEventAngle[],
-  eventId: string
-): ComputedEventAngle | null => {
-  for (const eventAngle of eventAngles) {
-    if (eventAngle.eventIds.includes(eventId)) {
-      return eventAngle;
-    }
-  }
-
-  return null;
-};
-
 const resolveActiveEventAngle = (
   eventAngles: readonly ComputedEventAngle[],
   activeEventId: string | null
@@ -110,10 +98,12 @@ const resolveActiveEventAngle = (
   }
 
   if (activeEventId !== null) {
-    const matched = findEventAngleByEventId(eventAngles, activeEventId);
+    const matchedEventAngle = eventAngles.find((eventAngle) => {
+      return eventAngle.eventIds.includes(activeEventId);
+    });
 
-    if (matched !== null) {
-      return matched;
+    if (matchedEventAngle !== undefined) {
+      return matchedEventAngle;
     }
   }
 
@@ -125,14 +115,35 @@ const resolveActiveEventId = (
   autoEventId: string | null
 ): string | null => {
   if (autoEventId !== null) {
-    if (findEventAngleByEventId(eventAngles, autoEventId) !== null) {
+    const hasAutoEvent = eventAngles.some((eventAngle) => {
+      return eventAngle.eventIds.includes(autoEventId);
+    });
+
+    if (hasAutoEvent) {
       return autoEventId;
     }
   }
 
-  return (
-    [...eventAngles].sort(compareEventAnglesByTimestamp)[0]?.event.id ?? null
-  );
+  return [...eventAngles].sort(compareEventAnglesByTimestamp)[0]?.event.id ?? null;
+};
+
+const pickRandomClusterTarget = (
+  clusterTargets: readonly DivergenceCalloutTarget[],
+  previousClusterTargetId: string | null
+): DivergenceCalloutTarget | null => {
+  if (clusterTargets.length === 0) {
+    return null;
+  }
+
+  const candidateTargets =
+    previousClusterTargetId === null || clusterTargets.length <= 1
+      ? clusterTargets
+      : clusterTargets.filter((target) => {
+          return target.id !== previousClusterTargetId;
+        });
+  const randomIndex = Math.floor(Math.random() * candidateTargets.length);
+
+  return candidateTargets[randomIndex] ?? clusterTargets[0];
 };
 
 export const RehoboamScene = () => {
@@ -145,6 +156,11 @@ export const RehoboamScene = () => {
   });
   const [events, setEvents] = useState<readonly WorldEvent[]>([]);
   const [autoEventId, setAutoEventId] = useState<string | null>(null);
+  const [activeClusterTarget, setActiveClusterTarget] =
+    useState<DivergenceCalloutTarget | null>(null);
+  const [calloutCycleToken, setCalloutCycleToken] = useState(0);
+  const activeClusterTargetRef = useRef<DivergenceCalloutTarget | null>(null);
+  const clusterTargetsRef = useRef<readonly DivergenceCalloutTarget[]>([]);
   const eventSource = useMemo(() => createMockEventSource(), []);
   const qualityProfile = useMemo(() => {
     return resolveSceneQualityProfile({
@@ -162,7 +178,7 @@ export const RehoboamScene = () => {
     });
   }, [events]);
   const autoCycleEventIds = useMemo(() => {
-    return getRandomizedQuadrantCycleIds(eventAngles);
+    return getChronologicalCycleIds(eventAngles);
   }, [eventAngles]);
   const activeEventId = useMemo(() => {
     return resolveActiveEventId(eventAngles, autoEventId);
@@ -192,10 +208,62 @@ export const RehoboamScene = () => {
 
     return {
       event: activeEventAngle.event,
-      angleRad: activeEventAngle.angleRad,
+      angleRad: activeClusterTarget?.angleRad ?? activeEventAngle.angleRad,
       anchorRadius: getMarkerAnchorRadius(instrumentSize),
     };
-  }, [activeEventAngle, instrumentSize.height, instrumentSize.width]);
+  }, [activeClusterTarget, activeEventAngle, instrumentSize.height, instrumentSize.width]);
+
+  const advanceCalloutClusterTarget = useCallback(() => {
+    setCalloutCycleToken((currentToken) => {
+      return currentToken + 1;
+    });
+
+    const nextClusterTarget = pickRandomClusterTarget(
+      clusterTargetsRef.current,
+      activeClusterTargetRef.current?.id ?? null
+    );
+    activeClusterTargetRef.current = nextClusterTarget;
+    setActiveClusterTarget(nextClusterTarget);
+
+    if (autoCycleEventIds.length === 0) {
+      setAutoEventId(null);
+
+      return;
+    }
+
+    if (activeEventId === null) {
+      setAutoEventId(autoCycleEventIds[0]);
+
+      return;
+    }
+
+    const currentIndex = autoCycleEventIds.indexOf(activeEventId);
+
+    if (currentIndex < 0) {
+      setAutoEventId(autoCycleEventIds[0]);
+
+      return;
+    }
+
+    const nextIndex = (currentIndex + 1) % autoCycleEventIds.length;
+    setAutoEventId(autoCycleEventIds[nextIndex]);
+  }, [activeEventId, autoCycleEventIds]);
+
+  const handleRenderSnapshot = useCallback((snapshot: RehoboamRenderSnapshot) => {
+    clusterTargetsRef.current = snapshot.divergenceCalloutTargets;
+
+    if (
+      activeClusterTargetRef.current === null &&
+      snapshot.divergenceCalloutTargets.length > 0
+    ) {
+      const nextClusterTarget = pickRandomClusterTarget(
+        snapshot.divergenceCalloutTargets,
+        null
+      );
+      activeClusterTargetRef.current = nextClusterTarget;
+      setActiveClusterTarget(nextClusterTarget);
+    }
+  }, []);
 
   useEffect(() => {
     if (autoCycleEventIds.length === 0) {
@@ -204,22 +272,21 @@ export const RehoboamScene = () => {
       return;
     }
 
-    if (autoEventId === null || !autoCycleEventIds.includes(autoEventId)) {
-      setAutoEventId(autoCycleEventIds[0]);
+    setAutoEventId((previousAutoEventId) => {
+      if (
+        previousAutoEventId === null ||
+        !autoCycleEventIds.includes(previousAutoEventId)
+      ) {
+        return autoCycleEventIds[0];
+      }
 
-      return;
-    }
+      return previousAutoEventId;
+    });
+  }, [autoCycleEventIds]);
 
-    const currentIndex = autoCycleEventIds.indexOf(autoEventId);
-    const timeoutHandle = window.setTimeout(() => {
-      const nextIndex = (currentIndex + 1) % autoCycleEventIds.length;
-      setAutoEventId(autoCycleEventIds[nextIndex]);
-    }, AUTO_EVENT_CYCLE_MS);
-
-    return () => {
-      window.clearTimeout(timeoutHandle);
-    };
-  }, [autoEventId, autoCycleEventIds]);
+  const handleCalloutCycleComplete = useCallback(() => {
+    advanceCalloutClusterTarget();
+  }, [advanceCalloutClusterTarget]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -273,6 +340,7 @@ export const RehoboamScene = () => {
     const engine = createRehoboamEngine({
       canvas,
       dprCap: DEFAULT_DPR_CAP,
+      onRenderSnapshot: handleRenderSnapshot,
     });
     engineRef.current = engine;
 
@@ -318,7 +386,7 @@ export const RehoboamScene = () => {
       engine.destroy();
       engineRef.current = null;
     };
-  }, []);
+  }, [handleRenderSnapshot]);
 
   useEffect(() => {
     const engine = engineRef.current;
@@ -353,8 +421,10 @@ export const RehoboamScene = () => {
           ref={canvasRef}
         />
         <CalloutOverlay
+          cycleToken={calloutCycleToken}
           instrumentSize={instrumentSize}
           target={activeCalloutTarget}
+          onCycleComplete={handleCalloutCycleComplete}
         />
       </section>
     </main>

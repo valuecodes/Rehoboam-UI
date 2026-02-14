@@ -118,7 +118,7 @@ export const createRehoboamEngine = (
     const deltaMs = previousFrameAtMs === null ? 0 : timeMs - previousFrameAtMs;
     previousFrameAtMs = timeMs;
 
-    renderer.render({
+    const snapshot = renderer.render({
       viewport,
       events,
       interaction,
@@ -127,6 +127,7 @@ export const createRehoboamEngine = (
       timeMs,
       deltaMs,
     });
+    options.onRenderSnapshot?.(snapshot);
   };
 
   const rafLoop = createRafLoop({

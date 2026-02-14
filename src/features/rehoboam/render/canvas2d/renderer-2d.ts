@@ -1,10 +1,14 @@
 import type {
+  DivergenceCalloutTarget,
   RehoboamRenderer,
   RehoboamRendererFactoryOptions,
   RehoboamRendererFrame,
+  RehoboamRenderSnapshot,
   RehoboamTheme,
 } from "../../engine/types";
+import { normalizeAngle, TAU } from "../../layout/polar";
 import { createDivergenceClusterTracker } from "./divergence-cluster-tracker";
+import type { DivergenceCluster } from "./divergence-cluster-tracker";
 import { createDivergencePulseTracker } from "./divergence-pulse-tracker";
 import { drawBackgroundPass } from "./passes/background-pass";
 import type { BackgroundPassInput } from "./passes/background-pass";
@@ -14,6 +18,9 @@ import { createRingSpecs, drawRingsPass } from "./passes/rings-pass";
 import type { RingsPassInput, RingSpec } from "./passes/rings-pass";
 import { drawSweepPass } from "./passes/sweep-pass";
 import type { SweepPassInput } from "./passes/sweep-pass";
+
+const CLUSTER_MODULATION_SPEED_SCALE = 0.52;
+const EMPTY_DIVERGENCE_CALLOUT_TARGETS = [] as const;
 
 const shouldRebuildRingSpecs = (
   previousTheme: RehoboamTheme,
@@ -30,6 +37,90 @@ const buildRingSpecs = (theme: RehoboamTheme): readonly RingSpec[] => {
     seed: theme.ringSeed,
     ringCount: theme.ringCount,
   });
+};
+
+const getClusterEnvelope = (
+  cluster: DivergenceCluster,
+  timeMs: number
+): number => {
+  const elapsedMs = timeMs - cluster.startedAtMs;
+
+  if (elapsedMs <= 0) {
+    return 0;
+  }
+
+  if (elapsedMs <= cluster.attackMs) {
+    const attackProgress = elapsedMs / cluster.attackMs;
+
+    return attackProgress * attackProgress;
+  }
+
+  const sustainEndMs = cluster.attackMs + cluster.holdMs;
+
+  if (elapsedMs <= sustainEndMs) {
+    return 1;
+  }
+
+  const decayProgress = (elapsedMs - sustainEndMs) / cluster.decayMs;
+
+  if (decayProgress >= 1) {
+    return 0;
+  }
+
+  return (1 - decayProgress) ** 2;
+};
+
+const resolveClusterCalloutTargets = (
+  clusters: readonly DivergenceCluster[],
+  elapsedMs: number,
+  timeMs: number
+): readonly DivergenceCalloutTarget[] => {
+  const elapsedSeconds = elapsedMs / 1000;
+  const targets: DivergenceCalloutTarget[] = [];
+
+  for (const cluster of clusters) {
+    const clusterEnvelope = getClusterEnvelope(cluster, timeMs);
+
+    if (clusterEnvelope <= 0) {
+      continue;
+    }
+
+    const ageSeconds = Math.max(0, (timeMs - cluster.startedAtMs) / 1000);
+    const angleRad = normalizeAngle(
+      cluster.centerAngleRad + cluster.driftRadPerSecond * ageSeconds
+    );
+    const flareModulation =
+      0.78 +
+      0.22 *
+        Math.sin(
+          elapsedSeconds *
+            CLUSTER_MODULATION_SPEED_SCALE *
+            cluster.flareSpeedHz *
+            TAU +
+            cluster.flarePhaseOffsetRad
+        );
+    const strength = cluster.strength * clusterEnvelope * flareModulation;
+
+    if (strength <= 0) {
+      continue;
+    }
+
+    targets.push({
+      id: cluster.id,
+      angleRad,
+      strength,
+    });
+  }
+
+  targets.sort((left, right) => {
+    if (left.strength !== right.strength) {
+      return right.strength - left.strength;
+    }
+
+    return left.id.localeCompare(right.id);
+  });
+
+  return targets;
 };
 
 export const createRenderer2D = (
@@ -57,7 +148,10 @@ export const createRenderer2D = (
 
   const render: RehoboamRenderer["render"] = (frame: RehoboamRendererFrame) => {
     if (isDestroyed) {
-      return;
+      return {
+        timeMs: frame.timeMs,
+        divergenceCalloutTargets: EMPTY_DIVERGENCE_CALLOUT_TARGETS,
+      };
     }
 
     if (shouldRebuildRingSpecs(theme, frame.theme)) {
@@ -120,6 +214,17 @@ export const createRenderer2D = (
     drawRingsPass(ringsInput);
     drawDivergencePass(divergenceInput);
     drawSweepPass(sweepInput);
+
+    const snapshot: RehoboamRenderSnapshot = {
+      timeMs: frame.timeMs,
+      divergenceCalloutTargets: resolveClusterCalloutTargets(
+        activeClusters,
+        frame.elapsedMs,
+        frame.timeMs
+      ),
+    };
+
+    return snapshot;
   };
 
   const destroy: RehoboamRenderer["destroy"] = () => {
