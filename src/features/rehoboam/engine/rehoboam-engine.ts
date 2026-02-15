@@ -126,7 +126,9 @@ export const createRehoboamEngine = (
     const elapsedMs = timeMs - startedAtMs;
     const rawDeltaMs =
       previousFrameAtMs === null ? 0 : timeMs - previousFrameAtMs;
-    const deltaMs = frameOptions.freezeDelta ? 0 : clampFrameDeltaMs(rawDeltaMs);
+    const deltaMs = frameOptions.freezeDelta
+      ? 0
+      : clampFrameDeltaMs(rawDeltaMs);
     previousFrameAtMs = timeMs;
 
     const snapshot = renderer.render({
