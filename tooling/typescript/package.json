@@ -1,0 +1,11 @@
+{
+  "name": "@repo/typescript",
+  "version": "1.0.0",
+  "private": true,
+  "files": [
+    "*.json"
+  ],
+  "scripts": {
+    "format": "prettier --write ."
+  }
+}

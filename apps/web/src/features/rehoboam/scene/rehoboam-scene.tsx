@@ -262,12 +262,7 @@ export const RehoboamScene = () => {
       angleRad: activeClusterTarget?.angleRad ?? activeEventAngle.angleRad,
       anchorRadius: getMarkerAnchorRadius(instrumentSize),
     };
-  }, [
-    activeClusterTarget,
-    activeEventAngle,
-    instrumentSize.height,
-    instrumentSize.width,
-  ]);
+  }, [activeClusterTarget, activeEventAngle, instrumentSize]);
 
   useEffect(() => {
     autoCycleEventIdsRef.current = autoCycleEventIds;

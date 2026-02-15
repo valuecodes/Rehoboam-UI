@@ -1,7 +1,8 @@
-/node_modules
-/dist
+node_modules
+dist
 /coverage
 .pnpm-store
+.cache
 
 # Environment variables
 .env
@@ -9,8 +10,8 @@
 .env.*
 
 # Playwright artifacts
-/test-results
-/playwright-report
+test-results
+playwright-report
 .tmp/screenshots/
 
 .tmp

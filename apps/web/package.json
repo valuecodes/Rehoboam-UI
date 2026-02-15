@@ -1,0 +1,40 @@
+{
+  "name": "web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 3000",
+    "start": "vite --port 3000",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run --passWithNoTests",
+    "screenshot:scene": "node --experimental-strip-types scripts/screenshot-scene.ts",
+    "screenshot:scene:headed": "node --experimental-strip-types scripts/screenshot-scene.ts --headed"
+  },
+  "dependencies": {
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-spring": "10.0.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.58.2",
+    "@repo/eslint": "workspace:*",
+    "@repo/prettier": "workspace:*",
+    "@repo/typescript": "workspace:*",
+    "@types/node": "25.2.2",
+    "@types/react": "19.2.13",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "5.1.3",
+    "eslint": "9.39.1",
+    "jsdom": "28.0.0",
+    "playwright": "1.58.2",
+    "typescript": "5.6.3",
+    "vite": "7.3.1",
+    "vitest": "4.0.18",
+    "zx": "8.8.5"
+  },
+  "prettier": "@repo/prettier"
+}

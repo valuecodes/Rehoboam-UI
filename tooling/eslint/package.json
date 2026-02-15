@@ -1,0 +1,26 @@
+{
+  "name": "@repo/eslint",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./base": "./base.ts",
+    "./react": "./react.ts"
+  },
+  "dependencies": {
+    "@eslint/compat": "2.0.2",
+    "@eslint/js": "9.39.1",
+    "eslint-plugin-import": "2.32.0",
+    "eslint-plugin-react": "7.37.5",
+    "eslint-plugin-react-hooks": "7.0.1",
+    "jiti": "2.6.1",
+    "typescript-eslint": "8.54.0"
+  },
+  "devDependencies": {
+    "@repo/prettier": "workspace:*",
+    "@repo/typescript": "workspace:*",
+    "@types/node": "25.2.2",
+    "eslint": "9.39.1",
+    "prettier": "3.8.1",
+    "typescript": "5.6.3"
+  }
+}
