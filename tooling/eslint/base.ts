@@ -1,14 +1,13 @@
+import path from "path";
 import { includeIgnoreFile } from "@eslint/compat";
 import eslint from "@eslint/js";
 import importPlugin from "eslint-plugin-import";
 import { defineConfig } from "eslint/config";
 import tseslint from "typescript-eslint";
 
-const rootDir = decodeURIComponent(new URL(".", import.meta.url).pathname);
-
-export default defineConfig(
+export const baseConfig = defineConfig(
   // Ignore files not tracked by VCS and any config files
-  includeIgnoreFile(`${rootDir}.gitignore`),
+  includeIgnoreFile(path.join(import.meta.dirname, "../../.gitignore")),
   { ignores: ["**/*.config.*"] },
   {
     files: ["**/*.js", "**/*.ts", "**/*.tsx"],
@@ -84,7 +83,7 @@ export default defineConfig(
     languageOptions: {
       parserOptions: {
         projectService: true,
-        tsconfigRootDir: rootDir,
+        tsconfigRootDir: import.meta.dirname,
       },
     },
   }

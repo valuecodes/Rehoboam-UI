@@ -1,0 +1,7 @@
+{
+  "extends": "@repo/typescript/react.json",
+  "compilerOptions": {
+    "types": ["node", "vite/client", "vitest/globals"]
+  },
+  "include": ["src", "scripts", "tests", "*.ts"]
+}

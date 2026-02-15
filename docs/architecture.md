@@ -9,13 +9,13 @@ verified against source on February 11, 2026.
 
 ## Current Status Snapshot
 
-- Active implementation is V2 under `src/features/rehoboam/**`.
+- Active implementation is V2 under `apps/web/src/features/rehoboam/**`.
 - Active renderer pipeline has four passes: background, rings, divergence, sweep.
-- `src/features/rehoboam/render/canvas2d/passes/event-contour-pass.ts` exists but
+- `apps/web/src/features/rehoboam/render/canvas2d/passes/event-contour-pass.ts` exists but
   is not wired into `Renderer2D`.
 - Scene boot is cache-first from IndexedDB, then background refresh/replace from a
   static mock source.
-- Automated tests are present under `src/tests/rehoboam/**` for data, layout,
+- Automated tests are present under `apps/web/src/tests/rehoboam/**` for data, layout,
   engine, renderer, overlay, and quality behavior.
 
 ## Tech Stack
@@ -187,7 +187,7 @@ Behavior:
 - Source refresh failures return existing snapshot unchanged.
 - Successful refresh treats source as authoritative and replaces cached snapshot.
 - Current scene source is `createMockEventSource()` backed by
-  `src/features/rehoboam/fixtures/mock-events.json`.
+  `apps/web/src/features/rehoboam/fixtures/mock-events.json`.
 
 ### Normalization and Dedupe Pipeline
 
@@ -376,11 +376,11 @@ Event list UI:
 
 ## Shared Utilities
 
-### Seeded RNG (`src/shared/utils/seeded-rng.ts`)
+### Seeded RNG (`apps/web/src/shared/utils/seeded-rng.ts`)
 
 FNV-1a seed hashing + Mulberry32 PRNG, used by ring and cluster generation.
 
-### Polar Math (`src/features/rehoboam/layout/polar.ts`)
+### Polar Math (`apps/web/src/features/rehoboam/layout/polar.ts`)
 
 `polarToCartesian`, `cartesianToPolar`, `normalizeAngle`, and
 `shortestAngularDistance` are the geometry primitives for layout and rendering.
@@ -389,7 +389,7 @@ FNV-1a seed hashing + Mulberry32 PRNG, used by ring and cluster generation.
 
 ## Testing Coverage
 
-Current test modules under `src/tests/rehoboam/**` cover:
+Current test modules under `apps/web/src/tests/rehoboam/**` cover:
 
 - data pipeline (`source`, `normalize`, `dedupe`, `bootstrap`, `persistence`)
 - layout math (`polar`, `compute-angles`, `seeded-rng`)
@@ -402,36 +402,36 @@ Current test modules under `src/tests/rehoboam/**` cover:
 
 ## Key Files
 
-| Concept                    | Path                                                                  |
-| -------------------------- | --------------------------------------------------------------------- |
-| Entry point                | `src/main.tsx`                                                        |
-| Root component             | `src/app.tsx`                                                         |
-| Scene orchestrator         | `src/features/rehoboam/scene/rehoboam-scene.tsx`                      |
-| Scene quality tiering      | `src/features/rehoboam/scene/quality.ts`                              |
-| Engine core                | `src/features/rehoboam/engine/rehoboam-engine.ts`                     |
-| Engine defaults/theme      | `src/features/rehoboam/engine/defaults.ts`                            |
-| Interaction state updates  | `src/features/rehoboam/engine/input.ts`                               |
-| RAF loop utilities         | `src/features/rehoboam/engine/timing.ts`                              |
-| Renderer orchestration     | `src/features/rehoboam/render/canvas2d/renderer-2d.ts`                |
-| Divergence constants       | `src/features/rehoboam/render/canvas2d/divergence-constants.ts`       |
-| Background pass            | `src/features/rehoboam/render/canvas2d/passes/background-pass.ts`     |
-| Rings pass                 | `src/features/rehoboam/render/canvas2d/passes/rings-pass.ts`          |
-| Divergence pass            | `src/features/rehoboam/render/canvas2d/passes/divergence-pass.ts`     |
-| Sweep pass                 | `src/features/rehoboam/render/canvas2d/passes/sweep-pass.ts`          |
-| Dormant event contour pass | `src/features/rehoboam/render/canvas2d/passes/event-contour-pass.ts`  |
-| Pulse tracker              | `src/features/rehoboam/render/canvas2d/divergence-pulse-tracker.ts`   |
-| Cluster tracker            | `src/features/rehoboam/render/canvas2d/divergence-cluster-tracker.ts` |
-| Data source + pipeline     | `src/features/rehoboam/data/source.ts`                                |
-| Normalization              | `src/features/rehoboam/data/normalize.ts`                             |
-| Deduplication              | `src/features/rehoboam/data/dedupe.ts`                                |
-| Cache-first bootstrap      | `src/features/rehoboam/data/bootstrap.ts`                             |
-| IndexedDB persistence      | `src/features/rehoboam/data/persistence.ts`                           |
-| Callout overlay            | `src/features/rehoboam/overlay/callout-overlay.tsx`                   |
-| Intro callout overlay      | `src/features/rehoboam/overlay/intro-callout-overlay.tsx`             |
-| Event list panel           | `src/features/rehoboam/overlay/event-list-panel.tsx`                  |
-| Angle computation          | `src/features/rehoboam/layout/compute-angles.ts`                      |
-| Polar math                 | `src/features/rehoboam/layout/polar.ts`                               |
-| Shared RNG utility         | `src/shared/utils/seeded-rng.ts`                                      |
-| Mock event fixture         | `src/features/rehoboam/fixtures/mock-events.json`                     |
-| Scene styles               | `src/features/rehoboam/scene/rehoboam-scene.css`                      |
-| Unit tests root            | `src/tests/rehoboam`                                                  |
+| Concept                    | Path                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------ |
+| Entry point                | `apps/web/src/main.tsx`                                                        |
+| Root component             | `apps/web/src/app.tsx`                                                         |
+| Scene orchestrator         | `apps/web/src/features/rehoboam/scene/rehoboam-scene.tsx`                      |
+| Scene quality tiering      | `apps/web/src/features/rehoboam/scene/quality.ts`                              |
+| Engine core                | `apps/web/src/features/rehoboam/engine/rehoboam-engine.ts`                     |
+| Engine defaults/theme      | `apps/web/src/features/rehoboam/engine/defaults.ts`                            |
+| Interaction state updates  | `apps/web/src/features/rehoboam/engine/input.ts`                               |
+| RAF loop utilities         | `apps/web/src/features/rehoboam/engine/timing.ts`                              |
+| Renderer orchestration     | `apps/web/src/features/rehoboam/render/canvas2d/renderer-2d.ts`                |
+| Divergence constants       | `apps/web/src/features/rehoboam/render/canvas2d/divergence-constants.ts`       |
+| Background pass            | `apps/web/src/features/rehoboam/render/canvas2d/passes/background-pass.ts`     |
+| Rings pass                 | `apps/web/src/features/rehoboam/render/canvas2d/passes/rings-pass.ts`          |
+| Divergence pass            | `apps/web/src/features/rehoboam/render/canvas2d/passes/divergence-pass.ts`     |
+| Sweep pass                 | `apps/web/src/features/rehoboam/render/canvas2d/passes/sweep-pass.ts`          |
+| Dormant event contour pass | `apps/web/src/features/rehoboam/render/canvas2d/passes/event-contour-pass.ts`  |
+| Pulse tracker              | `apps/web/src/features/rehoboam/render/canvas2d/divergence-pulse-tracker.ts`   |
+| Cluster tracker            | `apps/web/src/features/rehoboam/render/canvas2d/divergence-cluster-tracker.ts` |
+| Data source + pipeline     | `apps/web/src/features/rehoboam/data/source.ts`                                |
+| Normalization              | `apps/web/src/features/rehoboam/data/normalize.ts`                             |
+| Deduplication              | `apps/web/src/features/rehoboam/data/dedupe.ts`                                |
+| Cache-first bootstrap      | `apps/web/src/features/rehoboam/data/bootstrap.ts`                             |
+| IndexedDB persistence      | `apps/web/src/features/rehoboam/data/persistence.ts`                           |
+| Callout overlay            | `apps/web/src/features/rehoboam/overlay/callout-overlay.tsx`                   |
+| Intro callout overlay      | `apps/web/src/features/rehoboam/overlay/intro-callout-overlay.tsx`             |
+| Event list panel           | `apps/web/src/features/rehoboam/overlay/event-list-panel.tsx`                  |
+| Angle computation          | `apps/web/src/features/rehoboam/layout/compute-angles.ts`                      |
+| Polar math                 | `apps/web/src/features/rehoboam/layout/polar.ts`                               |
+| Shared RNG utility         | `apps/web/src/shared/utils/seeded-rng.ts`                                      |
+| Mock event fixture         | `apps/web/src/features/rehoboam/fixtures/mock-events.json`                     |
+| Scene styles               | `apps/web/src/features/rehoboam/scene/rehoboam-scene.css`                      |
+| Unit tests root            | `apps/web/src/tests/rehoboam`                                                  |
