@@ -93,7 +93,9 @@ describe("data/bootstrap", () => {
       "critical"
     );
     expect(refreshed.find((event) => event.id === "event-2")).toBeDefined();
-    expect(refreshed.find((event) => event.id === "event-stale")).toBeUndefined();
+    expect(
+      refreshed.find((event) => event.id === "event-stale")
+    ).toBeUndefined();
     expect(persisted).toStrictEqual(refreshed);
   });
 

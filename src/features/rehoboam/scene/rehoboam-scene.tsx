@@ -165,7 +165,9 @@ const resolveActiveEventId = (
     }
   }
 
-  return [...eventAngles].sort(compareEventAnglesByTimestamp)[0]?.event.id ?? null;
+  return (
+    [...eventAngles].sort(compareEventAnglesByTimestamp)[0]?.event.id ?? null
+  );
 };
 
 const pickRandomClusterTarget = (
@@ -258,7 +260,12 @@ export const RehoboamScene = () => {
       angleRad: activeClusterTarget?.angleRad ?? activeEventAngle.angleRad,
       anchorRadius: getMarkerAnchorRadius(instrumentSize),
     };
-  }, [activeClusterTarget, activeEventAngle, instrumentSize.height, instrumentSize.width]);
+  }, [
+    activeClusterTarget,
+    activeEventAngle,
+    instrumentSize.height,
+    instrumentSize.width,
+  ]);
 
   const advanceCalloutClusterTarget = useCallback(() => {
     setCalloutCycleToken((currentToken) => {
@@ -296,21 +303,24 @@ export const RehoboamScene = () => {
     setAutoEventId(autoCycleEventIds[nextIndex]);
   }, [activeEventId, autoCycleEventIds]);
 
-  const handleRenderSnapshot = useCallback((snapshot: RehoboamRenderSnapshot) => {
-    clusterTargetsRef.current = snapshot.divergenceCalloutTargets;
+  const handleRenderSnapshot = useCallback(
+    (snapshot: RehoboamRenderSnapshot) => {
+      clusterTargetsRef.current = snapshot.divergenceCalloutTargets;
 
-    if (
-      activeClusterTargetRef.current === null &&
-      snapshot.divergenceCalloutTargets.length > 0
-    ) {
-      const nextClusterTarget = pickRandomClusterTarget(
-        snapshot.divergenceCalloutTargets,
-        null
-      );
-      activeClusterTargetRef.current = nextClusterTarget;
-      setActiveClusterTarget(nextClusterTarget);
-    }
-  }, []);
+      if (
+        activeClusterTargetRef.current === null &&
+        snapshot.divergenceCalloutTargets.length > 0
+      ) {
+        const nextClusterTarget = pickRandomClusterTarget(
+          snapshot.divergenceCalloutTargets,
+          null
+        );
+        activeClusterTargetRef.current = nextClusterTarget;
+        setActiveClusterTarget(nextClusterTarget);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     if (autoCycleEventIds.length === 0) {

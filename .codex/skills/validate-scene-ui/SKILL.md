@@ -18,15 +18,18 @@ pnpm screenshot:scene
 ```
 
 2. Use options when needed:
+
 - `pnpm screenshot:scene -- --count 3 --interval-ms 1200` to sample animation progression.
 - `pnpm screenshot:scene -- --output .tmp/screenshots/<label>.png` to keep outputs tied to the task.
 - `pnpm screenshot:scene:headed` for local visual debugging.
 
 3. Review both generated images:
+
 - Full page: `<output>.png`
 - Instrument crop: `<output>.instrument.png`
 
 4. Check visual quality:
+
 - Preserve layout alignment and spacing.
 - Avoid clipping, overlap, or unreadable text.
 - Keep ring/sweep/divergence rendering stable and intentional.
