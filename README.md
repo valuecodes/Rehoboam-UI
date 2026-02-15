@@ -2,7 +2,7 @@
 
 A React app inspired by the "Rehoboam" interface from Westworld TV series.
 
-![Preview](./public/preview.jpg)
+![Preview](./apps/web/public/preview.jpg)
 
 - Explore a timeline of major world events with Rehoboam-style animation.
 - Inspect active signals through synchronized callouts and the event list panel.
@@ -52,21 +52,21 @@ pnpm test
 Use the local screenshot tool for fast UI iteration snapshots:
 
 ```bash
-pnpm screenshot:scene
+pnpm --filter web screenshot:scene
 ```
 
 Default outputs:
 
-- full page: `.tmp/screenshots/current-codex-auto.png`
-- scene element: `.tmp/screenshots/current-codex-auto.instrument.png`
+- full page: `apps/web/.tmp/screenshots/current-codex-auto.png`
+- scene element: `apps/web/.tmp/screenshots/current-codex-auto.instrument.png`
 
 Useful options:
 
 ```bash
-pnpm screenshot:scene --output .tmp/screenshots/current-codex-auto.png
-pnpm screenshot:scene --width 1365 --height 1024 --settle-ms 250
-pnpm screenshot:scene --base-url http://127.0.0.1:3001
-pnpm screenshot:scene:headed
+pnpm --filter web screenshot:scene -- --output .tmp/screenshots/current-codex-auto.png
+pnpm --filter web screenshot:scene -- --width 1365 --height 1024 --settle-ms 250
+pnpm --filter web screenshot:scene -- --base-url http://127.0.0.1:3001
+pnpm --filter web screenshot:scene:headed
 ```
 
 Equivalent environment variables:
@@ -93,8 +93,8 @@ short settle delay before capturing.
 - `pnpm format` - auto-format files with Prettier
 - `pnpm format:check` - verify formatting
 - `pnpm test` - run tests with Vitest
-- `pnpm screenshot:scene` - capture deterministic full + scene screenshots
-- `pnpm screenshot:scene:headed` - run screenshot capture with headed browser
+- `pnpm --filter web screenshot:scene` - capture deterministic full + scene screenshots
+- `pnpm --filter web screenshot:scene:headed` - run screenshot capture with headed browser
 
 ## CI Pipeline
 
