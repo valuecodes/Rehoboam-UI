@@ -3,8 +3,8 @@ import { createInitialInteractionState } from "../../../features/rehoboam/engine
 import { createRehoboamEngine } from "../../../features/rehoboam/engine/rehoboam-engine";
 import type {
   RehoboamRenderer,
-  RehoboamRendererFrame,
   RehoboamRendererFactory,
+  RehoboamRendererFrame,
   WorldEvent,
 } from "../../../features/rehoboam/engine/types";
 import { createMockCanvasContext } from "../render/mock-canvas-context";

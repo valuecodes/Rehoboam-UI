@@ -4,8 +4,8 @@ import {
 } from "../../../features/rehoboam/engine/defaults";
 import { createInitialInteractionState } from "../../../features/rehoboam/engine/input";
 import type { WorldEvent } from "../../../features/rehoboam/engine/types";
-import { drawDivergencePass } from "../../../features/rehoboam/render/canvas2d/passes/divergence-pass";
 import type { DivergenceCluster } from "../../../features/rehoboam/render/canvas2d/divergence-cluster-tracker";
+import { drawDivergencePass } from "../../../features/rehoboam/render/canvas2d/passes/divergence-pass";
 import { createMockCanvasContext } from "./mock-canvas-context";
 
 const createEvent = (): WorldEvent => {
