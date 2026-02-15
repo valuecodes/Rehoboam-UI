@@ -13,7 +13,7 @@ verified against source on February 11, 2026.
 - Active renderer pipeline has four passes: background, rings, divergence, sweep.
 - `src/features/rehoboam/render/canvas2d/passes/event-contour-pass.ts` exists but
   is not wired into `Renderer2D`.
-- Scene boot is cache-first from IndexedDB, then background refresh/merge from a
+- Scene boot is cache-first from IndexedDB, then background refresh/replace from a
   static mock source.
 - Automated tests are present under `src/tests/rehoboam/**` for data, layout,
   engine, renderer, overlay, and quality behavior.
@@ -124,12 +124,12 @@ flowchart LR
     CT --> P3
 ```
 
-| #   | Pass           | What it draws                                                                                                                                           |
-| --- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **Background** | Full scene fill, subtle center ring stroke, and soft core tint                                                                                          |
-| 2   | **Rings**      | Seeded concentric rings with deterministic dash templates and per-ring rotation/pulse                                                                   |
-| 3   | **Divergence** | Main contour deformation field. Uses theme sample count (220/300/360 by quality tier), event pulses, cluster extensions, and multi-layer mountain lanes |
-| 4   | **Sweep**      | Scanner arc (6 degrees wide, alpha 0.06). Tracks pointer angle when present, else rotates at theme speed (default 8 degrees/s)                          |
+| #   | Pass           | What it draws                                                                                                                                                                                                                                                                                           |
+| --- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Background** | Full scene fill, subtle center ring stroke, and soft core tint                                                                                                                                                                                                                                          |
+| 2   | **Rings**      | Seeded concentric rings with deterministic dash templates and per-ring rotation/pulse                                                                                                                                                                                                                   |
+| 3   | **Divergence** | Main contour deformation field. Uses theme sample count (220/300/360 by quality tier), event pulses, cluster extensions with outward lift caps and inward notch phases, localized spike-burst envelopes, a core-seam underpaint gradient bridge, and multi-layer mountain lanes with sector smoke halos |
+| 4   | **Sweep**      | Scanner arc (6 degrees wide, alpha 0.06). Tracks pointer angle when present, else rotates at theme speed (default 8 degrees/s)                                                                                                                                                                          |
 
 `event-contour-pass.ts` is currently dormant and not invoked by `renderer-2d.ts`.
 
@@ -176,15 +176,16 @@ sequenceDiagram
     Scene->>Boot: refreshEventsFromSource({ existingEvents: cache })
     Boot->>Src: loadEvents()
     Src-->>Boot: raw events
-    Boot->>Boot: runEventPipeline + merge snapshots
-    Boot->>IDB: savePersistedEvents(merged)
-    Boot-->>Scene: merged events
+    Boot->>Boot: runEventPipeline on source snapshot
+    Boot->>IDB: savePersistedEvents(refreshed)
+    Boot-->>Scene: refreshed events
 ```
 
 Behavior:
 
 - IndexedDB read failures return `[]` (best-effort persistence).
 - Source refresh failures return existing snapshot unchanged.
+- Successful refresh treats source as authoritative and replaces cached snapshot.
 - Current scene source is `createMockEventSource()` backed by
   `src/features/rehoboam/fixtures/mock-events.json`.
 
@@ -223,39 +224,20 @@ Behavior:
 
 ```mermaid
 flowchart TD
-    Pointer["Pointer Move"] --> Hit["Hit Detection\n(nearest marker in radius)"]
-    Hit -->|miss| Clear["Clear hover candidate"]
-    Hit -->|hit| Candidate["Set hover candidate"]
-    Candidate --> Dwell{"120ms dwell"}
-    Dwell -->|elapsed| Hovered["Set hoveredEventId"]
-    Hovered --> Active["Resolve activeEventId\n(selected > hovered > auto)"]
+    Cycle["Chronological cycle\n(oldest -> newest)"] --> Active["Resolve activeEventId"]
+    Clusters["Renderer snapshot\n(active divergence clusters)"] --> Anchor["Resolve callout anchor angle"]
     Active --> EngSync["engine.setInteraction()"]
-    Active --> CalloutTarget["Compute callout anchor"]
+    Active --> CalloutTarget["Compose callout event content"]
+    Anchor --> CalloutTarget
     CalloutTarget --> Overlay["CalloutOverlay"]
-
-    Click["Pointer Click"] --> Select["Set selectedEventId"]
-    Select --> Active
-
-    Escape["Escape key"] --> Deselect["Clear selection"]
-    Deselect --> Active
-
-    AutoCycle["Auto timer (3200ms)"] --> AutoId["Set autoEventId"]
-    AutoId --> Active
+    Overlay -->|cycle complete| NextTarget["Advance to next event in cycle"]
+    NextTarget --> Cycle
 ```
 
 Priority resolution for `activeEventId`:
 
-1. `selectedEventId`
-2. `hoveredEventId`
-3. `autoEventId`
-4. fallback to highest-priority visible event (severity desc, timestamp desc, id asc)
-
-Auto-cycle pauses while any of these are true:
-
-- selection exists
-- hover exists
-- hover candidate exists
-- pointer is down
+1. chronological cycle event (`timestampMs` asc, `id` asc tie-breaker)
+2. fallback to oldest visible event (`timestampMs` asc, `id` asc)
 
 ---
 
@@ -356,10 +338,30 @@ Setter behavior:
 
 Animated active-event callout:
 
-- SVG leader path: anchor -> elbow -> label edge
+- startup plays a one-time centered boot callout (`IntroCalloutOverlay`) before
+  regular event cycling starts
+- startup callout supports `?intro-debug=1` (locked visible), while any
+  `callout-debug*` query skips intro entirely
+- startup callout now mirrors regular callout lifecycle: open, hold, then
+  reverse close before advancing to regular event cycling
+- V1-style SVG leader with two strokes:
+  - connector line: anchor -> label dock point
+  - framed polyline near the label edge with a beveled notch
+- anchor angle is sourced from active divergence clusters (randomized per cycle)
 - two anchor nodes (outer + inner)
-- label fields: time (`HH.MM.SS`), `DIVERGENCE : LOCATION/CATEGORY`, title, severity/category
-- line draw animation over `200ms`, then label fade/translate in
+- label block placement follows V1 quadrant rules (left/right + top/bottom bands)
+- label fields follow V1 block semantics:
+  - date/time (`HH.MM.SS`)
+  - location/category headline (dynamic size based on length)
+  - message/title line
+  - add/summary line (fallback `severity / category`)
+- animations are `react-spring`-driven with V1-style staging:
+  - line/frame share one dash-offset spring (`-1800 -> 0`) with `1000ms` delay and `1000ms` duration
+  - text enters after `2000ms` with spring config (`mass=3`, `tension=600`, `friction=100`)
+  - overlay auto-closes after `5000ms` and uses reverse values for close
+  - active callout target is latched for the full open/close cycle
+  - callout anchor angle is picked from active divergence clusters on each cycle
+  - after close completes, scene advances to the next chronological event target
 
 ### EventListPanel
 
@@ -425,6 +427,7 @@ Current test modules under `src/tests/rehoboam/**` cover:
 | Cache-first bootstrap      | `src/features/rehoboam/data/bootstrap.ts`                             |
 | IndexedDB persistence      | `src/features/rehoboam/data/persistence.ts`                           |
 | Callout overlay            | `src/features/rehoboam/overlay/callout-overlay.tsx`                   |
+| Intro callout overlay      | `src/features/rehoboam/overlay/intro-callout-overlay.tsx`             |
 | Event list panel           | `src/features/rehoboam/overlay/event-list-panel.tsx`                  |
 | Angle computation          | `src/features/rehoboam/layout/compute-angles.ts`                      |
 | Polar math                 | `src/features/rehoboam/layout/polar.ts`                               |
