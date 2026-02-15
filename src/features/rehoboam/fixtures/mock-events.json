@@ -24,14 +24,14 @@
     "id": "oil-price-crash",
     "date": "2014-11-27",
     "title": "Oil price crash",
-    "location": "Vienna",
+    "location": "Global oil markets",
     "severity": "medium"
   },
   {
     "id": "covid-pandemic",
     "date": "2020-03-11",
     "title": "COVID-19 global pandemic",
-    "location": "Geneva",
+    "location": "Worldwide",
     "severity": "critical"
   },
   {
