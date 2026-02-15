@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { animated, useSpring } from "react-spring";
 
 import { polarToCartesian } from "../layout/polar";
@@ -28,10 +28,12 @@ type Point = Readonly<{
 const INTRO_LINE_DELAY_MS = 450;
 const INTRO_LINE_DURATION_MS = 900;
 const INTRO_TEXT_DELAY_MS = 1_150;
-const INTRO_DISPLAY_DURATION_MS = 4_800;
+const INTRO_AUTO_CLOSE_MS = 4_800;
+const INTRO_CLEAR_CLOSE_MS = 3_200;
 const INTRO_DASH_LENGTH = 1_200;
 const INTRO_TEXT_SHIFT_PX = 6;
 const INTRO_TEXT_TRACK_OPEN = -8;
+const INTRO_TEXT_TRACK_CLOSE = 10;
 const INTRO_ENDPOINT_OUTER_RADIUS_PX = 6;
 const INTRO_ENDPOINT_INNER_RADIUS_PX = 2.25;
 const INTRO_CORNER_STEP_PX = 10;
@@ -42,6 +44,8 @@ const INTRO_FOURTH_FRAME_OFFSET_PX = 48;
 const INTRO_FIFTH_FRAME_OFFSET_PX = 36;
 const INTRO_ANCHOR_ANGLE_RAD = 0.67;
 const INTRO_ANCHOR_RADIUS_RATIO = 0.84;
+const INTRO_LABEL_OFFSET_X_PX = -34;
+const INTRO_LABEL_OFFSET_Y_PX = -25;
 
 const clampNumber = (value: number, min: number, max: number): number => {
   return Math.min(max, Math.max(min, value));
@@ -77,12 +81,12 @@ const getIntroCalloutGeometry = (
   const maxLabelWidth = Math.max(300, instrumentSize.width - margin * 2);
   const labelWidth = clampNumber(520, 280, maxLabelWidth);
   const labelX = clampNumber(
-    centerX - labelWidth * 0.45,
+    centerX - labelWidth * 0.45 + INTRO_LABEL_OFFSET_X_PX,
     margin,
     instrumentSize.width - labelWidth - margin
   );
   const labelY = clampNumber(
-    centerY - 36,
+    centerY - 36 + INTRO_LABEL_OFFSET_Y_PX,
     margin,
     instrumentSize.height - margin - 140
   );
@@ -154,6 +158,8 @@ export const IntroCalloutOverlay = memo(
     onComplete,
     debugMode = false,
   }: IntroCalloutOverlayProps) => {
+    const onCompleteRef = useRef(onComplete);
+    const [open, setOpen] = useState<"open" | "close">("open");
     const currentDateText = useMemo(() => {
       return formatCurrentDate();
     }, []);
@@ -162,54 +168,69 @@ export const IntroCalloutOverlay = memo(
     }, [instrumentSize]);
 
     useEffect(() => {
+      onCompleteRef.current = onComplete;
+    }, [onComplete]);
+
+    useEffect(() => {
       if (debugMode) {
+        setOpen("open");
+
         return;
       }
 
-      const completeHandle = window.setTimeout(() => {
-        onComplete?.();
-      }, INTRO_DISPLAY_DURATION_MS);
+      setOpen("open");
+      let completeHandle = 0;
+      const closeHandle = window.setTimeout(() => {
+        setOpen("close");
+        completeHandle = window.setTimeout(() => {
+          onCompleteRef.current?.();
+        }, INTRO_CLEAR_CLOSE_MS);
+      }, INTRO_AUTO_CLOSE_MS);
 
       return () => {
-        window.clearTimeout(completeHandle);
+        window.clearTimeout(closeHandle);
+
+        if (completeHandle !== 0) {
+          window.clearTimeout(completeHandle);
+        }
       };
-    }, [debugMode, onComplete]);
+    }, [debugMode]);
 
     const [lineSpring] = useSpring(
       {
         reset: true,
         from: {
-          dashOffset: -INTRO_DASH_LENGTH,
-          nodeOpacity: 0,
+          dashOffset: open === "open" ? -INTRO_DASH_LENGTH : 0,
+          nodeOpacity: open === "open" ? 0 : 1,
         },
         to: {
-          dashOffset: 0,
-          nodeOpacity: 1,
+          dashOffset: open === "open" ? 0 : INTRO_DASH_LENGTH,
+          nodeOpacity: open === "open" ? 1 : 0,
         },
         delay: debugMode ? 0 : INTRO_LINE_DELAY_MS,
         immediate: debugMode,
         config: { duration: INTRO_LINE_DURATION_MS },
       },
-      [debugMode]
+      [debugMode, open]
     );
     const [textSpring] = useSpring(
       {
         reset: true,
         from: {
-          textOpacity: 0,
-          textShiftY: INTRO_TEXT_SHIFT_PX,
-          textTracking: INTRO_TEXT_TRACK_OPEN,
+          textOpacity: open === "open" ? 0 : 1,
+          textShiftY: open === "open" ? INTRO_TEXT_SHIFT_PX : 0,
+          textTracking: open === "open" ? INTRO_TEXT_TRACK_OPEN : 0,
         },
         to: {
-          textOpacity: 1,
-          textShiftY: 0,
-          textTracking: 0,
+          textOpacity: open === "open" ? 1 : 0,
+          textShiftY: open === "open" ? 0 : INTRO_TEXT_SHIFT_PX,
+          textTracking: open === "open" ? 0 : INTRO_TEXT_TRACK_CLOSE,
         },
         delay: debugMode ? 0 : INTRO_TEXT_DELAY_MS,
         immediate: debugMode,
         config: { mass: 3, tension: 600, friction: 100 },
       },
-      [debugMode]
+      [debugMode, open]
     );
 
     if (geometry === null) {
