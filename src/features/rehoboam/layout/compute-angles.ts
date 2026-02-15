@@ -259,6 +259,25 @@ const toComputedMarker = (marker: ResolvedEventMarker): ComputedEventAngle => {
   };
 };
 
+const resolveCircularMeanAngle = (
+  markers: readonly ResolvedEventMarker[]
+): number => {
+  const { sinSum, cosSum } = markers.reduce(
+    (accumulator, marker) => {
+      return {
+        sinSum: accumulator.sinSum + Math.sin(marker.angleRad),
+        cosSum: accumulator.cosSum + Math.cos(marker.angleRad),
+      };
+    },
+    {
+      sinSum: 0,
+      cosSum: 0,
+    }
+  );
+
+  return normalizeAngle(Math.atan2(sinSum, cosSum));
+};
+
 const clusterMarkers = (
   markers: readonly ResolvedEventMarker[],
   maxVisibleCount: number
@@ -288,8 +307,7 @@ const clusterMarkers = (
 
     const sortedBucket = [...bucket].sort(compareForRepresentative);
     const representative = sortedBucket[0];
-    const meanAngle =
-      bucket.reduce((sum, marker) => sum + marker.angleRad, 0) / bucket.length;
+    const meanAngle = resolveCircularMeanAngle(bucket);
     const markerHeight = bucket.reduce((maxHeight, marker) => {
       return Math.max(maxHeight, marker.markerHeight);
     }, 0);
@@ -300,7 +318,7 @@ const clusterMarkers = (
     clustered.push({
       event: representative.event,
       eventIds,
-      angleRad: normalizeAngle(meanAngle),
+      angleRad: meanAngle,
       markerHeight,
       clusterSize: bucket.length,
       isCluster: true,

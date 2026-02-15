@@ -347,6 +347,7 @@ export const CalloutOverlay = memo(
     const [renderTarget, setRenderTarget] =
       useState<CalloutOverlayTarget | null>(target);
     const renderTargetRef = useRef<CalloutOverlayTarget | null>(target);
+    const onCycleCompleteRef = useRef(onCycleComplete);
     const [open, setOpen] = useState<"open" | "close">("open");
     const [animationKey, setAnimationKey] = useState(0);
     const targetEventId = target?.event.id ?? null;
@@ -370,6 +371,10 @@ export const CalloutOverlay = memo(
       geometryTarget,
       instrumentSize,
     ]);
+
+    useEffect(() => {
+      onCycleCompleteRef.current = onCycleComplete;
+    }, [onCycleComplete]);
 
     useEffect(() => {
       if (!isCalloutDebugMode) {
@@ -435,7 +440,7 @@ export const CalloutOverlay = memo(
       closeHandle = window.setTimeout(() => {
         setOpen("close");
         cycleCompleteHandle = window.setTimeout(() => {
-          onCycleComplete?.();
+          onCycleCompleteRef.current?.();
         }, V1_CLEAR_CLOSE_MS);
       }, V1_AUTO_CLOSE_MS);
 
@@ -448,7 +453,7 @@ export const CalloutOverlay = memo(
           window.clearTimeout(cycleCompleteHandle);
         }
       };
-    }, [cycleToken, isCalloutDebugMode, onCycleComplete, target]);
+    }, [cycleToken, isCalloutDebugMode, targetEventId]);
 
     const [lineSpring] = useSpring(
       {

@@ -153,4 +153,31 @@ describe("computeAngles", () => {
     expect(ordered[2].angleRad).toBeCloseTo(TAU * 0.5);
     expect(ordered[3].angleRad).toBeCloseTo(TAU * 0.75);
   });
+
+  it("uses circular mean when clustered markers straddle the 0/TAU seam", () => {
+    const nowMs = 1_770_600_000_000;
+    const windowMs = 24 * 60 * 60 * 1000;
+    const windowStartMs = nowMs - windowMs;
+    const events = [
+      createEvent({
+        id: "event-near-zero",
+        timestampMs: windowStartMs + windowMs * 0.01,
+      }),
+      createEvent({
+        id: "event-near-tau",
+        timestampMs: windowStartMs + windowMs * 0.99,
+      }),
+    ] satisfies readonly WorldEvent[];
+
+    const clustered = computeAngles(events, {
+      nowMs,
+      windowMs,
+      maxVisibleCount: 1,
+      distributionMode: "time-window",
+    });
+
+    expect(clustered).toHaveLength(1);
+    expect(clustered[0].isCluster).toBe(true);
+    expect(clustered[0].angleRad).toBeLessThan(0.2);
+  });
 });
