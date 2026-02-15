@@ -1017,7 +1017,8 @@ const drawFlowCircleLanes = (
 
     const seamOuterPoints = mountainSamples.map((mountainSample, index) => {
       const coreContourRadius =
-        coreContourRadii[index] ?? viewport.outerRadius * CORE_RING_RADIUS_FACTOR;
+        coreContourRadii[index] ??
+        viewport.outerRadius * CORE_RING_RADIUS_FACTOR;
       const extensionLift = Math.min(
         viewport.outerRadius * SEAM_UNDERPAINT_EXTENSION_CAP_FACTOR,
         mountainSample.extensionInfluence *

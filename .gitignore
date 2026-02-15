@@ -12,3 +12,6 @@
 /test-results
 /playwright-report
 .tmp/screenshots/
+
+.tmp
+plans
