@@ -210,6 +210,8 @@ export const RehoboamScene = () => {
   const [calloutCycleToken, setCalloutCycleToken] = useState(0);
   const activeClusterTargetRef = useRef<DivergenceCalloutTarget | null>(null);
   const clusterTargetsRef = useRef<readonly DivergenceCalloutTarget[]>([]);
+  const autoCycleEventIdsRef = useRef<readonly string[]>([]);
+  const activeEventIdRef = useRef<string | null>(null);
   const eventSource = useMemo(() => createMockEventSource(), []);
   const qualityProfile = useMemo(() => {
     return resolveSceneQualityProfile({
@@ -267,6 +269,14 @@ export const RehoboamScene = () => {
     instrumentSize.width,
   ]);
 
+  useEffect(() => {
+    autoCycleEventIdsRef.current = autoCycleEventIds;
+  }, [autoCycleEventIds]);
+
+  useEffect(() => {
+    activeEventIdRef.current = activeEventId;
+  }, [activeEventId]);
+
   const advanceCalloutClusterTarget = useCallback(() => {
     setCalloutCycleToken((currentToken) => {
       return currentToken + 1;
@@ -279,29 +289,32 @@ export const RehoboamScene = () => {
     activeClusterTargetRef.current = nextClusterTarget;
     setActiveClusterTarget(nextClusterTarget);
 
-    if (autoCycleEventIds.length === 0) {
+    const cycleEventIds = autoCycleEventIdsRef.current;
+    const currentActiveEventId = activeEventIdRef.current;
+
+    if (cycleEventIds.length === 0) {
       setAutoEventId(null);
 
       return;
     }
 
-    if (activeEventId === null) {
-      setAutoEventId(autoCycleEventIds[0]);
+    if (currentActiveEventId === null) {
+      setAutoEventId(cycleEventIds[0]);
 
       return;
     }
 
-    const currentIndex = autoCycleEventIds.indexOf(activeEventId);
+    const currentIndex = cycleEventIds.indexOf(currentActiveEventId);
 
     if (currentIndex < 0) {
-      setAutoEventId(autoCycleEventIds[0]);
+      setAutoEventId(cycleEventIds[0]);
 
       return;
     }
 
-    const nextIndex = (currentIndex + 1) % autoCycleEventIds.length;
-    setAutoEventId(autoCycleEventIds[nextIndex]);
-  }, [activeEventId, autoCycleEventIds]);
+    const nextIndex = (currentIndex + 1) % cycleEventIds.length;
+    setAutoEventId(cycleEventIds[nextIndex]);
+  }, []);
 
   const handleRenderSnapshot = useCallback(
     (snapshot: RehoboamRenderSnapshot) => {

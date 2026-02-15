@@ -16,6 +16,8 @@ import type {
   WorldEvent,
 } from "./types";
 
+const MAX_FRAME_DELTA_MS = 100;
+
 const getDefaultNow = (): number => {
   if (typeof performance.now === "function") {
     return performance.now();
@@ -44,6 +46,10 @@ const cloneTheme = (theme: RehoboamTheme): RehoboamTheme => {
   return {
     ...theme,
   };
+};
+
+const clampFrameDeltaMs = (deltaMs: number): number => {
+  return Math.max(0, Math.min(MAX_FRAME_DELTA_MS, deltaMs));
 };
 
 const applyCanvasDimensions = (
@@ -107,7 +113,10 @@ export const createRehoboamEngine = (
     theme,
   });
 
-  const renderCurrentFrame = (timeMs: number) => {
+  const renderCurrentFrame = (
+    timeMs: number,
+    frameOptions: Readonly<{ freezeDelta?: boolean }> = {}
+  ) => {
     if (isDestroyed) {
       return;
     }
@@ -115,7 +124,9 @@ export const createRehoboamEngine = (
     startedAtMs ??= timeMs;
 
     const elapsedMs = timeMs - startedAtMs;
-    const deltaMs = previousFrameAtMs === null ? 0 : timeMs - previousFrameAtMs;
+    const rawDeltaMs =
+      previousFrameAtMs === null ? 0 : timeMs - previousFrameAtMs;
+    const deltaMs = frameOptions.freezeDelta ? 0 : clampFrameDeltaMs(rawDeltaMs);
     previousFrameAtMs = timeMs;
 
     const snapshot = renderer.render({
@@ -142,7 +153,8 @@ export const createRehoboamEngine = (
       return;
     }
 
-    renderCurrentFrame(now());
+    const snapshotTimeMs = previousFrameAtMs ?? now();
+    renderCurrentFrame(snapshotTimeMs, { freezeDelta: true });
   };
 
   const start: RehoboamEngine["start"] = () => {

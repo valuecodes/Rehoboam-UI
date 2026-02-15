@@ -1,7 +1,12 @@
 import { DEFAULT_THEME } from "../../../features/rehoboam/engine/defaults";
 import { createInitialInteractionState } from "../../../features/rehoboam/engine/input";
 import { createRehoboamEngine } from "../../../features/rehoboam/engine/rehoboam-engine";
-import type { WorldEvent } from "../../../features/rehoboam/engine/types";
+import type {
+  RehoboamRenderer,
+  RehoboamRendererFrame,
+  RehoboamRendererFactory,
+  WorldEvent,
+} from "../../../features/rehoboam/engine/types";
 import { createMockCanvasContext } from "../render/mock-canvas-context";
 
 const createRafHarness = () => {
@@ -57,6 +62,26 @@ const createTestCanvas = (
   });
 
   return canvas;
+};
+
+const createFrameCaptureRendererFactory = (
+  capturedFrames: RehoboamRendererFrame[]
+): RehoboamRendererFactory => {
+  return (): RehoboamRenderer => {
+    return {
+      resize: vi.fn(),
+      setTheme: vi.fn(),
+      render: (frame) => {
+        capturedFrames.push(frame);
+
+        return {
+          timeMs: frame.timeMs,
+          divergenceCalloutTargets: [],
+        };
+      },
+      destroy: vi.fn(),
+    };
+  };
 };
 
 describe("createRehoboamEngine", () => {
@@ -165,5 +190,79 @@ describe("createRehoboamEngine", () => {
       engine.resize({ width: 100, height: 100, dpr: 1 });
       engine.destroy();
     }).not.toThrow();
+  });
+
+  it("clamps large frame deltas to prevent animation jumps", () => {
+    const raf = createRafHarness();
+    const mockContext = createMockCanvasContext();
+    const canvas = createTestCanvas(mockContext.context);
+    const capturedFrames: RehoboamRendererFrame[] = [];
+    const nowSequence = [0, 1_000];
+    let nowIndex = 0;
+
+    const engine = createRehoboamEngine({
+      canvas,
+      now: () => {
+        const sampledNowMs =
+          nowSequence[nowIndex] ?? nowSequence[nowSequence.length - 1];
+        nowIndex += 1;
+
+        return sampledNowMs;
+      },
+      requestAnimationFrame: raf.requestAnimationFrame,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      rendererFactory: createFrameCaptureRendererFactory(capturedFrames),
+    });
+
+    engine.start();
+    raf.runSingleFrame(0);
+    raf.runSingleFrame(16);
+
+    expect(capturedFrames).toHaveLength(2);
+    expect(capturedFrames[0].deltaMs).toBe(0);
+    expect(capturedFrames[1].deltaMs).toBe(100);
+  });
+
+  it("renders stopped snapshots as still frames", () => {
+    const raf = createRafHarness();
+    const mockContext = createMockCanvasContext();
+    const canvas = createTestCanvas(mockContext.context);
+    const capturedFrames: RehoboamRendererFrame[] = [];
+    const nowSequence = [10, 20_000];
+    let nowIndex = 0;
+
+    const engine = createRehoboamEngine({
+      canvas,
+      now: () => {
+        const sampledNowMs =
+          nowSequence[nowIndex] ?? nowSequence[nowSequence.length - 1];
+        nowIndex += 1;
+
+        return sampledNowMs;
+      },
+      requestAnimationFrame: raf.requestAnimationFrame,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      rendererFactory: createFrameCaptureRendererFactory(capturedFrames),
+    });
+
+    engine.start();
+    raf.runSingleFrame(16);
+    engine.stop();
+
+    const frameCountBeforeSnapshot = capturedFrames.length;
+
+    engine.setTheme({
+      ...DEFAULT_THEME,
+      ringCount: DEFAULT_THEME.ringCount + 1,
+    });
+
+    expect(capturedFrames).toHaveLength(frameCountBeforeSnapshot + 1);
+
+    const latestFrame = capturedFrames[capturedFrames.length - 1];
+    const firstFrame = capturedFrames[0];
+
+    expect(latestFrame.timeMs).toBe(firstFrame.timeMs);
+    expect(latestFrame.elapsedMs).toBe(firstFrame.elapsedMs);
+    expect(latestFrame.deltaMs).toBe(0);
   });
 });
