@@ -25,6 +25,7 @@ It summarizes the current architecture, quality gates, and safe editing workflow
 - Root app: `src/app.tsx`
 - Scene composition: `src/features/rehoboam/scene/rehoboam-scene.tsx`
 - Scene styles: `src/features/rehoboam/scene/rehoboam-scene.css`
+- Scene event cycle helper: `src/features/rehoboam/scene/event-cycle.ts`
 - Engine core: `src/features/rehoboam/engine/rehoboam-engine.ts`
 - Interaction updates: `src/features/rehoboam/engine/input.ts`
 - Renderer orchestration: `src/features/rehoboam/render/canvas2d/renderer-2d.ts`
@@ -32,6 +33,7 @@ It summarizes the current architecture, quality gates, and safe editing workflow
 - Render passes: `src/features/rehoboam/render/canvas2d/passes/{background,rings,divergence,sweep,event-contour}-pass.ts`
 - Divergence pass: `src/features/rehoboam/render/canvas2d/passes/divergence-pass.ts`
 - Event callout overlay: `src/features/rehoboam/overlay/callout-overlay.tsx`
+- Intro callout overlay: `src/features/rehoboam/overlay/intro-callout-overlay.tsx`
 - Event list panel: `src/features/rehoboam/overlay/event-list-panel.tsx`
 - Data source + pipeline: `src/features/rehoboam/data/source.ts`
 - Data transforms: `src/features/rehoboam/data/normalize.ts`, `src/features/rehoboam/data/dedupe.ts`

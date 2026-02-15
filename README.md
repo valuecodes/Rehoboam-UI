@@ -4,8 +4,8 @@ A React app inspired by the "Rehoboam" interface from Westworld TV series.
 
 ![Preview](./public/preview.jpg)
 
-- Watch critical COVID-19 timeline events.
-- Create and launch a custom timeline.
+- Explore a timeline of major world events with Rehoboam-style animation.
+- Inspect active signals through synchronized callouts and the event list panel.
 
 ## Tech Stack
 
