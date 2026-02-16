@@ -1,7 +1,8 @@
 import { Bool, OpenAPIRoute, Str } from "chanfana";
 import { z } from "zod";
 
-import { Task, type AppContext } from "../types";
+import type { AppContext } from "../types";
+import { Task } from "../types";
 
 export class TaskDelete extends OpenAPIRoute {
   schema = {
@@ -31,7 +32,7 @@ export class TaskDelete extends OpenAPIRoute {
     },
   };
 
-  async handle(c: AppContext) {
+  async handle(_c: AppContext) {
     // Get validated data
     const data = await this.getValidatedData<typeof this.schema>();
 

@@ -23,5 +23,5 @@ openapi.delete("/api/tasks/:taskSlug", TaskDelete);
 // You may also register routes for non OpenAPI directly on Hono
 // app.get('/test', (c) => c.text('Hono!'))
 
-// Export the Hono app
+// eslint-disable-next-line import/no-default-export -- Cloudflare Workers require a default export
 export default app;
