@@ -1,7 +1,8 @@
 import { Bool, OpenAPIRoute, Str } from "chanfana";
 import { z } from "zod";
 
-import { Task, type AppContext } from "../types";
+import type { AppContext } from "../types";
+import { Task } from "../types";
 
 export class TaskFetch extends OpenAPIRoute {
   schema = {
@@ -44,7 +45,7 @@ export class TaskFetch extends OpenAPIRoute {
     },
   };
 
-  async handle(c: AppContext) {
+  async handle(_c: AppContext) {
     // Get validated data
     const data = await this.getValidatedData<typeof this.schema>();
 
@@ -53,10 +54,10 @@ export class TaskFetch extends OpenAPIRoute {
 
     // Implement your own object fetch here
 
-    const exists = true;
+    // TODO: implement actual existence check
+    const exists = true as boolean;
 
-    // @ts-ignore: check if the object exists
-    if (exists === false) {
+    if (!exists) {
       return Response.json(
         {
           success: false,
