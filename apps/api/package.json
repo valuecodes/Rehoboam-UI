@@ -13,7 +13,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "chanfana": "2.6.3",
+    "@hono/zod-validator": "0.7.6",
     "hono": "4.6.20",
     "zod": "3.24.1"
   },
