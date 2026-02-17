@@ -1,0 +1,75 @@
+import { Hono } from "hono";
+import { z } from "zod";
+
+const eventSchema = z.object({
+  id: z.string(),
+  date: z.string(),
+  title: z.string(),
+  location: z.string(),
+  severity: z.enum(["low", "medium", "high", "critical"]),
+});
+
+const eventsResponse = z.array(eventSchema);
+
+const mockEvents = [
+  {
+    id: "dotcom-bubble-burst",
+    date: "2000-03-10",
+    title: "Dot-com bubble burst",
+    location: "New York",
+    severity: "high",
+  },
+  {
+    id: "global-financial-crisis",
+    date: "2008-09-15",
+    title: "Global financial crisis escalation",
+    location: "New York",
+    severity: "critical",
+  },
+  {
+    id: "eurozone-debt-crisis",
+    date: "2010-05-02",
+    title: "Eurozone debt crisis",
+    location: "Brussels",
+    severity: "high",
+  },
+  {
+    id: "oil-price-crash",
+    date: "2014-11-27",
+    title: "Oil price crash",
+    location: "Global oil markets",
+    severity: "medium",
+  },
+  {
+    id: "covid-pandemic",
+    date: "2020-03-11",
+    title: "COVID-19 global pandemic",
+    location: "Worldwide",
+    severity: "critical",
+  },
+  {
+    id: "supply-chain-crunch",
+    date: "2021-10-01",
+    title: "Global supply chain crunch",
+    location: "Shanghai",
+    severity: "high",
+  },
+  {
+    id: "ukraine-war",
+    date: "2022-02-24",
+    title: "Russia-Ukraine war escalation",
+    location: "Kyiv",
+    severity: "critical",
+  },
+  {
+    id: "red-sea-shipping-crisis",
+    date: "2024-01-15",
+    title: "Red Sea shipping crisis",
+    location: "Suez",
+    severity: "high",
+  },
+];
+
+export const events = new Hono<{ Bindings: Env }>().get("/", (c) => {
+  return c.json(eventsResponse.parse(mockEvents));
+});
