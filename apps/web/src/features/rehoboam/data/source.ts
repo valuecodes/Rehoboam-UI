@@ -84,3 +84,19 @@ export const loadEventsFromSource = async (
 
   return runEventPipeline(payload, options);
 };
+
+export const createApiEventSource = (url: string): RehoboamEventSource => {
+  return {
+    loadEvents: async () => {
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch events: ${response.status} ${response.statusText}`
+        );
+      }
+
+      return response.json() as Promise<unknown>;
+    },
+  };
+};

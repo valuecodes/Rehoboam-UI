@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { refreshEventsFromSource } from "../data/bootstrap";
 import { loadPersistedEvents } from "../data/persistence";
-import { createMockEventSource } from "../data/source";
+import { createApiEventSource } from "../data/source";
 import { DEFAULT_DPR_CAP, DEFAULT_THEME } from "../engine/defaults";
 import { createInitialInteractionState } from "../engine/input";
 import { createRehoboamEngine } from "../engine/rehoboam-engine";
@@ -212,7 +212,7 @@ export const RehoboamScene = () => {
   const clusterTargetsRef = useRef<readonly DivergenceCalloutTarget[]>([]);
   const autoCycleEventIdsRef = useRef<readonly string[]>([]);
   const activeEventIdRef = useRef<string | null>(null);
-  const eventSource = useMemo(() => createMockEventSource(), []);
+  const eventSource = useMemo(() => createApiEventSource("/api/events"), []);
   const qualityProfile = useMemo(() => {
     return resolveSceneQualityProfile({
       width: instrumentSize.width,
