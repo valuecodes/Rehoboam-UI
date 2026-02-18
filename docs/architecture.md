@@ -5,7 +5,7 @@ Events are rendered as distortions in a polar coordinate system, with overlays
 for focused event detail.
 
 This document reflects the implementation currently in this repository and was
-verified against source on February 11, 2026.
+verified against source on February 18, 2026.
 
 ## Current Status Snapshot
 
@@ -13,8 +13,8 @@ verified against source on February 11, 2026.
 - Active renderer pipeline has four passes: background, rings, divergence, sweep.
 - `apps/web/src/features/rehoboam/render/canvas2d/passes/event-contour-pass.ts` exists but
   is not wired into `Renderer2D`.
-- Scene boot is cache-first from IndexedDB, then background refresh/replace from a
-  static mock source.
+- Scene boot is cache-first from IndexedDB, then background refresh/replace from
+  API endpoint `/api/events`.
 - Automated tests are present under `apps/web/src/tests/rehoboam/**` for data, layout,
   engine, renderer, overlay, and quality behavior.
 
@@ -61,7 +61,7 @@ graph TD
     end
 
     subgraph Data["Data Pipeline"]
-        Source["Event Source"]
+        Source["API Event Source (/api/events)"]
         Norm["Normalize"]
         Dedup["Dedupe"]
         Boot["Bootstrap"]
@@ -186,8 +186,21 @@ Behavior:
 - IndexedDB read failures return `[]` (best-effort persistence).
 - Source refresh failures return existing snapshot unchanged.
 - Successful refresh treats source as authoritative and replaces cached snapshot.
-- Current scene source is `createMockEventSource()` backed by
-  `apps/web/src/features/rehoboam/fixtures/mock-events.json`.
+- Current scene source is `createApiEventSource("/api/events")`.
+- In local development, Vite proxies `/api/*` from the web app to
+  `http://localhost:3001`.
+
+### API Event Payload Contract
+
+`apps/api` currently returns event rows with:
+
+- `id` (`string`)
+- `date` (`YYYY-MM-DD`)
+- `title` (`string`)
+- `location` (`string`)
+- `severity` (`low | medium | high | critical`)
+
+`runEventPipeline` normalizes this API payload into `WorldEvent[]`.
 
 ### Normalization and Dedupe Pipeline
 
@@ -422,6 +435,8 @@ Current test modules under `apps/web/src/tests/rehoboam/**` cover:
 | Pulse tracker              | `apps/web/src/features/rehoboam/render/canvas2d/divergence-pulse-tracker.ts`   |
 | Cluster tracker            | `apps/web/src/features/rehoboam/render/canvas2d/divergence-cluster-tracker.ts` |
 | Data source + pipeline     | `apps/web/src/features/rehoboam/data/source.ts`                                |
+| API worker entry           | `apps/api/src/index.ts`                                                        |
+| API events route           | `apps/api/src/routes/events.ts`                                                |
 | Normalization              | `apps/web/src/features/rehoboam/data/normalize.ts`                             |
 | Deduplication              | `apps/web/src/features/rehoboam/data/dedupe.ts`                                |
 | Cache-first bootstrap      | `apps/web/src/features/rehoboam/data/bootstrap.ts`                             |
@@ -432,6 +447,6 @@ Current test modules under `apps/web/src/tests/rehoboam/**` cover:
 | Angle computation          | `apps/web/src/features/rehoboam/layout/compute-angles.ts`                      |
 | Polar math                 | `apps/web/src/features/rehoboam/layout/polar.ts`                               |
 | Shared RNG utility         | `apps/web/src/shared/utils/seeded-rng.ts`                                      |
-| Mock event fixture         | `apps/web/src/features/rehoboam/fixtures/mock-events.json`                     |
+| Mock event fixture         | `apps/web/src/features/rehoboam/fixtures/mock-events.json` (utility/tests)     |
 | Scene styles               | `apps/web/src/features/rehoboam/scene/rehoboam-scene.css`                      |
 | Unit tests root            | `apps/web/src/tests/rehoboam`                                                  |
