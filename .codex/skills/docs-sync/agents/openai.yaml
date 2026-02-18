@@ -1,0 +1,4 @@
+interface:
+  display_name: "Docs Sync"
+  short_description: "Synchronize docs across Rehoboam monorepo"
+  default_prompt: "Synchronize documentation updates across this monorepo and validate doc-related consistency."

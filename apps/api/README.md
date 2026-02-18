@@ -1,25 +1,57 @@
-# Cloudflare Workers OpenAPI 3.1
+# Rehoboam API
 
-This is a Cloudflare Worker with OpenAPI 3.1 using [chanfana](https://github.com/cloudflare/chanfana) and [Hono](https://github.com/honojs/hono).
+Cloudflare Worker API workspace for timeline events consumed by `apps/web`.
 
-This is an example project made to be used as a quick start into building OpenAPI compliant Workers that generates the
-`openapi.json` schema automatically from code and validates the incoming request to the defined parameters or request body.
+## Endpoint
 
-## Get started
+- `GET /api/events`
+- Response body is a JSON array with this shape:
 
-1. Sign up for [Cloudflare Workers](https://workers.dev). The free tier is more than enough for most use cases.
-2. Clone this project and install dependencies with `npm install`
-3. Run `wrangler login` to login to your Cloudflare account in wrangler
-4. Run `wrangler deploy` to publish the API to Cloudflare Workers
+```json
+[
+  {
+    "id": "dotcom-bubble-burst",
+    "date": "2000-03-10",
+    "title": "Dot-com bubble burst",
+    "location": "New York",
+    "severity": "high"
+  }
+]
+```
 
-## Project structure
+`severity` is one of `low | medium | high | critical`.
 
-1. Your main router is defined in `src/index.ts`.
-2. Each endpoint has its own file in `src/endpoints/`.
-3. For more information read the [chanfana documentation](https://chanfana.pages.dev/) and [Hono documentation](https://hono.dev/docs).
+## Local Development
 
-## Development
+Run from repo root:
 
-1. Run `wrangler dev` to start a local instance of the API.
-2. Open `http://localhost:8787/` in your browser to see the Swagger interface where you can try the endpoints.
-3. Changes made in the `src/` folder will automatically trigger the server to reload, you only need to refresh the Swagger interface.
+```bash
+pnpm --filter api dev
+```
+
+Default local URL: `http://localhost:3001`
+
+For full stack local dev (web + api in parallel), run:
+
+```bash
+pnpm dev
+```
+
+The web app in `apps/web` proxies `/api/*` requests to
+`http://localhost:3001`.
+
+## Workspace Scripts
+
+- `pnpm --filter api dev` - start Wrangler local worker on port `3001`
+- `pnpm --filter api start` - start Wrangler local worker with Wrangler defaults
+- `pnpm --filter api deploy` - deploy Worker
+- `pnpm --filter api cf-typegen` - generate `worker-configuration.d.ts`
+- `pnpm --filter api typecheck` - run TypeScript checks
+- `pnpm --filter api lint` - run ESLint
+- `pnpm --filter api test` - run Vitest
+
+## Project Structure
+
+- Router entry: `src/index.ts`
+- Events route: `src/routes/events.ts`
+- Worker config: `wrangler.jsonc`

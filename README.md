@@ -1,11 +1,11 @@
 # Rehoboam UI
 
-A React app inspired by the "Rehoboam" interface from Westworld TV series.
+A pnpm monorepo with a Rehoboam-style React UI and a Cloudflare Worker API.
 
 ![Preview](./apps/web/public/preview.jpg)
 
 - Explore a timeline of major world events with Rehoboam-style animation.
-- Inspect active signals through synchronized callouts and the event list panel.
+- Inspect active signals through synchronized callouts.
 
 ## Tech Stack
 
@@ -29,13 +29,20 @@ pnpm install
 pnpm dev
 ```
 
-Dev server URL: `http://localhost:3000`
+`pnpm dev` runs all workspaces in parallel:
+
+- Web UI: `http://localhost:3000`
+- API Worker: `http://localhost:3001`
+- Events endpoint: `http://localhost:3001/api/events`
+
+In local web development, Vite proxies `/api/*` requests from `apps/web` to the
+API worker on port `3001`.
 
 ## Build and Preview
 
 ```bash
 pnpm build
-pnpm preview
+pnpm --filter web preview
 ```
 
 ## Quality Checks
@@ -91,15 +98,16 @@ short settle delay before capturing.
 
 ## Scripts
 
-- `pnpm dev` - run the Vite dev server on port `3000`
-- `pnpm start` - alias for `pnpm dev` (port `3000`)
-- `pnpm build` - create production build
-- `pnpm preview` - preview the production build
-- `pnpm typecheck` - run TypeScript checks
-- `pnpm lint` - run ESLint
+- `pnpm dev` - run `dev` in all workspaces (`web` + `api`) in parallel
+- `pnpm build` - build all workspaces
+- `pnpm typecheck` - run TypeScript checks in all workspaces
+- `pnpm lint` - run ESLint in all workspaces
 - `pnpm format` - auto-format files with Prettier
 - `pnpm format:check` - verify formatting
-- `pnpm test` - run tests with Vitest
+- `pnpm test` - run tests in all workspaces
+- `pnpm --filter web dev` - run only the web dev server (`http://localhost:3000`)
+- `pnpm --filter api dev` - run only the API worker (`http://localhost:3001`)
+- `pnpm --filter web preview` - preview the web production build
 - `pnpm --filter web screenshot:scene` - capture deterministic full + scene screenshots
 - `pnpm --filter web screenshot:scene:headed` - run screenshot capture with headed browser
 
