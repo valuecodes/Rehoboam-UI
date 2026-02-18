@@ -82,6 +82,13 @@ The command uses a dedicated screenshot server on port `3001` by default,
 waits for `.rehoboam-scene__instrument` to be visible, and then applies a
 short settle delay before capturing.
 
+## Updating Packages
+
+### Pick packages to update
+
+1. `pnpm outdated -r`
+2. `pnpm up --latest -r package another-package`
+
 ## Scripts
 
 - `pnpm dev` - run the Vite dev server on port `3000`

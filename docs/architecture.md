@@ -355,9 +355,9 @@ Animated active-event callout:
   - location/category headline (dynamic size based on length)
   - message/title line
   - add/summary line (fallback `severity / category`)
-- animations are `react-spring`-driven with V1-style staging:
+- animations are `motion`-driven with V1-style staging:
   - line/frame share one dash-offset spring (`-1800 -> 0`) with `1000ms` delay and `1000ms` duration
-  - text enters after `2000ms` with spring config (`mass=3`, `tension=600`, `friction=100`)
+  - text enters after `2000ms` with spring config (`mass=3`, `stiffness=600`, `damping=100`)
   - overlay auto-closes after `5000ms` and uses reverse values for close
   - active callout target is latched for the full open/close cycle
   - callout anchor angle is picked from active divergence clusters on each cycle

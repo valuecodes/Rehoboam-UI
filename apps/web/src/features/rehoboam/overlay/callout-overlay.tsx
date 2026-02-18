@@ -1,5 +1,5 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
-import { animated, useSpring } from "react-spring";
+import { animate, motion, useMotionTemplate, useMotionValue } from "motion/react";
 
 import type { WorldEvent } from "../engine/types";
 import { polarToCartesian } from "../layout/polar";
@@ -49,8 +49,6 @@ const V1_TEXT_DELAY_MS = 2_000;
 const V1_AUTO_CLOSE_MS = 5_000;
 const V1_CLEAR_CLOSE_MS = 3_200;
 const V1_DASH_LENGTH = 1_800;
-const V1_TEXT_TRACK_OPEN = -10;
-const V1_TEXT_TRACK_CLOSE = 10;
 const V1_TEXT_SHIFT_PX = 7;
 const CALLOUT_ENDPOINT_OUTER_RADIUS_PX = 6;
 const CALLOUT_ENDPOINT_INNER_RADIUS_PX = 2.25;
@@ -455,40 +453,76 @@ export const CalloutOverlay = memo(
       };
     }, [cycleToken, isCalloutDebugMode, targetEventId]);
 
-    const [lineSpring] = useSpring(
-      {
-        reset: true,
-        from: {
-          dashOffset: open === "open" ? -V1_DASH_LENGTH : 0,
-          nodeOpacity: open === "open" ? 0 : 1,
-        },
-        to: {
-          dashOffset: open === "open" ? 0 : V1_DASH_LENGTH,
-          nodeOpacity: open === "open" ? 1 : 0,
-        },
-        delay: V1_LINE_DELAY_MS,
-        config: { duration: V1_LINE_DURATION_MS },
-      },
-      [animationKey, open]
-    );
-    const [textSpring] = useSpring(
-      {
-        reset: true,
-        from: {
-          textOpacity: open === "open" ? 0 : 1,
-          textShiftY: open === "open" ? V1_TEXT_SHIFT_PX : 0,
-          textTracking: open === "open" ? V1_TEXT_TRACK_OPEN : 0,
-        },
-        to: {
-          textOpacity: open === "open" ? 1 : 0,
-          textShiftY: open === "open" ? 0 : V1_TEXT_SHIFT_PX,
-          textTracking: open === "open" ? 0 : V1_TEXT_TRACK_CLOSE,
-        },
-        delay: V1_TEXT_DELAY_MS,
-        config: { mass: 3, tension: 600, friction: 100 },
-      },
-      [animationKey, open]
-    );
+    const lineDashOffset = useMotionValue(0);
+    const lineNodeOpacity = useMotionValue(0);
+    const textOpacity = useMotionValue(0);
+    const textShiftY = useMotionValue(0);
+    const textTransform = useMotionTemplate`translate3d(0, ${textShiftY}px, 0)`;
+
+    useEffect(() => {
+      if (isCalloutDebugMode) {
+        lineDashOffset.set(0);
+        lineNodeOpacity.set(1);
+        textOpacity.set(1);
+        textShiftY.set(0);
+
+        return;
+      }
+
+      const isOpening = open === "open";
+      lineDashOffset.set(isOpening ? -V1_DASH_LENGTH : 0);
+      lineNodeOpacity.set(isOpening ? 0 : 1);
+      textOpacity.set(isOpening ? 0 : 1);
+      textShiftY.set(isOpening ? V1_TEXT_SHIFT_PX : 0);
+
+      const lineAnimation = animate(
+        lineDashOffset,
+        isOpening ? 0 : V1_DASH_LENGTH,
+        {
+          delay: V1_LINE_DELAY_MS / 1_000,
+          duration: V1_LINE_DURATION_MS / 1_000,
+          ease: "linear",
+        }
+      );
+      const nodeAnimation = animate(lineNodeOpacity, isOpening ? 1 : 0, {
+        delay: V1_LINE_DELAY_MS / 1_000,
+        duration: V1_LINE_DURATION_MS / 1_000,
+        ease: "linear",
+      });
+      const textOpacityAnimation = animate(textOpacity, isOpening ? 1 : 0, {
+        delay: V1_TEXT_DELAY_MS / 1_000,
+        type: "spring",
+        mass: 3,
+        stiffness: 600,
+        damping: 100,
+      });
+      const textShiftAnimation = animate(
+        textShiftY,
+        isOpening ? 0 : V1_TEXT_SHIFT_PX,
+        {
+          delay: V1_TEXT_DELAY_MS / 1_000,
+          type: "spring",
+          mass: 3,
+          stiffness: 600,
+          damping: 100,
+        }
+      );
+
+      return () => {
+        lineAnimation.stop();
+        nodeAnimation.stop();
+        textOpacityAnimation.stop();
+        textShiftAnimation.stop();
+      };
+    }, [
+      animationKey,
+      isCalloutDebugMode,
+      lineDashOffset,
+      lineNodeOpacity,
+      open,
+      textOpacity,
+      textShiftY,
+    ]);
 
     if (geometry === null || geometryTarget === null) {
       return null;
@@ -505,54 +539,52 @@ export const CalloutOverlay = memo(
           className="rehoboam-scene__overlay"
           viewBox={`0 0 ${instrumentSize.width} ${instrumentSize.height}`}
         >
-          <animated.path
+          <motion.path
             className="rehoboam-scene__callout-line"
             d={geometry.connectorPath}
             style={{
               strokeDasharray: V1_DASH_LENGTH,
-              strokeDashoffset: isCalloutDebugMode ? 0 : lineSpring.dashOffset,
+              strokeDashoffset: isCalloutDebugMode ? 0 : lineDashOffset,
             }}
           />
-          <animated.polyline
+          <motion.polyline
             className="rehoboam-scene__callout-frame"
             points={geometry.framePoints}
             style={{
               strokeDasharray: V1_DASH_LENGTH,
-              strokeDashoffset: isCalloutDebugMode ? 0 : lineSpring.dashOffset,
+              strokeDashoffset: isCalloutDebugMode ? 0 : lineDashOffset,
             }}
           />
-          <animated.circle
+          <motion.circle
             className="rehoboam-scene__callout-endpoint-ring"
             cx={geometry.anchorX}
             cy={geometry.anchorY}
             r={CALLOUT_ENDPOINT_OUTER_RADIUS_PX}
             style={{
-              opacity: isCalloutDebugMode ? 1 : lineSpring.nodeOpacity,
+              opacity: isCalloutDebugMode ? 1 : lineNodeOpacity,
             }}
           />
-          <animated.circle
+          <motion.circle
             className="rehoboam-scene__callout-endpoint-dot"
             cx={geometry.anchorX}
             cy={geometry.anchorY}
             r={CALLOUT_ENDPOINT_INNER_RADIUS_PX}
             style={{
-              opacity: isCalloutDebugMode ? 1 : lineSpring.nodeOpacity,
+              opacity: isCalloutDebugMode ? 1 : lineNodeOpacity,
             }}
           />
         </svg>
-        <animated.div
+        <motion.div
           className="rehoboam-scene__callout"
           style={{
             left: geometry.labelX,
             top: geometry.labelY,
             width: geometry.labelWidth,
             textAlign: geometry.textAlign,
-            opacity: isCalloutDebugMode ? 1 : textSpring.textOpacity,
+            opacity: isCalloutDebugMode ? 1 : textOpacity,
             transform: isCalloutDebugMode
               ? "translate3d(0, 0, 0)"
-              : textSpring.textShiftY.to((shiftY: number) => {
-                  return `translate3d(0, ${shiftY}px, 0)`;
-                }),
+              : textTransform,
           }}
         >
           <p
@@ -572,7 +604,7 @@ export const CalloutOverlay = memo(
             </span>
           </p>
           <p className="rehoboam-scene__callout-subtitle">{titleText}</p>
-        </animated.div>
+        </motion.div>
       </>
     );
   }
