@@ -23,6 +23,9 @@ importers:
       '@hono/zod-validator':
         specifier: 0.7.6
         version: 0.7.6(hono@4.11.10)(zod@4.3.6)
+      '@repo/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       hono:
         specifier: 4.11.10
         version: 4.11.10
@@ -63,6 +66,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@repo/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       motion:
         specifier: 12.34.2
         version: 12.34.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -120,6 +126,34 @@ importers:
         version: 8.8.5
 
   packages/logger:
+    devDependencies:
+      '@repo/eslint':
+        specifier: workspace:*
+        version: link:../../tooling/eslint
+      '@repo/prettier':
+        specifier: workspace:*
+        version: link:../../tooling/prettier
+      '@repo/typescript':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
+      eslint:
+        specifier: 9.39.1
+        version: 9.39.1(jiti@2.6.1)
+      prettier:
+        specifier: 3.8.1
+        version: 3.8.1
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 4.0.18
+        version: 4.0.18(@types/node@25.2.3)(jiti@2.6.1)(jsdom@28.1.0)(terser@5.46.0)(yaml@2.8.2)
+
+  packages/types:
+    dependencies:
+      zod:
+        specifier: 4.3.6
+        version: 4.3.6
     devDependencies:
       '@repo/eslint':
         specifier: workspace:*

@@ -1,15 +1,5 @@
+import { EventsResponseSchema } from "@repo/types";
 import { Hono } from "hono";
-import { z } from "zod";
-
-const eventSchema = z.object({
-  id: z.string(),
-  date: z.string(),
-  title: z.string(),
-  location: z.string(),
-  severity: z.enum(["low", "medium", "high", "critical"]),
-});
-
-const eventsResponse = z.array(eventSchema);
 
 const mockEvents = [
   {
@@ -71,5 +61,5 @@ const mockEvents = [
 ];
 
 export const events = new Hono<{ Bindings: Env }>().get("/", (c) => {
-  return c.json(eventsResponse.parse(mockEvents));
+  return c.json(EventsResponseSchema.parse(mockEvents));
 });
