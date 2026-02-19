@@ -1,5 +1,10 @@
+import {
+  animate,
+  motion,
+  useMotionTemplate,
+  useMotionValue,
+} from "motion/react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
-import { animate, motion, useMotionTemplate, useMotionValue } from "motion/react";
 
 import { polarToCartesian } from "../layout/polar";
 import type { InstrumentSize } from "./callout-overlay";

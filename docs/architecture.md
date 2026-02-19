@@ -413,6 +413,14 @@ Current test modules under `apps/web/src/tests/rehoboam/**` cover:
 
 ---
 
+## Shared Packages
+
+| Package        | Path              | Purpose                                                             |
+| -------------- | ----------------- | ------------------------------------------------------------------- |
+| `@repo/logger` | `packages/logger` | Structured JSON logger with leveled output and per-instance context |
+
+---
+
 ## Key Files
 
 | Concept                    | Path                                                                           |
