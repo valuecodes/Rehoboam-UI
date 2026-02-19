@@ -1,5 +1,10 @@
+import {
+  animate,
+  motion,
+  useMotionTemplate,
+  useMotionValue,
+} from "motion/react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
-import { animate, motion, useMotionTemplate, useMotionValue } from "motion/react";
 
 import type { WorldEvent } from "../engine/types";
 import { polarToCartesian } from "../layout/polar";
