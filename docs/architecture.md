@@ -418,6 +418,7 @@ Current test modules under `apps/web/src/tests/rehoboam/**` cover:
 | Package        | Path              | Purpose                                                             |
 | -------------- | ----------------- | ------------------------------------------------------------------- |
 | `@repo/logger` | `packages/logger` | Structured JSON logger with leveled output and per-instance context |
+| `@repo/types`  | `packages/types`  | Shared Zod schemas and inferred types for the Rehoboam API contract |
 
 ---
 
