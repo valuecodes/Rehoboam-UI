@@ -1,0 +1,4 @@
+interface:
+  display_name: "Code Reviewer"
+  short_description: "Review changes vs main for security, bugs, docs, and conventions"
+  default_prompt: "Review the current changes against main and report findings focused on security, bugs, docs currency, and repo conventions."
