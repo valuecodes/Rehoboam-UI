@@ -36,6 +36,24 @@ describe("EventSchema", () => {
       EventSchema.parse({ ...validEvent, severity: "extreme" })
     ).toThrow();
   });
+
+  it("rejects an event with empty id", () => {
+    expect(() => EventSchema.parse({ ...validEvent, id: "" })).toThrow();
+  });
+
+  it("rejects an event with invalid date format", () => {
+    expect(() =>
+      EventSchema.parse({ ...validEvent, date: "not-a-date" })
+    ).toThrow();
+  });
+
+  it("rejects an event with empty title", () => {
+    expect(() => EventSchema.parse({ ...validEvent, title: "" })).toThrow();
+  });
+
+  it("rejects an event with empty location", () => {
+    expect(() => EventSchema.parse({ ...validEvent, location: "" })).toThrow();
+  });
 });
 
 describe("EventsResponseSchema", () => {

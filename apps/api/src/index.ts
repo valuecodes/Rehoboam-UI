@@ -11,5 +11,9 @@ app.onError(onErrorHandler);
 
 app.route("/api/events", events);
 
+app.notFound((c) => {
+  return c.json({ error: "Not Found" }, 404);
+});
+
 // eslint-disable-next-line import/no-default-export -- Cloudflare Workers require a default export
 export default app;

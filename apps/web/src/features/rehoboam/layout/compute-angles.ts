@@ -1,3 +1,4 @@
+import { compareStrings, SEVERITY_RANK } from "../engine/severity";
 import type { WorldEvent, WorldEventSeverity } from "../engine/types";
 import { normalizeAngle, TAU } from "./polar";
 
@@ -12,13 +13,6 @@ export const SEVERITY_MARKER_HEIGHT: Readonly<
   medium: 0.02,
   high: 0.032,
   critical: 0.045,
-};
-
-const SEVERITY_RANK: Readonly<Record<WorldEventSeverity, number>> = {
-  low: 0,
-  medium: 1,
-  high: 2,
-  critical: 3,
 };
 
 export type TimeWindowAngleOptions = Readonly<{
@@ -49,18 +43,6 @@ type ResolvedEventMarker = Readonly<{
   angleRad: number;
   markerHeight: number;
 }>;
-
-const compareStrings = (left: string, right: string): number => {
-  if (left < right) {
-    return -1;
-  }
-
-  if (left > right) {
-    return 1;
-  }
-
-  return 0;
-};
 
 const sanitizeWindowMs = (windowMs: number | undefined): number => {
   return Math.max(1, Math.trunc(windowMs ?? DEFAULT_LAYOUT_WINDOW_MS));

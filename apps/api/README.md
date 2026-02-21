@@ -26,7 +26,7 @@ Cloudflare Worker API workspace for timeline events consumed by `apps/web`.
 Run from repo root:
 
 ```bash
-pnpm --filter api dev
+pnpm --filter rehoboam-api dev
 ```
 
 Default local URL: `http://localhost:3001`
@@ -42,13 +42,13 @@ The web app in `apps/web` proxies `/api/*` requests to
 
 ## Workspace Scripts
 
-- `pnpm --filter api dev` - start Wrangler local worker on port `3001`
-- `pnpm --filter api start` - start Wrangler local worker with Wrangler defaults
-- `pnpm --filter api deploy` - deploy Worker
-- `pnpm --filter api cf-typegen` - generate `worker-configuration.d.ts`
-- `pnpm --filter api typecheck` - run TypeScript checks
-- `pnpm --filter api lint` - run ESLint
-- `pnpm --filter api test` - run Vitest
+- `pnpm --filter rehoboam-api dev` - start Wrangler local worker on port `3001`
+- `pnpm --filter rehoboam-api start` - start Wrangler local worker with Wrangler defaults
+- `pnpm --filter rehoboam-api deploy` - deploy Worker
+- `pnpm --filter rehoboam-api cf-typegen` - generate `worker-configuration.d.ts`
+- `pnpm --filter rehoboam-api typecheck` - run TypeScript checks
+- `pnpm --filter rehoboam-api lint` - run ESLint
+- `pnpm --filter rehoboam-api test` - run Vitest
 
 ## Project Structure
 

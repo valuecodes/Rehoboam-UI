@@ -8,6 +8,8 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
 
 import type { WorldEvent } from "../engine/types";
 import { polarToCartesian } from "../layout/polar";
+import { clampNumber, toPointList } from "./utils";
+import type { Point } from "./utils";
 
 export type InstrumentSize = Readonly<{
   width: number;
@@ -40,11 +42,6 @@ type CalloutGeometry = Readonly<{
   timeMarginTop: number;
 }>;
 
-type Point = Readonly<{
-  x: number;
-  y: number;
-}>;
-
 type CalloutDebugLock = "top" | "bottom";
 type CalloutDebugSideLock = "left" | "right";
 
@@ -73,10 +70,6 @@ const CALLOUT_DEBUG_QUERY_KEY = "callout-debug";
 const CALLOUT_DEBUG_HALF_QUERY_KEY = "callout-debug-half";
 const CALLOUT_DEBUG_SIDE_QUERY_KEY = "callout-debug-side";
 
-const clampNumber = (value: number, min: number, max: number): number => {
-  return Math.min(max, Math.max(min, value));
-};
-
 const formatCalloutDate = (timestampMs: number): string => {
   const date = new Date(timestampMs);
   const month = `${date.getUTCMonth() + 1}`.padStart(2, "0");
@@ -103,14 +96,6 @@ const getCalloutLocationText = (event: WorldEvent): string => {
   }
 
   return "Unknown location";
-};
-
-const toPointList = (points: readonly Point[]): string => {
-  return points
-    .map((point) => {
-      return `${point.x} ${point.y}`;
-    })
-    .join(",");
 };
 
 const isDebugFlagEnabled = (value: string | null): boolean => {

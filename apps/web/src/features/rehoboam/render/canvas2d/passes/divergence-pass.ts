@@ -1,3 +1,4 @@
+import { SEVERITY_RANK } from "../../../engine/severity";
 import type {
   InteractionState,
   RehoboamTheme,
@@ -5,11 +6,6 @@ import type {
   WorldEvent,
   WorldEventSeverity,
 } from "../../../engine/types";
-import {
-  computeAngles,
-  DEFAULT_LAYOUT_WINDOW_MS,
-  DEFAULT_MAX_VISIBLE_EVENT_COUNT,
-} from "../../../layout/compute-angles";
 import {
   normalizeAngle,
   polarToCartesian,
@@ -23,8 +19,8 @@ import {
   DIVERGENCE_PULSE_LIFETIME_MS,
 } from "../divergence-constants";
 import type { DivergencePulse } from "../divergence-pulse-tracker";
+import { getClusterEnvelope } from "../divergence-utils";
 
-const LEADING_TIME_OFFSET_MS = 45 * 60 * 1000;
 const MAX_RENDERABLE_PULSES = 14;
 const MAX_MOUNTAIN_EXTENSION_SOURCES = 16;
 const MAX_RENDERABLE_PULSE_EXTENSIONS = 4;
@@ -56,13 +52,6 @@ const SEAM_UNDERPAINT_GRADIENT_OUTER_OFFSET_FACTOR = 0.056;
 const BOTTOM_WAVE_DARKEN_WINDOW_RAD = Math.PI * 0.84;
 const BOTTOM_WAVE_DARKEN_THRESHOLD = 0.18;
 
-const SEVERITY_RANK: Readonly<Record<WorldEventSeverity, number>> = {
-  low: 0,
-  medium: 1,
-  high: 2,
-  critical: 3,
-};
-
 const PULSE_AMPLITUDE_SCALE: Readonly<Record<WorldEventSeverity, number>> = {
   low: 0.02,
   medium: 0.035,
@@ -86,6 +75,7 @@ export type DivergencePassInput = Readonly<{
   theme: RehoboamTheme;
   interaction: InteractionState;
   events: readonly WorldEvent[];
+  eventAnglesByEventId: ReadonlyMap<string, number>;
   pulses: readonly DivergencePulse[];
   clusters: readonly DivergenceCluster[];
   elapsedMs: number;
@@ -188,18 +178,6 @@ const sanitizeSampleCount = (value: number): number => {
   return Math.max(96, Math.min(720, Math.trunc(value)));
 };
 
-const getLayoutNowMs = (events: readonly WorldEvent[]): number => {
-  if (events.length === 0) {
-    return 0;
-  }
-
-  const latestTimestampMs = events.reduce((latest, event) => {
-    return Math.max(latest, event.timestampMs);
-  }, 0);
-
-  return latestTimestampMs + LEADING_TIME_OFFSET_MS;
-};
-
 const getPulseEnvelope = (elapsedMs: number): number => {
   if (elapsedMs <= 0 || elapsedMs >= DIVERGENCE_PULSE_LIFETIME_MS) {
     return 0;
@@ -277,26 +255,6 @@ const hashStringToUnitInterval = (value: string): number => {
 
 const resolveStablePhaseOffsetRad = (key: string): number => {
   return hashStringToUnitInterval(key) * TAU;
-};
-
-const resolveEventAnglesByEventId = (
-  events: readonly WorldEvent[]
-): ReadonlyMap<string, number> => {
-  const eventAngles = computeAngles(events, {
-    nowMs: getLayoutNowMs(events),
-    windowMs: DEFAULT_LAYOUT_WINDOW_MS,
-    maxVisibleCount: DEFAULT_MAX_VISIBLE_EVENT_COUNT,
-    distributionMode: "ordered",
-  });
-  const angleByEventId = new Map<string, number>();
-
-  for (const eventAngle of eventAngles) {
-    for (const eventId of eventAngle.eventIds) {
-      angleByEventId.set(eventId, eventAngle.angleRad);
-    }
-  }
-
-  return angleByEventId;
 };
 
 const resolveActivePulseDescriptors = (
@@ -406,44 +364,6 @@ const resolveRenderablePulses = (
     .map((prioritizedPulse) => {
       return prioritizedPulse.pulse;
     });
-};
-
-const getClusterEnvelope = (
-  cluster: DivergenceCluster,
-  timeMs: number
-): number => {
-  const attackMs = Math.max(0, cluster.attackMs);
-  const holdMs = Math.max(0, cluster.holdMs);
-  const decayMs = Math.max(0, cluster.decayMs);
-  const elapsedMs = timeMs - cluster.startedAtMs;
-
-  if (elapsedMs <= 0) {
-    return 0;
-  }
-
-  if (attackMs > 0 && elapsedMs <= attackMs) {
-    const attackProgress = elapsedMs / attackMs;
-
-    return attackProgress * attackProgress;
-  }
-
-  const sustainEndMs = attackMs + holdMs;
-
-  if (elapsedMs <= sustainEndMs) {
-    return 1;
-  }
-
-  if (decayMs <= 0) {
-    return 0;
-  }
-
-  const decayProgress = (elapsedMs - sustainEndMs) / decayMs;
-
-  if (decayProgress >= 1) {
-    return 0;
-  }
-
-  return (1 - decayProgress) ** 2;
 };
 
 const resolveClusterDescriptors = (
@@ -1428,6 +1348,7 @@ export const drawDivergencePass = (input: DivergencePassInput): void => {
     theme,
     interaction,
     events,
+    eventAnglesByEventId,
     pulses,
     clusters,
     elapsedMs,
@@ -1438,8 +1359,6 @@ export const drawDivergencePass = (input: DivergencePassInput): void => {
   if (events.length === 0) {
     return;
   }
-
-  const eventAnglesByEventId = resolveEventAnglesByEventId(events);
   const renderablePulses = resolveRenderablePulses(
     pulses,
     eventAnglesByEventId,

@@ -1,3 +1,4 @@
+import { SEVERITY_RANK } from "../../../engine/severity";
 import type {
   InteractionState,
   RehoboamTheme,
@@ -10,20 +11,14 @@ import {
   DEFAULT_MAX_VISIBLE_EVENT_COUNT,
 } from "../../../layout/compute-angles";
 import type { ComputedEventAngle } from "../../../layout/compute-angles";
+import { getLayoutNowMs } from "../../../layout/layout-time";
 import {
   polarToCartesian,
   shortestAngularDistance,
   TAU,
 } from "../../../layout/polar";
 
-const LEADING_TIME_OFFSET_MS = 45 * 60 * 1000;
 const MAX_CONTOUR_TARGETS = 12;
-const SEVERITY_RANK: Readonly<Record<WorldEvent["severity"], number>> = {
-  low: 0,
-  medium: 1,
-  high: 2,
-  critical: 3,
-};
 
 export type EventContourPassInput = Readonly<{
   context: CanvasRenderingContext2D;
@@ -45,18 +40,6 @@ type ContourTarget = Readonly<{
   rank: number;
   weight: number;
 }>;
-
-const getLayoutNowMs = (events: readonly WorldEvent[]): number => {
-  if (events.length === 0) {
-    return 0;
-  }
-
-  const latestTimestampMs = events.reduce((latest, event) => {
-    return Math.max(latest, event.timestampMs);
-  }, 0);
-
-  return latestTimestampMs + LEADING_TIME_OFFSET_MS;
-};
 
 const compareEventAnglesByPriority = (
   left: ComputedEventAngle,

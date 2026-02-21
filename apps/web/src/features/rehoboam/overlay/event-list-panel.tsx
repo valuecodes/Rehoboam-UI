@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 
-import type { WorldEventSeverity } from "../engine/types";
+import { SEVERITY_RANK } from "../engine/severity";
 import type { ComputedEventAngle } from "../layout/compute-angles";
 
 export type EventListPanelProps = Readonly<{
@@ -15,13 +15,6 @@ type EventListPanelItem = Readonly<{
   eventAngle: ComputedEventAngle;
   optionId: string;
 }>;
-
-const SEVERITY_RANK: Readonly<Record<WorldEventSeverity, number>> = {
-  low: 0,
-  medium: 1,
-  high: 2,
-  critical: 3,
-};
 
 const comparePanelItems = (
   left: EventListPanelItem,

@@ -1,8 +1,10 @@
+import { compareStrings, SEVERITY_RANK } from "../engine/severity";
 import type {
   WorldEvent,
   WorldEventLocation,
   WorldEventSeverity,
 } from "../engine/types";
+import { isRecord } from "./utils";
 
 const HALF_HOUR_MS = 30 * 60 * 1000;
 const FNV_OFFSET_BASIS = 0x811c9dc5;
@@ -10,35 +12,12 @@ const FNV_PRIME = 0x01000193;
 const DEFAULT_TITLE = "Untitled Event";
 const DEFAULT_CATEGORY = "general";
 
-const SEVERITY_RANK: Readonly<Record<WorldEventSeverity, number>> = {
-  low: 0,
-  medium: 1,
-  high: 2,
-  critical: 3,
-};
-
 export type NormalizeEventOptions = Readonly<{
   idPrefix?: string;
   timeBucketMs?: number;
   defaultCategory?: string;
   defaultTimestampMs?: number;
 }>;
-
-const isRecord = (value: unknown): value is Record<string, unknown> => {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-};
-
-const compareStrings = (left: string, right: string): number => {
-  if (left < right) {
-    return -1;
-  }
-
-  if (left > right) {
-    return 1;
-  }
-
-  return 0;
-};
 
 const firstDefined = <T>(
   values: readonly (T | null | undefined)[]

@@ -1,6 +1,7 @@
 import type { WorldEvent } from "../engine/types";
 import { runEventPipeline } from "./source";
 import type { EventPipelineOptions } from "./source";
+import { isRecord } from "./utils";
 
 const DEFAULT_DATABASE_NAME = "rehoboam-v2";
 const DEFAULT_OBJECT_STORE_NAME = "event-snapshots";
@@ -41,10 +42,6 @@ export type EventPersistenceOptions = Readonly<{
   store?: EventPersistenceStore;
   indexedDb?: IndexedDbStoreOptions;
 }>;
-
-const isRecord = (value: unknown): value is Record<string, unknown> => {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-};
 
 const getIndexedDbFactory = (
   options: IndexedDbStoreOptions

@@ -72,7 +72,7 @@ Useful options:
 ```bash
 pnpm --filter web screenshot:scene -- --output .tmp/screenshots/current-codex-auto.png
 pnpm --filter web screenshot:scene -- --width 1365 --height 1024 --settle-ms 250
-pnpm --filter web screenshot:scene -- --base-url http://127.0.0.1:3001
+pnpm --filter web screenshot:scene -- --base-url http://127.0.0.1:3000
 pnpm --filter web screenshot:scene:headed
 ```
 
@@ -85,9 +85,9 @@ Equivalent environment variables:
 - `SCREENSHOT_BASE_URL`
 - `SCREENSHOT_HEADLESS`
 
-The command uses a dedicated screenshot server on port `3001` by default,
-waits for `.rehoboam-scene__instrument` to be visible, and then applies a
-short settle delay before capturing.
+The command starts a dedicated web screenshot server on port `3000` and an API
+worker on port `3001` by default, waits for `.rehoboam-scene__instrument` to
+be visible, and then applies a short settle delay before capturing.
 
 ## Updating Packages
 
@@ -106,7 +106,7 @@ short settle delay before capturing.
 - `pnpm format:check` - verify formatting
 - `pnpm test` - run tests in all workspaces
 - `pnpm --filter web dev` - run only the web dev server (`http://localhost:3000`)
-- `pnpm --filter api dev` - run only the API worker (`http://localhost:3001`)
+- `pnpm --filter rehoboam-api dev` - run only the API worker (`http://localhost:3001`)
 - `pnpm --filter web preview` - preview the web production build
 - `pnpm --filter web screenshot:scene` - capture deterministic full + scene screenshots
 - `pnpm --filter web screenshot:scene:headed` - run screenshot capture with headed browser
