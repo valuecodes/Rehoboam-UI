@@ -19,8 +19,8 @@ pnpm --filter web screenshot:scene
 
 2. Use options when needed:
 
-- `pnpm --filter web screenshot:scene -- --count 3 --interval-ms 1200` to sample animation progression.
-- `pnpm --filter web screenshot:scene -- --output .tmp/screenshots/<label>.png` to keep outputs tied to the task.
+- `pnpm --filter web screenshot:scene --count 3 --interval-ms 1200` to sample animation progression.
+- `pnpm --filter web screenshot:scene --output .tmp/screenshots/<label>.png` to keep outputs tied to the task.
 - `pnpm --filter web screenshot:scene:headed` for local visual debugging.
 
 3. Review both generated images:
@@ -39,5 +39,5 @@ pnpm --filter web screenshot:scene
 
 ## Notes
 
-- The underlying command executes `apps/web/scripts/screenshot-scene.ts`, which runs Playwright against `http://127.0.0.1:3001` by default and captures deterministic outputs under `apps/web/.tmp/screenshots/`.
+- The underlying command executes `apps/web/scripts/screenshot-scene.ts`, which runs Playwright against `http://127.0.0.1:3000` by default, starts the API worker on `http://127.0.0.1:3001/api/events`, and captures deterministic outputs under `apps/web/.tmp/screenshots/`.
 - Use this skill by default for UI/animation validation unless the user explicitly asks to skip screenshot checks.

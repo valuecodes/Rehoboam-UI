@@ -70,9 +70,9 @@ Default outputs:
 Useful options:
 
 ```bash
-pnpm --filter web screenshot:scene -- --output .tmp/screenshots/current-codex-auto.png
-pnpm --filter web screenshot:scene -- --width 1365 --height 1024 --settle-ms 250
-pnpm --filter web screenshot:scene -- --base-url http://127.0.0.1:3000
+pnpm --filter web screenshot:scene --output .tmp/screenshots/current-codex-auto.png
+pnpm --filter web screenshot:scene --width 1365 --height 1024 --settle-ms 250
+pnpm --filter web screenshot:scene --base-url http://127.0.0.1:3000
 pnpm --filter web screenshot:scene:headed
 ```
 
@@ -122,5 +122,5 @@ Both workflows run:
 
 - typecheck
 - lint
-- format check
+- `format:check`
 - test
