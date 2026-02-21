@@ -42,7 +42,7 @@ API worker on port `3001`.
 
 ```bash
 pnpm build
-pnpm --filter web preview
+pnpm --filter rehoboam-ui preview
 ```
 
 ## Quality Checks
@@ -59,7 +59,7 @@ pnpm test
 Use the local screenshot tool for fast UI iteration snapshots:
 
 ```bash
-pnpm --filter web screenshot:scene
+pnpm --filter rehoboam-ui screenshot:scene
 ```
 
 Default outputs:
@@ -70,10 +70,10 @@ Default outputs:
 Useful options:
 
 ```bash
-pnpm --filter web screenshot:scene --output .tmp/screenshots/current-codex-auto.png
-pnpm --filter web screenshot:scene --width 1365 --height 1024 --settle-ms 250
-pnpm --filter web screenshot:scene --base-url http://127.0.0.1:3000
-pnpm --filter web screenshot:scene:headed
+pnpm --filter rehoboam-ui screenshot:scene --output .tmp/screenshots/current-codex-auto.png
+pnpm --filter rehoboam-ui screenshot:scene --width 1365 --height 1024 --settle-ms 250
+pnpm --filter rehoboam-ui screenshot:scene --base-url http://127.0.0.1:3000
+pnpm --filter rehoboam-ui screenshot:scene:headed
 ```
 
 Equivalent environment variables:
@@ -105,11 +105,11 @@ be visible, and then applies a short settle delay before capturing.
 - `pnpm format` - auto-format files with Prettier
 - `pnpm format:check` - verify formatting
 - `pnpm test` - run tests in all workspaces
-- `pnpm --filter web dev` - run only the web dev server (`http://localhost:3000`)
+- `pnpm --filter rehoboam-ui dev` - run only the web dev server (`http://localhost:3000`)
 - `pnpm --filter rehoboam-api dev` - run only the API worker (`http://localhost:3001`)
-- `pnpm --filter web preview` - preview the web production build
-- `pnpm --filter web screenshot:scene` - capture deterministic full + scene screenshots
-- `pnpm --filter web screenshot:scene:headed` - run screenshot capture with headed browser
+- `pnpm --filter rehoboam-ui preview` - preview the web production build
+- `pnpm --filter rehoboam-ui screenshot:scene` - capture deterministic full + scene screenshots
+- `pnpm --filter rehoboam-ui screenshot:scene:headed` - run screenshot capture with headed browser
 
 ## CI Pipeline
 

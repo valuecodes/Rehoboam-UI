@@ -50,15 +50,15 @@ Use it with the repo-level guide at the root: `AGENTS.md`.
 
 Run from repo root:
 
-- Dev server (`http://localhost:3000`): `pnpm --filter web dev`
-- Start alias (`http://localhost:3000`): `pnpm --filter web start`
-- Build: `pnpm --filter web build`
-- Preview build: `pnpm --filter web preview`
-- Typecheck: `pnpm --filter web typecheck`
-- Lint: `pnpm --filter web lint`
-- Unit tests: `pnpm --filter web test`
-- Screenshot tool: `pnpm --filter web screenshot:scene`
-- Screenshot tool (headed): `pnpm --filter web screenshot:scene:headed`
+- Dev server (`http://localhost:3000`): `pnpm --filter rehoboam-ui dev`
+- Start alias (`http://localhost:3000`): `pnpm --filter rehoboam-ui start`
+- Build: `pnpm --filter rehoboam-ui build`
+- Preview build: `pnpm --filter rehoboam-ui preview`
+- Typecheck: `pnpm --filter rehoboam-ui typecheck`
+- Lint: `pnpm --filter rehoboam-ui lint`
+- Unit tests: `pnpm --filter rehoboam-ui test`
+- Screenshot tool: `pnpm --filter rehoboam-ui screenshot:scene`
+- Screenshot tool (headed): `pnpm --filter rehoboam-ui screenshot:scene:headed`
 
 ## Web Code Standards
 
@@ -73,9 +73,9 @@ Run from repo root:
 1. Read relevant files in `src/features/rehoboam/**` before changing timeline behavior.
 2. Read `docs/architecture.md` before changing core engine/render/data behavior.
 3. Make minimal edits and preserve existing named-export patterns.
-4. Run at minimum: `pnpm --filter web typecheck` and `pnpm --filter web lint`.
+4. Run at minimum: `pnpm --filter rehoboam-ui typecheck` and `pnpm --filter rehoboam-ui lint`.
 5. Run `pnpm format` from root if formatting drifts, then re-run checks.
-6. If animation/timeline behavior changes, run `pnpm --filter web test` and do a quick manual run (`pnpm --filter web dev`).
+6. If animation/timeline behavior changes, run `pnpm --filter rehoboam-ui test` and do a quick manual run (`pnpm --filter rehoboam-ui dev`).
 7. If architecture or behavior changes, update `docs/architecture.md` and related docs in `docs/`.
 
 ## Testing State
