@@ -14,14 +14,14 @@ Run screenshot-based visual validation after scene/UI changes and use the captur
 1. Run screenshot capture.
 
 ```bash
-pnpm --filter web screenshot:scene
+pnpm --filter rehoboam-ui screenshot:scene
 ```
 
 2. Use options when needed:
 
-- `pnpm --filter web screenshot:scene --count 3 --interval-ms 1200` to sample animation progression.
-- `pnpm --filter web screenshot:scene --output .tmp/screenshots/<label>.png` to keep outputs tied to the task.
-- `pnpm --filter web screenshot:scene:headed` for local visual debugging.
+- `pnpm --filter rehoboam-ui screenshot:scene --count 3 --interval-ms 1200` to sample animation progression.
+- `pnpm --filter rehoboam-ui screenshot:scene --output .tmp/screenshots/<label>.png` to keep outputs tied to the task.
+- `pnpm --filter rehoboam-ui screenshot:scene:headed` for local visual debugging.
 
 3. Review both generated images:
 

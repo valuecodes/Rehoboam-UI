@@ -104,7 +104,7 @@ jobs:
         uses: ./.github/actions/setup
 
       - name: Build
-        run: pnpm --filter web build
+        run: pnpm --filter rehoboam-ui build
 
       - name: Deploy API Worker
         run: pnpm --filter rehoboam-api run deploy
