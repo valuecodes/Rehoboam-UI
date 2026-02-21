@@ -3,7 +3,8 @@ import { Hono } from "hono";
 import type { MockInstance } from "vitest";
 
 import type { AppEnv } from "../../types";
-import { loggerMiddleware, onErrorHandler } from "../logger";
+import { onErrorHandler } from "../error-handlers";
+import { loggerMiddleware } from "../logger";
 
 type ConsoleSpy = MockInstance<(...args: unknown[]) => void>;
 
