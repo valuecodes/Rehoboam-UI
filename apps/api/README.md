@@ -2,10 +2,10 @@
 
 Cloudflare Worker API workspace for timeline events consumed by `apps/web`.
 
-## Endpoint
+## Endpoint Contract
 
 - `GET /api/events`
-- Response body is a JSON array with this shape:
+- Response body is validated with `EventsResponseSchema` from `@repo/types`
 
 ```json
 [
@@ -21,6 +21,36 @@ Cloudflare Worker API workspace for timeline events consumed by `apps/web`.
 
 `severity` is one of `low | medium | high | critical`.
 
+## Request Lifecycle
+
+```mermaid
+flowchart LR
+    Client["Client (apps/web or external)"] --> Worker["Hono App (src/index.ts)"]
+    Worker --> SH["secureHeadersMiddleware"]
+    SH --> CC["cacheControlMiddleware"]
+    CC --> CORS["corsMiddleware"]
+    CORS --> LOG["loggerMiddleware (sets X-Request-Id)"]
+    LOG --> ROUTE["Route: /api/events"]
+    ROUTE --> HANDLER["events.ts handler"]
+    HANDLER --> SCHEMA["EventsResponseSchema.parse(mockEvents)"]
+    SCHEMA --> RESP["JSON 200 response"]
+
+    ROUTE -. unmatched .-> NF["notFoundHandler (404)"]
+    HANDLER -. throws .-> ERR["onErrorHandler (500)"]
+```
+
+## Workspace Architecture
+
+```mermaid
+flowchart TD
+    IDX["src/index.ts"] --> SEC["src/middleware/security.ts"]
+    IDX --> LOG["src/middleware/logger.ts"]
+    IDX --> ERR["src/middleware/error-handlers.ts"]
+    IDX --> EVT["src/routes/events.ts"]
+    EVT --> TYPES["@repo/types (EventsResponseSchema)"]
+    IDX --> CFG["wrangler.jsonc (Worker runtime + routes)"]
+```
+
 ## Local Development
 
 Run from repo root:
@@ -31,14 +61,13 @@ pnpm --filter rehoboam-api dev
 
 Default local URL: `http://localhost:3001`
 
-For full stack local dev (web + api in parallel), run:
+For full-stack local dev (`apps/web` + `apps/api` in parallel), run:
 
 ```bash
 pnpm dev
 ```
 
-The web app in `apps/web` proxies `/api/*` requests to
-`http://localhost:3001`.
+`apps/web` proxies `/api/*` to `http://localhost:3001` in local development.
 
 ## Workspace Scripts
 
@@ -52,6 +81,9 @@ The web app in `apps/web` proxies `/api/*` requests to
 
 ## Project Structure
 
-- Router entry: `src/index.ts`
+- Worker entry + middleware composition: `src/index.ts`
 - Events route: `src/routes/events.ts`
-- Worker config: `wrangler.jsonc`
+- Security middleware: `src/middleware/security.ts`
+- Request logger middleware: `src/middleware/logger.ts`
+- Error + not-found handlers: `src/middleware/error-handlers.ts`
+- Worker config and route deployment: `wrangler.jsonc`

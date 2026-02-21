@@ -4,12 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "tsc --noEmit",
     "deploy": "wrangler deploy",
     "dev": "wrangler dev --port 3001",
     "start": "wrangler dev",
     "cf-typegen": "wrangler types",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
+    "postinstall": "wrangler types",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
