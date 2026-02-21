@@ -1,10 +1,14 @@
 import type { LogEntry } from "@repo/logger";
 import { Hono } from "hono";
 import type { MockInstance } from "vitest";
+import { z } from "zod";
 
 import type { AppEnv } from "../../types";
 import { onErrorHandler } from "../error-handlers";
 import { loggerMiddleware } from "../logger";
+
+const IdResponseSchema = z.object({ id: z.string() });
+const ErrorResponseSchema = z.object({ error: z.string() });
 
 type ConsoleSpy = MockInstance<(...args: unknown[]) => void>;
 
@@ -76,7 +80,7 @@ describe("loggerMiddleware", () => {
     app.get("/test", (c) => c.json({ id: c.get("requestId") }));
 
     const res = await app.request("/test");
-    const body: { id: string } = await res.json();
+    const body = IdResponseSchema.parse(await res.json());
 
     expect(res.headers.get("X-Request-Id")).toBeDefined();
     expect(res.headers.get("X-Request-Id")).toBe(body.id);
@@ -89,8 +93,8 @@ describe("loggerMiddleware", () => {
 
     const res1 = await app.request("/test");
     const res2 = await app.request("/test");
-    const body1: { id: string } = await res1.json();
-    const body2: { id: string } = await res2.json();
+    const body1 = IdResponseSchema.parse(await res1.json());
+    const body2 = IdResponseSchema.parse(await res2.json());
 
     expect(body1.id).toBeDefined();
     expect(body2.id).toBeDefined();
@@ -126,7 +130,7 @@ describe("onErrorHandler", () => {
     const res = await app.request("/fail");
     expect(res.status).toBe(500);
 
-    const body: { error: string } = await res.json();
+    const body = ErrorResponseSchema.parse(await res.json());
     expect(body.error).toBe("Internal Server Error");
 
     expect(consoleSpy.error).toHaveBeenCalled();

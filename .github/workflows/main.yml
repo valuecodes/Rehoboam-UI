@@ -26,6 +26,9 @@ jobs:
       - name: Setup
         uses: ./.github/actions/setup
 
+      - name: Generate Cloudflare Worker types
+        run: pnpm --filter rehoboam-api cf-typegen
+
       - name: Typecheck
         run: pnpm typecheck
 
