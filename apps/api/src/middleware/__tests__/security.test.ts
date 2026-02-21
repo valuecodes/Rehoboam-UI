@@ -2,16 +2,11 @@ import { Hono } from "hono";
 
 import type { AppEnv } from "../../types";
 import { loggerMiddleware } from "../logger";
-import {
-  cacheControlMiddleware,
-  corsMiddleware,
-  secureHeadersMiddleware,
-} from "../security";
+import { corsMiddleware, secureHeadersMiddleware } from "../security";
 
 const createApp = () => {
   const app = new Hono<AppEnv>();
   app.use("*", secureHeadersMiddleware);
-  app.use("*", cacheControlMiddleware);
   app.use("*", corsMiddleware);
   app.use("*", loggerMiddleware);
   app.get("/api/test", (c) => c.json({ ok: true }));
@@ -101,13 +96,5 @@ describe("secureHeadersMiddleware", () => {
     const res = await createApp().request("/api/test");
 
     expect(res.headers.get("X-Powered-By")).toBeNull();
-  });
-});
-
-describe("cacheControlMiddleware", () => {
-  it("sets Cache-Control to no-store", async () => {
-    const res = await createApp().request("/api/test");
-
-    expect(res.headers.get("Cache-Control")).toBe("no-store");
   });
 });
