@@ -9,6 +9,7 @@ export const loggerMiddleware = createMiddleware<AppEnv>(async (c, next) => {
 
   c.set("logger", logger);
   c.set("requestId", requestId);
+  c.header("X-Request-Id", requestId);
 
   const method = c.req.method;
   const path = c.req.path;

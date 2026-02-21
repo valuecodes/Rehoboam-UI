@@ -70,6 +70,18 @@ describe("loggerMiddleware", () => {
     expect(typeof completedEntry.duration).toBe("number");
   });
 
+  it("sets X-Request-Id response header matching the context requestId", async () => {
+    const app = new Hono<AppEnv>();
+    app.use("*", loggerMiddleware);
+    app.get("/test", (c) => c.json({ id: c.get("requestId") }));
+
+    const res = await app.request("/test");
+    const body: { id: string } = await res.json();
+
+    expect(res.headers.get("X-Request-Id")).toBeDefined();
+    expect(res.headers.get("X-Request-Id")).toBe(body.id);
+  });
+
   it("sets a unique requestId per request", async () => {
     const app = new Hono<AppEnv>();
     app.use("*", loggerMiddleware);

@@ -2,11 +2,19 @@ import { Hono } from "hono";
 
 import { notFoundHandler, onErrorHandler } from "./middleware/error-handlers";
 import { loggerMiddleware } from "./middleware/logger";
+import {
+  cacheControlMiddleware,
+  corsMiddleware,
+  secureHeadersMiddleware,
+} from "./middleware/security";
 import { events } from "./routes/events";
 import type { AppEnv } from "./types";
 
 const app = new Hono<AppEnv>();
 
+app.use("*", secureHeadersMiddleware);
+app.use("*", cacheControlMiddleware);
+app.use("*", corsMiddleware);
 app.use("*", loggerMiddleware);
 app.onError(onErrorHandler);
 
