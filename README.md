@@ -2,7 +2,7 @@
 
 A pnpm monorepo with a Rehoboam-style React UI and a Cloudflare Worker API.
 
-![Preview](./apps/web/public/preview.jpg)
+![Preview](./apps/ui/public/preview.jpg)
 
 - Explore a timeline of major world events with Rehoboam-style animation.
 - Inspect active signals through synchronized callouts.
@@ -35,7 +35,7 @@ pnpm dev
 - API Worker: `http://localhost:3001`
 - Events endpoint: `http://localhost:3001/api/events`
 
-In local web development, Vite proxies `/api/*` requests from `apps/web` to the
+In local web development, Vite proxies `/api/*` requests from `apps/ui` to the
 API worker on port `3001`.
 
 ## Build and Preview
@@ -64,8 +64,8 @@ pnpm --filter rehoboam-ui screenshot:scene
 
 Default outputs:
 
-- full page: `apps/web/.tmp/screenshots/current-codex-auto.png`
-- scene element: `apps/web/.tmp/screenshots/current-codex-auto.instrument.png`
+- full page: `apps/ui/.tmp/screenshots/current-codex-auto.png`
+- scene element: `apps/ui/.tmp/screenshots/current-codex-auto.instrument.png`
 
 Useful options:
 

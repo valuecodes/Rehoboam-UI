@@ -1,6 +1,6 @@
 ---
 name: validate-scene-ui
-description: Validate Rehoboam scene animation and UI quality with deterministic Playwright screenshots driven by `apps/web/scripts/screenshot-scene.ts`. Use when changes touch animation timing, Canvas2D rendering, layout/CSS, overlays, timeline sequencing, or any visual behavior that should be confirmed by screenshots.
+description: Validate Rehoboam scene animation and UI quality with deterministic Playwright screenshots driven by `apps/ui/scripts/screenshot-scene.ts`. Use when changes touch animation timing, Canvas2D rendering, layout/CSS, overlays, timeline sequencing, or any visual behavior that should be confirmed by screenshots.
 ---
 
 # Validate Scene UI
@@ -39,5 +39,5 @@ pnpm --filter rehoboam-ui screenshot:scene
 
 ## Notes
 
-- The underlying command executes `apps/web/scripts/screenshot-scene.ts`, which runs Playwright against `http://127.0.0.1:3000` by default, starts the API worker on `http://127.0.0.1:3001/api/events`, and captures deterministic outputs under `apps/web/.tmp/screenshots/`.
+- The underlying command executes `apps/ui/scripts/screenshot-scene.ts`, which runs Playwright against `http://127.0.0.1:3000` by default, starts the API worker on `http://127.0.0.1:3001/api/events`, and captures deterministic outputs under `apps/ui/.tmp/screenshots/`.
 - Use this skill by default for UI/animation validation unless the user explicitly asks to skip screenshot checks.

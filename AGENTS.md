@@ -14,20 +14,20 @@ Use it for monorepo orientation, shared quality gates, and safe editing workflow
 ## Monorepo Snapshot
 
 - Monorepo: pnpm workspaces (`apps/`, `packages/`, `tooling/`)
-- App workspaces: Rehoboam UI in `apps/web` and Cloudflare Worker API in `apps/api`
+- App workspaces: Rehoboam UI in `apps/ui` and Cloudflare Worker API in `apps/api`
 - Package manager: `pnpm` (lockfile: `pnpm-lock.yaml`)
 - Required Node version: `24.12.0` (from `.nvmrc`)
 
 ## Workspace Map
 
-- App workspaces: `apps/web`, `apps/api`
+- App workspaces: `apps/ui`, `apps/api`
 - Shared packages: `packages/*`
 - Shared tooling configs: `tooling/eslint`, `tooling/prettier`, `tooling/typescript`
 - Architecture and project docs: `docs/`
 
 ## Workspace Guides
 
-- Web app detailed guidance lives in `apps/web/AGENTS.md`.
+- Web app detailed guidance lives in `apps/ui/AGENTS.md`.
 - API app guidance lives in `apps/api/AGENTS.md`.
 - Before changing a workspace, read its local `AGENTS.md` if present.
 
