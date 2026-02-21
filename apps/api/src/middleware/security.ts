@@ -1,8 +1,5 @@
 import { cors } from "hono/cors";
-import { createMiddleware } from "hono/factory";
 import { secureHeaders } from "hono/secure-headers";
-
-import type { AppEnv } from "../types";
 
 const ALLOWED_ORIGINS = [
   "https://rehoboam.valuecodes.fi",
@@ -16,10 +13,3 @@ export const corsMiddleware = cors({
 });
 
 export const secureHeadersMiddleware = secureHeaders();
-
-export const cacheControlMiddleware = createMiddleware<AppEnv>(
-  async (c, next) => {
-    await next();
-    c.header("Cache-Control", "no-store");
-  }
-);
