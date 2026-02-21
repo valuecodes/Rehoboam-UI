@@ -9,7 +9,7 @@ Use it with the repo-level guide at root: `AGENTS.md`.
 
 - Workspace: `apps/api`
 - Runtime: Cloudflare Workers + Hono + TypeScript
-- App type: Worker API that serves timeline events for `apps/web`
+- App type: Worker API that serves timeline events for `apps/ui`
 - Primary endpoint: `GET /api/events`
 - Contract source: `@repo/types` (`EventsResponseSchema`)
 - Tests: Vitest (middleware-focused)
@@ -58,7 +58,7 @@ Run from repo root:
 ## Safe Workflow For API Changes
 
 1. Read `src/index.ts` and the relevant route/middleware files before edits.
-2. If changing API payload shape, update `@repo/types` and verify `apps/web` consumers.
+2. If changing API payload shape, update `@repo/types` and verify `apps/ui` consumers.
 3. If changing Cloudflare bindings/config, update `wrangler.jsonc` and run `pnpm --filter rehoboam-api cf-typegen`.
 4. Make minimal edits and preserve existing route + middleware composition.
 5. Run at minimum: `pnpm --filter rehoboam-api typecheck`, `pnpm --filter rehoboam-api lint`, and `pnpm --filter rehoboam-api test`.

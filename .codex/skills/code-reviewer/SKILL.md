@@ -17,7 +17,7 @@ Prioritize actionable findings in security, correctness, documentation currency,
    - Fallback to `origin/main` if local `main` does not exist.
    - Use merge-base to avoid unrelated history noise.
 2. Collect review scope.
-   - List changed files and classify by workspace (`apps/web`, `apps/api`, `packages/*`, docs, tooling).
+   - List changed files and classify by workspace (`apps/ui`, `apps/api`, `packages/*`, docs, tooling).
    - Read root `AGENTS.md` and touched workspace `AGENTS.md` files before judging conventions.
 3. Inspect diff content.
    - Review logic changes file-by-file with emphasis on risky surfaces.

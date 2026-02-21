@@ -2,12 +2,12 @@
 
 ## Purpose
 
-This document is the web-app-specific quick-start for coding agents working in `apps/web`.
+This document is the web-app-specific quick-start for coding agents working in `apps/ui`.
 Use it with the repo-level guide at the root: `AGENTS.md`.
 
 ## Web App Snapshot
 
-- Workspace: `apps/web`
+- Workspace: `apps/ui`
 - Runtime: React 19 + Vite 7 + TypeScript 5
 - App type: Rehoboam-style animated timeline UI
 - Tests: Vitest unit tests + Playwright screenshot flow

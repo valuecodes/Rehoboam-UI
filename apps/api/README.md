@@ -1,6 +1,6 @@
 # Rehoboam API
 
-Cloudflare Worker API workspace for timeline events consumed by `apps/web`.
+Cloudflare Worker API workspace for timeline events consumed by `apps/ui`.
 
 ## Endpoint Contract
 
@@ -25,7 +25,7 @@ Cloudflare Worker API workspace for timeline events consumed by `apps/web`.
 
 ```mermaid
 flowchart LR
-    Client["Client (apps/web or external)"] --> Worker["Hono App (src/index.ts)"]
+    Client["Client (apps/ui or external)"] --> Worker["Hono App (src/index.ts)"]
     Worker --> SH["secureHeadersMiddleware"]
     SH --> CC["cacheControlMiddleware"]
     CC --> CORS["corsMiddleware"]
@@ -61,13 +61,13 @@ pnpm --filter rehoboam-api dev
 
 Default local URL: `http://localhost:3001`
 
-For full-stack local dev (`apps/web` + `apps/api` in parallel), run:
+For full-stack local dev (`apps/ui` + `apps/api` in parallel), run:
 
 ```bash
 pnpm dev
 ```
 
-`apps/web` proxies `/api/*` to `http://localhost:3001` in local development.
+`apps/ui` proxies `/api/*` to `http://localhost:3001` in local development.
 
 ## Workspace Scripts
 
