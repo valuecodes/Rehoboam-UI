@@ -42,7 +42,7 @@ Run from repo root:
 
 - Dev (`http://localhost:3001`): `pnpm --filter rehoboam-api dev`
 - Start (Wrangler default dev): `pnpm --filter rehoboam-api start`
-- Deploy Worker: `pnpm --filter rehoboam-api deploy`
+- Deploy Worker: `pnpm --filter rehoboam-api run deploy`
 - Regenerate Worker env types: `pnpm --filter rehoboam-api cf-typegen`
 - Typecheck: `pnpm --filter rehoboam-api typecheck`
 - Lint: `pnpm --filter rehoboam-api lint`
