@@ -8,6 +8,8 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
 
 import { polarToCartesian } from "../layout/polar";
 import type { InstrumentSize } from "./callout-overlay";
+import { clampNumber, toPointList } from "./utils";
+import type { Point } from "./utils";
 
 export type IntroCalloutOverlayProps = Readonly<{
   instrumentSize: InstrumentSize;
@@ -23,11 +25,6 @@ type IntroCalloutGeometry = Readonly<{
   labelX: number;
   labelY: number;
   labelWidth: number;
-}>;
-
-type Point = Readonly<{
-  x: number;
-  y: number;
 }>;
 
 const INTRO_LINE_DELAY_MS = 450;
@@ -49,18 +46,6 @@ const INTRO_ANCHOR_ANGLE_RAD = 0.67;
 const INTRO_ANCHOR_RADIUS_RATIO = 0.84;
 const INTRO_LABEL_OFFSET_X_PX = -34;
 const INTRO_LABEL_OFFSET_Y_PX = -25;
-
-const clampNumber = (value: number, min: number, max: number): number => {
-  return Math.min(max, Math.max(min, value));
-};
-
-const toPointList = (points: readonly Point[]): string => {
-  return points
-    .map((point) => {
-      return `${point.x} ${point.y}`;
-    })
-    .join(",");
-};
 
 const formatCurrentDate = (): string => {
   const date = new Date();

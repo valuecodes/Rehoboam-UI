@@ -6,10 +6,17 @@ import type {
   RehoboamRenderSnapshot,
   RehoboamTheme,
 } from "../../engine/types";
+import {
+  computeAngles,
+  DEFAULT_LAYOUT_WINDOW_MS,
+  DEFAULT_MAX_VISIBLE_EVENT_COUNT,
+} from "../../layout/compute-angles";
+import { getLayoutNowMs } from "../../layout/layout-time";
 import { normalizeAngle, TAU } from "../../layout/polar";
 import { createDivergenceClusterTracker } from "./divergence-cluster-tracker";
 import type { DivergenceCluster } from "./divergence-cluster-tracker";
 import { createDivergencePulseTracker } from "./divergence-pulse-tracker";
+import { getClusterEnvelope } from "./divergence-utils";
 import { drawBackgroundPass } from "./passes/background-pass";
 import type { BackgroundPassInput } from "./passes/background-pass";
 import { drawDivergencePass } from "./passes/divergence-pass";
@@ -37,44 +44,6 @@ const buildRingSpecs = (theme: RehoboamTheme): readonly RingSpec[] => {
     seed: theme.ringSeed,
     ringCount: theme.ringCount,
   });
-};
-
-const getClusterEnvelope = (
-  cluster: DivergenceCluster,
-  timeMs: number
-): number => {
-  const attackMs = Math.max(0, cluster.attackMs);
-  const holdMs = Math.max(0, cluster.holdMs);
-  const decayMs = Math.max(0, cluster.decayMs);
-  const elapsedMs = timeMs - cluster.startedAtMs;
-
-  if (elapsedMs <= 0) {
-    return 0;
-  }
-
-  if (attackMs > 0 && elapsedMs <= attackMs) {
-    const attackProgress = elapsedMs / attackMs;
-
-    return attackProgress * attackProgress;
-  }
-
-  const sustainEndMs = attackMs + holdMs;
-
-  if (elapsedMs <= sustainEndMs) {
-    return 1;
-  }
-
-  if (decayMs <= 0) {
-    return 0;
-  }
-
-  const decayProgress = (elapsedMs - sustainEndMs) / decayMs;
-
-  if (decayProgress >= 1) {
-    return 0;
-  }
-
-  return (1 - decayProgress) ** 2;
 };
 
 const resolveClusterCalloutTargets = (
@@ -139,6 +108,8 @@ export const createRenderer2D = (
   const divergenceClusterTracker = createDivergenceClusterTracker();
   const divergencePulseTracker = createDivergencePulseTracker();
   let isDestroyed = false;
+  let cachedEvents: readonly unknown[] = [];
+  let cachedEventAnglesByEventId: ReadonlyMap<string, number> = new Map();
 
   const resize: RehoboamRenderer["resize"] = () => {
     // The engine owns viewport updates. No local resize bookkeeping is needed yet.
@@ -198,6 +169,25 @@ export const createRenderer2D = (
       elapsedMs: frame.elapsedMs,
     };
 
+    if (frame.events !== cachedEvents) {
+      cachedEvents = frame.events;
+      const eventAngles = computeAngles(frame.events, {
+        nowMs: getLayoutNowMs(frame.events),
+        windowMs: DEFAULT_LAYOUT_WINDOW_MS,
+        maxVisibleCount: DEFAULT_MAX_VISIBLE_EVENT_COUNT,
+        distributionMode: "ordered",
+      });
+      const angleByEventId = new Map<string, number>();
+
+      for (const eventAngle of eventAngles) {
+        for (const eventId of eventAngle.eventIds) {
+          angleByEventId.set(eventId, eventAngle.angleRad);
+        }
+      }
+
+      cachedEventAnglesByEventId = angleByEventId;
+    }
+
     divergencePulseTracker.updateEvents(frame.events, frame.timeMs);
     const activePulses = divergencePulseTracker.getActivePulses(frame.timeMs);
     divergenceClusterTracker.update(frame.timeMs);
@@ -210,6 +200,7 @@ export const createRenderer2D = (
       theme,
       interaction: frame.interaction,
       events: frame.events,
+      eventAnglesByEventId: cachedEventAnglesByEventId,
       pulses: activePulses,
       clusters: activeClusters,
       elapsedMs: frame.elapsedMs,

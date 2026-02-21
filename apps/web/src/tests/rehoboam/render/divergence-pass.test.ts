@@ -52,6 +52,7 @@ describe("drawDivergencePass", () => {
       theme: DEFAULT_THEME,
       interaction: createInitialInteractionState(),
       events: [createEvent()],
+      eventAnglesByEventId: new Map([["event-1", 0.5]]),
       pulses: [],
       clusters: [createZeroDurationCluster()],
       elapsedMs: 10_000,

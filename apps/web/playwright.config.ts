@@ -25,7 +25,7 @@ const getHeadless = (): boolean => {
   return value !== "false" && value !== "0";
 };
 
-const baseUrl = process.env.SCREENSHOT_BASE_URL ?? "http://127.0.0.1:3001";
+const baseUrl = process.env.SCREENSHOT_BASE_URL ?? "http://127.0.0.1:3000";
 const viewportWidth = parseNumber(process.env.SCREENSHOT_VIEWPORT_WIDTH, 1365);
 const viewportHeight = parseNumber(
   process.env.SCREENSHOT_VIEWPORT_HEIGHT,
@@ -44,10 +44,18 @@ export default defineConfig({
     headless: getHeadless(),
     viewport: { width: viewportWidth, height: viewportHeight },
   },
-  webServer: {
-    command: "pnpm exec vite --host 127.0.0.1 --port 3001 --strictPort",
-    url: baseUrl,
-    timeout: 120_000,
-    reuseExistingServer: true,
-  },
+  webServer: [
+    {
+      command: "pnpm exec vite --host 127.0.0.1 --port 3000 --strictPort",
+      url: "http://127.0.0.1:3000",
+      timeout: 120_000,
+      reuseExistingServer: true,
+    },
+    {
+      command: "pnpm --filter rehoboam-api dev",
+      url: "http://127.0.0.1:3001/api/events",
+      timeout: 120_000,
+      reuseExistingServer: true,
+    },
+  ],
 });

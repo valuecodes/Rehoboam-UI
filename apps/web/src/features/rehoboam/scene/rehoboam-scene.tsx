@@ -18,6 +18,7 @@ import {
   DEFAULT_MAX_VISIBLE_EVENT_COUNT,
 } from "../layout/compute-angles";
 import type { ComputedEventAngle } from "../layout/compute-angles";
+import { getLayoutNowMs } from "../layout/layout-time";
 import { CalloutOverlay } from "../overlay/callout-overlay";
 import type {
   CalloutOverlayTarget,
@@ -29,7 +30,6 @@ import { resolveSceneQualityProfile } from "./quality";
 
 import "./rehoboam-scene.css";
 
-const LEADING_TIME_OFFSET_MS = 45 * 60 * 1000;
 const INTRO_DEBUG_QUERY_KEY = "intro-debug";
 const CALLOUT_DEBUG_QUERY_KEYS = [
   "callout-debug",
@@ -109,18 +109,6 @@ const compareEventAnglesByTimestamp = (
   }
 
   return left.event.id.localeCompare(right.event.id);
-};
-
-const getLayoutNowMs = (events: readonly WorldEvent[]): number => {
-  if (events.length === 0) {
-    return 0;
-  }
-
-  const latestTimestampMs = events.reduce((latest, event) => {
-    return Math.max(latest, event.timestampMs);
-  }, 0);
-
-  return latestTimestampMs + LEADING_TIME_OFFSET_MS;
 };
 
 const getMarkerAnchorRadius = (instrumentSize: InstrumentSize): number => {

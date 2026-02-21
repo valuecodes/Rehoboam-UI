@@ -128,7 +128,7 @@ export const createDivergencePulseTracker = (
   ) => {
     pulses = pruneExpiredPulses(pulses, timeMs, pulseLifetimeMs);
 
-    return [...pulses];
+    return pulses;
   };
 
   const reset: DivergencePulseTracker["reset"] = () => {

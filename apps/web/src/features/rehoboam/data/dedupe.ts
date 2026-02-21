@@ -1,30 +1,12 @@
-import type { WorldEvent, WorldEventSeverity } from "../engine/types";
+import { compareStrings, SEVERITY_RANK } from "../engine/severity";
+import type { WorldEvent } from "../engine/types";
 import { sortWorldEvents } from "./normalize";
 
 const HALF_HOUR_MS = 30 * 60 * 1000;
 
-const SEVERITY_RANK: Readonly<Record<WorldEventSeverity, number>> = {
-  low: 0,
-  medium: 1,
-  high: 2,
-  critical: 3,
-};
-
 export type DedupeEventsOptions = Readonly<{
   timeBucketMs?: number;
 }>;
-
-const compareStrings = (left: string, right: string): number => {
-  if (left < right) {
-    return -1;
-  }
-
-  if (left > right) {
-    return 1;
-  }
-
-  return 0;
-};
 
 const normalizeForKey = (value: string): string => {
   return value.trim().toLowerCase().replace(/\s+/gu, " ");

@@ -27,7 +27,7 @@ Options:
   --width <number>      Viewport width (default: 1365)
   --height <number>     Viewport height (default: 1024)
   --settle-ms <number>  Delay after selector visibility (default: 200)
-  --base-url <url>      App URL (default: http://127.0.0.1:3001)
+  --base-url <url>      App URL (default: http://127.0.0.1:3000)
   --headed              Run browser in headed mode
   --headless            Force headless mode
   --help                Show this help

@@ -11,6 +11,7 @@ runs:
       uses: actions/setup-node@v6
       with:
         node-version-file: ".nvmrc"
+        cache: "pnpm"
 
     - name: Install dependencies
       shell: bash
