@@ -113,7 +113,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Deploy Rehoboam UI to Cloudflare Pages
-        run: pnpm dlx wrangler@4.66.0 pages deploy apps/ui/dist --project-name=rehoboam
+        run: pnpm dlx wrangler@4.66.0 pages deploy apps/ui/dist --project-name=rehoboam-ui
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
