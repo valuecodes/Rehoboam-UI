@@ -1,6 +1,8 @@
 import { EventsResponseSchema } from "@repo/types";
 import { Hono } from "hono";
 
+import type { AppEnv } from "../types";
+
 const mockEvents = [
   {
     id: "dotcom-bubble-burst",
@@ -60,6 +62,9 @@ const mockEvents = [
   },
 ];
 
-export const events = new Hono<{ Bindings: Env }>().get("/", (c) => {
+export const events = new Hono<AppEnv>().get("/", (c) => {
+  const logger = c.get("logger");
+  logger.debug("fetching events", { count: mockEvents.length });
+
   return c.json(EventsResponseSchema.parse(mockEvents));
 });
