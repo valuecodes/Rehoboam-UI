@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 
-import { loggerMiddleware, onErrorHandler } from "./middleware/logger";
+import { notFoundHandler, onErrorHandler } from "./middleware/error-handlers";
+import { loggerMiddleware } from "./middleware/logger";
 import { events } from "./routes/events";
 import type { AppEnv } from "./types";
 
@@ -11,9 +12,7 @@ app.onError(onErrorHandler);
 
 app.route("/api/events", events);
 
-app.notFound((c) => {
-  return c.json({ error: "Not Found" }, 404);
-});
+app.notFound(notFoundHandler);
 
 // eslint-disable-next-line import/no-default-export -- Cloudflare Workers require a default export
 export default app;
