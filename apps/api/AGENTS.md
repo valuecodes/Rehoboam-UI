@@ -19,17 +19,19 @@ Use it with the repo-level guide at root: `AGENTS.md`.
 - Worker entry + route wiring: `src/index.ts`
 - Events route: `src/routes/events.ts`
 - Request logger middleware: `src/middleware/logger.ts`
+- Security middleware (CORS, secure headers, cache control): `src/middleware/security.ts`
 - Error + not-found handlers: `src/middleware/error-handlers.ts`
 - Worker/Hono app env typing: `src/types.ts`
-- Middleware tests: `src/middleware/__tests__/logger.test.ts`
+- Middleware tests: `src/middleware/__tests__/logger.test.ts`, `src/middleware/__tests__/security.test.ts`
 - Worker config and route deployment: `wrangler.jsonc`
 - Generated Cloudflare env types: `worker-configuration.d.ts`
 
 ## Implementation Notes
 
-- `src/index.ts` wires `loggerMiddleware` globally, installs `onErrorHandler`, mounts `/api/events`, and defines `notFoundHandler`.
+- `src/index.ts` wires security middleware (`secureHeadersMiddleware`, `cacheControlMiddleware`, `corsMiddleware`), then `loggerMiddleware`, installs `onErrorHandler`, mounts `/api/events`, and defines `notFoundHandler`.
 - The Worker must default-export the Hono app for Cloudflare runtime compatibility.
-- `loggerMiddleware` sets `logger` and `requestId` in context variables; downstream handlers depend on these values.
+- `loggerMiddleware` sets `logger` and `requestId` in context variables and exposes `X-Request-Id` on the response; downstream handlers depend on these values.
+- `security.ts` configures CORS (allowed origins: production domain and localhost:3000), secure response headers via Hono built-ins, and `Cache-Control: no-store` for all API responses.
 - `src/routes/events.ts` validates the response with `EventsResponseSchema.parse(...)` before returning JSON.
 - Current data source is in-file `mockEvents`; treat this as the active behavior unless explicitly migrating to storage or external APIs.
 - If `wrangler.jsonc` bindings change, regenerate `worker-configuration.d.ts`.
