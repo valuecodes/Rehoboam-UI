@@ -11,6 +11,12 @@
     "enabled": true,
   },
   "compatibility_flags": ["nodejs_compat"],
+  "routes": [
+    {
+      "pattern": "rehoboam.valuecodes.fi/api/*",
+      "zone_name": "valuecodes.fi",
+    },
+  ],
   /**
    * Smart Placement
    * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
