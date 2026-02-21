@@ -106,13 +106,13 @@ jobs:
       - name: Build
         run: pnpm --filter rehoboam-ui build
 
-      - name: Deploy API Worker
+      - name: Deploy Rehoboam API to Cloudflare Workers
         run: pnpm --filter rehoboam-api run deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Deploy to Cloudflare Pages
+      - name: Deploy Rehoboam UI to Cloudflare Pages
         run: pnpm dlx wrangler@4.66.0 pages deploy apps/web/dist --project-name=rehoboam
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
