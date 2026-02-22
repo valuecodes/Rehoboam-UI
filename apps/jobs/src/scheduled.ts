@@ -47,6 +47,11 @@ export const handleScheduled: ExportedHandlerScheduledHandler<Env> = async (
 
   const failed = results.filter((r) => r.status === "rejected").length;
   const succeeded = results.filter((r) => r.status === "fulfilled").length;
+  const failedJobs = results.flatMap((result, index) =>
+    result.status === "rejected"
+      ? [jobs[index]?.name ?? `unknown-${index}`]
+      : []
+  );
 
   logger.info("scheduled run finished", {
     cron,
@@ -55,4 +60,12 @@ export const handleScheduled: ExportedHandlerScheduledHandler<Env> = async (
     failed,
     durationMs: Date.now() - startTime,
   });
+
+  if (failedJobs.length > 0) {
+    logger.error("scheduled run failed", {
+      cron,
+      failedJobs,
+    });
+    throw new Error(`Scheduled jobs failed: ${failedJobs.join(", ")}`);
+  }
 };
