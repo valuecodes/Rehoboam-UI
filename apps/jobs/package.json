@@ -1,0 +1,33 @@
+{
+  "name": "rehoboam-jobs",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev --port 3002 --test-scheduled",
+    "start": "wrangler dev",
+    "cf-typegen": "wrangler types",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "postinstall": "wrangler types",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@repo/logger": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/eslint": "workspace:*",
+    "@repo/prettier": "workspace:*",
+    "@repo/typescript": "workspace:*",
+    "@types/node": "25.2.3",
+    "@types/service-worker-mock": "2.0.4",
+    "eslint": "9.39.1",
+    "prettier": "3.8.1",
+    "typescript": "5.9.3",
+    "vitest": "4.0.18",
+    "wrangler": "4.66.0"
+  },
+  "prettier": "@repo/prettier"
+}

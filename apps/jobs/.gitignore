@@ -1,0 +1,4 @@
+# Wrangler local dev state
+.dev.vars*
+!.dev.vars.example
+.wrangler/
