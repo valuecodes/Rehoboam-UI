@@ -28,10 +28,11 @@ flowchart LR
     Client["Client (apps/ui or external)"] --> Worker["Hono App (src/index.ts)"]
     Worker --> SH["secureHeadersMiddleware"]
     SH --> CORS["corsMiddleware"]
-    CORS --> ETAG["etagMiddleware (weak ETags)"]
-    ETAG --> CACHE["createCacheMiddleware (300s, Vary: Origin)"]
-    CACHE --> LOG["loggerMiddleware (sets X-Request-Id)"]
-    LOG --> ROUTE["Route: /api/events"]
+    CORS --> LOG["loggerMiddleware (X-Request-Id set after response)"]
+    LOG --> ETAG["etagMiddleware (weak ETags)"]
+    ETAG --> NOSTORE["defaultNoStoreCacheControlMiddleware"]
+    NOSTORE --> CACHE["createCacheMiddleware (300s, Vary: Origin)"]
+    CACHE --> ROUTE["Route: /api/events"]
     ROUTE --> HANDLER["events.ts handler"]
     HANDLER --> SCHEMA["EventsResponseSchema.parse(mockEvents)"]
     SCHEMA --> RESP["JSON 200 response"]
@@ -86,7 +87,7 @@ pnpm dev
 - Worker entry + middleware composition: `src/index.ts`
 - Events route: `src/routes/events.ts`
 - Security middleware: `src/middleware/security.ts`
-- Cache middleware (ETag, Cloudflare Cache API): `src/middleware/cache.ts`
+- Cache middleware (ETag, Cloudflare Cache API, default no-store): `src/middleware/cache.ts`
 - Request logger middleware: `src/middleware/logger.ts`
 - Error + not-found handlers: `src/middleware/error-handlers.ts`
 - Worker config and route deployment: `wrangler.jsonc`

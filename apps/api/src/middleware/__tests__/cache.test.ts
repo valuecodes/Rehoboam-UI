@@ -12,6 +12,12 @@ const createApp = () => {
   return app;
 };
 
+const createExecutionCtx = () => ({
+  waitUntil: vi.fn(),
+  passThroughOnException: vi.fn(),
+  props: {},
+});
+
 beforeEach(() => {
   vi.spyOn(console, "log").mockImplementation(() => undefined);
 });
@@ -68,15 +74,50 @@ describe("createCacheMiddleware", () => {
   it("sets Vary: Origin header to prevent CORS cache poisoning", async () => {
     const mockCache = { match: vi.fn().mockResolvedValue(null), put: vi.fn() };
     vi.stubGlobal("caches", { open: vi.fn().mockResolvedValue(mockCache) });
+    const executionCtx = createExecutionCtx();
 
     const app = new Hono<AppEnv>();
     app.use("*", loggerMiddleware);
     app.use("/api/test/*", createCacheMiddleware({ ttl: 60 }));
     app.get("/api/test/data", (c) => c.json({ ok: true }));
 
-    const res = await app.request("/api/test/data");
+    const res = await app.request("/api/test/data", undefined, undefined, executionCtx);
 
     expect(res.headers.get("Vary")).toContain("origin");
+
+    vi.unstubAllGlobals();
+  });
+
+  it("does not persist X-Request-Id across cached responses", async () => {
+    const cacheStore = new Map<string, Response>();
+    const mockCache = {
+      match: vi.fn((key: string) => cacheStore.get(key) ?? null),
+      put: vi.fn((key: string, response: Response) => {
+        cacheStore.set(key, response.clone());
+      }),
+    };
+    vi.stubGlobal("caches", { open: vi.fn().mockResolvedValue(mockCache) });
+    const executionCtx = createExecutionCtx();
+
+    const app = new Hono<AppEnv>();
+    app.use("*", loggerMiddleware);
+    app.use("/api/test/*", createCacheMiddleware({ ttl: 60 }));
+    app.get("/api/test/data", (c) => c.json({ id: c.get("requestId") }));
+
+    const first = await app.request("/api/test/data", undefined, undefined, executionCtx);
+    const firstBody = await first.json<{ id: string }>();
+    const firstHeader = first.headers.get("X-Request-Id");
+
+    const second = await app.request("/api/test/data", undefined, undefined, executionCtx);
+    const secondBody = await second.json<{ id: string }>();
+    const secondHeader = second.headers.get("X-Request-Id");
+
+    expect(mockCache.put).toHaveBeenCalledTimes(1);
+    expect(secondBody.id).toBe(firstBody.id);
+    expect(firstHeader).toBe(firstBody.id);
+    expect(secondHeader).toBeDefined();
+    expect(secondHeader).not.toBe(secondBody.id);
+    expect(secondHeader).not.toBe(firstHeader);
 
     vi.unstubAllGlobals();
   });
