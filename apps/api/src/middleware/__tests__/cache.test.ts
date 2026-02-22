@@ -81,7 +81,12 @@ describe("createCacheMiddleware", () => {
     app.use("/api/test/*", createCacheMiddleware({ ttl: 60 }));
     app.get("/api/test/data", (c) => c.json({ ok: true }));
 
-    const res = await app.request("/api/test/data", undefined, undefined, executionCtx);
+    const res = await app.request(
+      "/api/test/data",
+      undefined,
+      undefined,
+      executionCtx
+    );
 
     expect(res.headers.get("Vary")).toContain("origin");
 
@@ -104,11 +109,21 @@ describe("createCacheMiddleware", () => {
     app.use("/api/test/*", createCacheMiddleware({ ttl: 60 }));
     app.get("/api/test/data", (c) => c.json({ id: c.get("requestId") }));
 
-    const first = await app.request("/api/test/data", undefined, undefined, executionCtx);
+    const first = await app.request(
+      "/api/test/data",
+      undefined,
+      undefined,
+      executionCtx
+    );
     const firstBody = await first.json<{ id: string }>();
     const firstHeader = first.headers.get("X-Request-Id");
 
-    const second = await app.request("/api/test/data", undefined, undefined, executionCtx);
+    const second = await app.request(
+      "/api/test/data",
+      undefined,
+      undefined,
+      executionCtx
+    );
     const secondBody = await second.json<{ id: string }>();
     const secondHeader = second.headers.get("X-Request-Id");
 
