@@ -29,7 +29,7 @@ Use it with the repo-level guide at root: `AGENTS.md`.
 
 ## Implementation Notes
 
-- `src/index.ts` wires security middleware (`secureHeadersMiddleware`, `corsMiddleware`), then `etagMiddleware` globally and cache middleware per-route, followed by `loggerMiddleware`. Logger runs after cache so cached responses skip it and don't carry a stale `X-Request-Id`. Installs `onErrorHandler`, mounts `/api/events`, and defines `notFoundHandler`.
+- `src/index.ts` wires security middleware (`secureHeadersMiddleware`, `corsMiddleware`), then `loggerMiddleware`, `etagMiddleware`, a default no-store fallback for responses that don't set `Cache-Control`, and cache middleware for `/api/events`. Logger sets `X-Request-Id` after downstream middleware so cached responses can still receive a fresh per-request ID without persisting stale IDs in cache. Installs `onErrorHandler`, mounts `/api/events`, and defines `notFoundHandler`.
 - The Worker must default-export the Hono app for Cloudflare runtime compatibility.
 - `loggerMiddleware` sets `logger` and `requestId` in context variables and exposes `X-Request-Id` on the response; downstream handlers depend on these values.
 - `security.ts` configures CORS (allowed origins: production domain and localhost:3000) and secure response headers via Hono built-ins.

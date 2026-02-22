@@ -27,3 +27,12 @@ export const cacheControl = (directive: string) =>
     await next();
     c.header("Cache-Control", directive);
   });
+
+export const defaultNoStoreCacheControlMiddleware = createMiddleware<AppEnv>(
+  async (c, next) => {
+    await next();
+    if (!c.res.headers.has("Cache-Control")) {
+      c.header("Cache-Control", "no-store");
+    }
+  }
+);
