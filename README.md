@@ -1,6 +1,6 @@
 # Rehoboam UI
 
-A pnpm monorepo with a Rehoboam-style React UI and a Cloudflare Worker API.
+A pnpm monorepo with a Rehoboam-style React UI, a Cloudflare Worker API, and a scheduled Cloudflare Worker jobs service.
 
 ![Preview](./apps/ui/public/preview.jpg)
 
@@ -34,6 +34,8 @@ pnpm dev
 - Web UI: `http://localhost:3000`
 - API Worker: `http://localhost:3001`
 - Events endpoint: `http://localhost:3001/api/events`
+- Jobs Worker (scheduled): `http://localhost:3002`
+- Scheduled test trigger: `http://localhost:3002/__scheduled?cron=0+*/6+*+*+*`
 
 In local web development, Vite proxies `/api/*` requests from `apps/ui` to the
 API worker on port `3001`.
@@ -98,7 +100,7 @@ be visible, and then applies a short settle delay before capturing.
 
 ## Scripts
 
-- `pnpm dev` - run `dev` in all workspaces (`web` + `api`) in parallel
+- `pnpm dev` - run `dev` in all workspaces (`web` + `api` + `jobs`) in parallel
 - `pnpm build` - build all workspaces
 - `pnpm typecheck` - run TypeScript checks in all workspaces
 - `pnpm lint` - run ESLint in all workspaces
@@ -107,6 +109,7 @@ be visible, and then applies a short settle delay before capturing.
 - `pnpm test` - run tests in all workspaces
 - `pnpm --filter rehoboam-ui dev` - run only the web dev server (`http://localhost:3000`)
 - `pnpm --filter rehoboam-api dev` - run only the API worker (`http://localhost:3001`)
+- `pnpm --filter rehoboam-jobs dev` - run only the jobs worker with scheduled testing (`http://localhost:3002`)
 - `pnpm --filter rehoboam-ui preview` - preview the web production build
 - `pnpm --filter rehoboam-ui screenshot:scene` - capture deterministic full + scene screenshots
 - `pnpm --filter rehoboam-ui screenshot:scene:headed` - run screenshot capture with headed browser
