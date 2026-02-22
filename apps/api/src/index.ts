@@ -11,12 +11,10 @@ const app = new Hono<AppEnv>();
 
 app.use("*", secureHeadersMiddleware);
 app.use("*", corsMiddleware);
-app.use("*", loggerMiddleware);
 app.use("*", etagMiddleware);
-// Default edge cache for all routes; individual routes can override with a longer TTL
-app.use("*", createCacheMiddleware({ ttl: 60 }));
-
 app.use("/api/events", createCacheMiddleware({ ttl: 300 }));
+// Logger runs after cache so cached responses don't carry a stale X-Request-Id
+app.use("*", loggerMiddleware);
 app.onError(onErrorHandler);
 
 app.route("/api/events", events);

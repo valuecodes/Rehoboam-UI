@@ -29,11 +29,11 @@ Use it with the repo-level guide at root: `AGENTS.md`.
 
 ## Implementation Notes
 
-- `src/index.ts` wires security middleware (`secureHeadersMiddleware`, `corsMiddleware`), then `loggerMiddleware`, `etagMiddleware` globally, and per-route cache middleware. Installs `onErrorHandler`, mounts `/api/events`, and defines `notFoundHandler`.
+- `src/index.ts` wires security middleware (`secureHeadersMiddleware`, `corsMiddleware`), then `etagMiddleware` globally and cache middleware per-route, followed by `loggerMiddleware`. Logger runs after cache so cached responses skip it and don't carry a stale `X-Request-Id`. Installs `onErrorHandler`, mounts `/api/events`, and defines `notFoundHandler`.
 - The Worker must default-export the Hono app for Cloudflare runtime compatibility.
 - `loggerMiddleware` sets `logger` and `requestId` in context variables and exposes `X-Request-Id` on the response; downstream handlers depend on these values.
 - `security.ts` configures CORS (allowed origins: production domain and localhost:3000) and secure response headers via Hono built-ins.
-- `cache.ts` provides two caching layers: `etagMiddleware` (global, weak ETags for conditional requests) and `createCacheMiddleware` (per-route, Cloudflare Cache API with custom `keyGenerator` that includes `Vary` headers in the cache key for correctness). The `cacheControl` utility allows setting custom `Cache-Control` directives per route.
+- `cache.ts` provides two caching layers: `etagMiddleware` (global, weak ETags for conditional requests) and `createCacheMiddleware` (per-route, Cloudflare Cache API with `vary: "Origin"` so cached responses are keyed per origin, preventing CORS cache poisoning). The `cacheControl` utility allows setting custom `Cache-Control` directives per route.
 - `src/routes/events.ts` validates the response with `EventsResponseSchema.parse(...)` before returning JSON.
 - Current data source is in-file `mockEvents`; treat this as the active behavior unless explicitly migrating to storage or external APIs.
 - If `wrangler.jsonc` bindings change, regenerate `worker-configuration.d.ts`.

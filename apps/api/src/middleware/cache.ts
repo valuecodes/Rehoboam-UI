@@ -17,6 +17,7 @@ export const createCacheMiddleware = (options: CacheOptions) => {
   return cache({
     cacheName,
     cacheControl: `public, s-maxage=${String(ttl)}, max-age=${String(ttl)}`,
+    vary: "Origin",
     wait: false,
   });
 };
