@@ -87,7 +87,7 @@ jobs:
         run: pnpm test
 
   deploy-api:
-    name: deploy api
+    name: deploy-api
     needs: [typecheck, lint, format-check, test]
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -110,7 +110,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
   deploy-jobs:
-    name: deploy jobs
+    name: deploy-jobs
     needs: [typecheck, lint, format-check, test]
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -133,7 +133,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
   deploy-ui:
-    name: deploy ui
+    name: deploy-ui
     needs: [typecheck, lint, format-check, test]
     runs-on: ubuntu-latest
     timeout-minutes: 10
