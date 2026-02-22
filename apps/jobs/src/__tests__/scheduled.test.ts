@@ -1,13 +1,14 @@
 import { handleScheduled } from "../scheduled";
 
-const { getJobsForCronMock } = vi.hoisted(() => ({
+const { getJobsForCronMock, warnMock } = vi.hoisted(() => ({
   getJobsForCronMock: vi.fn(),
+  warnMock: vi.fn(),
 }));
 
 vi.mock("@repo/logger", () => ({
   Logger: class {
     info = vi.fn();
-    warn = vi.fn();
+    warn = warnMock;
     error = vi.fn();
     debug = vi.fn();
   },
@@ -31,6 +32,7 @@ const createController = (cron: string): ScheduledController =>
 describe("handleScheduled", () => {
   beforeEach(() => {
     getJobsForCronMock.mockReset();
+    warnMock.mockReset();
   });
 
   it("completes when all jobs succeed", async () => {
@@ -73,5 +75,21 @@ describe("handleScheduled", () => {
     ).rejects.toThrow("Scheduled jobs failed: failing-job");
     expect(runSuccess).toHaveBeenCalledOnce();
     expect(runFailure).toHaveBeenCalledOnce();
+  });
+
+  it("returns early when no jobs are registered", async () => {
+    getJobsForCronMock.mockReturnValue([]);
+
+    await expect(
+      handleScheduled(
+        createController("0 */6 * * *"),
+        {} as Env,
+        {} as ExecutionContext
+      )
+    ).resolves.toBeUndefined();
+    expect(warnMock).toHaveBeenCalledWith(
+      "no jobs registered for cron pattern",
+      { cron: "0 */6 * * *" }
+    );
   });
 });
