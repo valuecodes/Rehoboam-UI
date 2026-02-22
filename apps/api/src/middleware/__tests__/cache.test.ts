@@ -64,6 +64,22 @@ describe("createCacheMiddleware", () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ cached: true });
   });
+
+  it("sets Vary: Origin header to prevent CORS cache poisoning", async () => {
+    const mockCache = { match: vi.fn().mockResolvedValue(null), put: vi.fn() };
+    vi.stubGlobal("caches", { open: vi.fn().mockResolvedValue(mockCache) });
+
+    const app = new Hono<AppEnv>();
+    app.use("*", loggerMiddleware);
+    app.use("/api/test/*", createCacheMiddleware({ ttl: 60 }));
+    app.get("/api/test/data", (c) => c.json({ ok: true }));
+
+    const res = await app.request("/api/test/data");
+
+    expect(res.headers.get("Vary")).toContain("origin");
+
+    vi.unstubAllGlobals();
+  });
 });
 
 describe("cacheControl", () => {

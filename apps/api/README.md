@@ -27,9 +27,10 @@ Cloudflare Worker API workspace for timeline events consumed by `apps/ui`.
 flowchart LR
     Client["Client (apps/ui or external)"] --> Worker["Hono App (src/index.ts)"]
     Worker --> SH["secureHeadersMiddleware"]
-    SH --> CC["cacheControlMiddleware"]
-    CC --> CORS["corsMiddleware"]
-    CORS --> LOG["loggerMiddleware (sets X-Request-Id)"]
+    SH --> CORS["corsMiddleware"]
+    CORS --> ETAG["etagMiddleware (weak ETags)"]
+    ETAG --> CACHE["createCacheMiddleware (300s, Vary: Origin)"]
+    CACHE --> LOG["loggerMiddleware (sets X-Request-Id)"]
     LOG --> ROUTE["Route: /api/events"]
     ROUTE --> HANDLER["events.ts handler"]
     HANDLER --> SCHEMA["EventsResponseSchema.parse(mockEvents)"]
@@ -44,6 +45,7 @@ flowchart LR
 ```mermaid
 flowchart TD
     IDX["src/index.ts"] --> SEC["src/middleware/security.ts"]
+    IDX --> CACHE["src/middleware/cache.ts"]
     IDX --> LOG["src/middleware/logger.ts"]
     IDX --> ERR["src/middleware/error-handlers.ts"]
     IDX --> EVT["src/routes/events.ts"]
@@ -84,6 +86,7 @@ pnpm dev
 - Worker entry + middleware composition: `src/index.ts`
 - Events route: `src/routes/events.ts`
 - Security middleware: `src/middleware/security.ts`
+- Cache middleware (ETag, Cloudflare Cache API): `src/middleware/cache.ts`
 - Request logger middleware: `src/middleware/logger.ts`
 - Error + not-found handlers: `src/middleware/error-handlers.ts`
 - Worker config and route deployment: `wrangler.jsonc`
