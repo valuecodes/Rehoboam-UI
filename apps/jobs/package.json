@@ -15,7 +15,9 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@repo/logger": "workspace:*"
+    "@repo/logger": "workspace:*",
+    "fast-xml-parser": "5.3.4",
+    "zod": "4.3.6"
   },
   "devDependencies": {
     "@repo/eslint": "workspace:*",
