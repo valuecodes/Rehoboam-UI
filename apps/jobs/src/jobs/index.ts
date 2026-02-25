@@ -1,5 +1,6 @@
 import type { Logger } from "@repo/logger";
 
+import { DatabaseClient } from "../clients/database-client";
 import { NewsJob } from "./news-job";
 
 export type Job = {
@@ -11,8 +12,9 @@ export type Job = {
 export class JobRegistry {
   private readonly jobs: Job[];
 
-  constructor(logger: Logger) {
-    this.jobs = [new NewsJob(logger)];
+  constructor(logger: Logger, env: Env) {
+    const db = new DatabaseClient(env.DB, logger);
+    this.jobs = [new NewsJob(logger, db)];
   }
 
   getJobsForCron(cron: string): Job[] {

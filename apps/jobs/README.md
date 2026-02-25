@@ -8,6 +8,43 @@ Cloudflare Worker jobs workspace for scheduled background tasks.
 - Dispatches scheduled events to registered jobs in `src/jobs`
 - Executes matching jobs in parallel with isolated failures via `Promise.allSettled`
 
+## Database (Cloudflare D1)
+
+News items are persisted to a D1 SQLite database using Drizzle ORM.
+
+### First-Time Setup
+
+1. Create the D1 database:
+   ```bash
+   wrangler d1 create rehoboam-jobs-db
+   ```
+2. Copy the returned `database_id` into `wrangler.jsonc` (replace `<YOUR_DATABASE_ID>` before deploying)
+3. Apply the migration locally:
+   ```bash
+   pnpm --filter rehoboam-jobs db:migrate:local
+   ```
+
+### Database Scripts
+
+- `pnpm --filter rehoboam-jobs db:generate` - generate a new migration from schema changes in `src/db/schema.ts`
+- `pnpm --filter rehoboam-jobs db:migrate:local` - apply migrations to local D1
+- `pnpm --filter rehoboam-jobs db:migrate:remote` - apply migrations to production D1 (used by manual GitHub workflow `Migrations`, job `migrate-jobs-d1`)
+
+### Schema Change Workflow
+
+1. Edit `src/db/schema.ts`
+2. `pnpm --filter rehoboam-jobs db:generate` — creates a new `.sql` file in `drizzle/`
+3. `pnpm --filter rehoboam-jobs db:migrate:local` — apply to local DB for testing
+4. Merge to `main`, then trigger the GitHub Actions workflow `Migrations` (job `migrate-jobs-d1`, requires `production` environment approval)
+5. `pnpm --filter rehoboam-jobs deploy` — deploy updated worker code (no remote migrations)
+
+### Production Migration Runbook
+
+1. Merge schema/code changes to `main`
+2. Trigger GitHub Actions workflow `Migrations` with the target ref (`ref` input defaults to `main`)
+3. Approve the `production` environment gate and verify migration logs
+4. If needed, rerun the `deploy-jobs` workflow to roll out worker code changes
+
 ## Local Development
 
 Run from repo root:
@@ -28,11 +65,14 @@ curl "http://localhost:3002/__scheduled?cron=0+*/6+*+*+*"
 
 - `pnpm --filter rehoboam-jobs dev` - start Wrangler local worker on port `3002` with scheduled testing enabled
 - `pnpm --filter rehoboam-jobs start` - start Wrangler local worker with defaults
-- `pnpm --filter rehoboam-jobs deploy` - deploy Worker
+- `pnpm --filter rehoboam-jobs deploy` - deploy Worker code only (no remote migrations)
 - `pnpm --filter rehoboam-jobs cf-typegen` - generate `worker-configuration.d.ts`
 - `pnpm --filter rehoboam-jobs typecheck` - run TypeScript checks
 - `pnpm --filter rehoboam-jobs lint` - run ESLint
 - `pnpm --filter rehoboam-jobs test` - run Vitest
+- `pnpm --filter rehoboam-jobs db:generate` - generate migration from schema
+- `pnpm --filter rehoboam-jobs db:migrate:local` - apply migrations locally
+- `pnpm --filter rehoboam-jobs db:migrate:remote` - apply migrations to production
 
 ## Project Structure
 
@@ -40,4 +80,8 @@ curl "http://localhost:3002/__scheduled?cron=0+*/6+*+*+*"
 - Scheduled dispatcher: `src/scheduled.ts`
 - Job registry and contract: `src/jobs/index.ts`
 - Jobs implementations: `src/jobs/*`
+- Database schema (Drizzle ORM): `src/db/schema.ts`
+- Database client: `src/clients/database-client.ts`
+- Migrations: `drizzle/`
+- Drizzle config: `drizzle.config.ts`
 - Worker runtime and cron triggers: `wrangler.jsonc`

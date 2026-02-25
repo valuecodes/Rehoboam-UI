@@ -1,7 +1,6 @@
+import type { Logger } from "@repo/logger";
 import { XMLParser } from "fast-xml-parser";
 import { z } from "zod";
-
-import type { Logger } from "@repo/logger";
 
 import type { NewsItem } from "../types";
 import { NewsService } from "./news-service";
@@ -67,7 +66,7 @@ export class CnnNewsService extends NewsService {
           link: item.link,
           description: item.description,
         };
-      }),
+      })
     );
   }
 }

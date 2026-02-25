@@ -44,9 +44,7 @@ describe("CnnNewsService", () => {
   });
 
   it("parses CNN RSS feed", async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(CNN_RSS, { status: 200 }),
-    );
+    vi.mocked(fetch).mockResolvedValue(new Response(CNN_RSS, { status: 200 }));
 
     const service = new CnnNewsService(loggerMock as never);
     const items = await service.fetch();
@@ -64,9 +62,7 @@ describe("CnnNewsService", () => {
   });
 
   it("extracts guid from object form with isPermaLink", async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(CNN_RSS, { status: 200 }),
-    );
+    vi.mocked(fetch).mockResolvedValue(new Response(CNN_RSS, { status: 200 }));
 
     const service = new CnnNewsService(loggerMock as never);
     const items = await service.fetch();
@@ -75,9 +71,7 @@ describe("CnnNewsService", () => {
   });
 
   it("handles items without pubDate", async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(CNN_RSS, { status: 200 }),
-    );
+    vi.mocked(fetch).mockResolvedValue(new Response(CNN_RSS, { status: 200 }));
 
     const service = new CnnNewsService(loggerMock as never);
     const items = await service.fetch();
@@ -88,16 +82,15 @@ describe("CnnNewsService", () => {
 
   it("returns empty array for invalid feed structure", async () => {
     vi.mocked(fetch).mockResolvedValue(
-      new Response("<notRss/>", { status: 200 }),
+      new Response("<notRss/>", { status: 200 })
     );
 
     const service = new CnnNewsService(loggerMock as never);
     const items = await service.fetch();
 
     expect(items).toHaveLength(0);
-    expect(loggerMock.warn).toHaveBeenCalledWith(
-      "invalid CNN feed structure",
-      { source: "cnn" },
-    );
+    expect(loggerMock.warn).toHaveBeenCalledWith("invalid CNN feed structure", {
+      source: "cnn",
+    });
   });
 });

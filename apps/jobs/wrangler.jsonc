@@ -13,6 +13,18 @@
     "enabled": true,
   },
   /**
+   * D1 Database bindings
+   * https://developers.cloudflare.com/d1/
+   */
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "rehoboam-jobs-db",
+      "database_id": "0a4c36ee-f8ef-415e-ae45-6b985510fad4",
+      "migrations_dir": "drizzle",
+    },
+  ],
+  /**
    * Cron Triggers
    * https://developers.cloudflare.com/workers/configuration/cron-triggers/
    */

@@ -1,0 +1,44 @@
+name: Migrations
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to run migrations from"
+        required: true
+        default: "main"
+        type: string
+      reason:
+        description: "Why this migration is being run"
+        required: false
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: migrations-production
+  cancel-in-progress: false
+
+jobs:
+  migrate-jobs-d1:
+    name: migrate-jobs-d1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.inputs.ref }}
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Run D1 remote migrations for Jobs
+        run: pnpm --filter rehoboam-jobs db:migrate:remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

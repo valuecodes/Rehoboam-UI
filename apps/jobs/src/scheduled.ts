@@ -4,7 +4,7 @@ import { JobRegistry } from "./jobs";
 
 export const handleScheduled: ExportedHandlerScheduledHandler<Env> = async (
   controller,
-  _env,
+  env,
   _ctx
 ) => {
   const logger = new Logger({ context: "jobs" });
@@ -12,7 +12,7 @@ export const handleScheduled: ExportedHandlerScheduledHandler<Env> = async (
 
   logger.info("scheduled event received", { cron });
 
-  const registry = new JobRegistry(logger);
+  const registry = new JobRegistry(logger, env);
   const jobs = registry.getJobsForCron(cron);
 
   if (jobs.length === 0) {
