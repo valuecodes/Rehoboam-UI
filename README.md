@@ -116,7 +116,7 @@ be visible, and then applies a short settle delay before capturing.
 
 ## CI Pipeline
 
-Two GitHub Actions workflows validate every change:
+Two GitHub Actions workflows validate every code change:
 
 - `.github/workflows/feature.yml`: runs on pull requests to `main`
 - `.github/workflows/main.yml`: runs on pushes to `main`
@@ -127,3 +127,7 @@ Both workflows run:
 - lint
 - `format:check`
 - test
+
+Manual operations workflow:
+
+- `.github/workflows/migrations.yml`: manually applies Jobs D1 migrations to production (`workflow_dispatch`, environment-gated)

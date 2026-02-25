@@ -1,5 +1,6 @@
 import type { Logger } from "@repo/logger";
 
+import type { DatabaseClient } from "../clients/database-client";
 import type { Job } from "./index";
 import { BbcNewsService } from "./news/services/bbc-service";
 import { CnnNewsService } from "./news/services/cnn-service";
@@ -12,11 +13,11 @@ export class NewsJob implements Job {
 
   private readonly services: NewsService[];
 
-  constructor(private readonly logger: Logger) {
-    this.services = [
-      new BbcNewsService(logger),
-      new CnnNewsService(logger),
-    ];
+  constructor(
+    private readonly logger: Logger,
+    private readonly db: DatabaseClient
+  ) {
+    this.services = [new BbcNewsService(logger), new CnnNewsService(logger)];
   }
 
   async run(): Promise<void> {
@@ -25,15 +26,18 @@ export class NewsJob implements Job {
     });
 
     const results = await Promise.allSettled(
-      this.services.map((service) => service.fetch()),
+      this.services.map((service) => service.fetch())
     );
 
     const allItems: NewsItem[] = results.flatMap((result) =>
-      result.status === "fulfilled" ? result.value : [],
+      result.status === "fulfilled" ? result.value : []
     );
+
+    const processedCount = await this.db.upsertNewsItems(allItems);
 
     this.logger.info("news job completed", {
       totalItems: allItems.length,
+      processedCount,
       services: this.services.length,
       failed: results.filter((r) => r.status === "rejected").length,
     });

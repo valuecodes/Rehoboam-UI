@@ -3,15 +3,22 @@ import { NewsJob } from "../jobs/news-job";
 const fetchMock = vi.hoisted(() => vi.fn());
 
 const { MockService } = await vi.hoisted(async () => {
-  const { NewsService } = await import(
-    "../jobs/news/services/news-service"
-  );
+  const { NewsService } = await import("../jobs/news/services/news-service");
 
   class MockServiceClass extends NewsService {
     readonly slug = "test-feed";
     readonly url = "https://example.com/rss.xml";
 
-    protected async parse(): Promise<{ id: string; title: string; source: string; publishedAt: string; link: string; description: string }[]> {
+    protected async parse(): Promise<
+      {
+        id: string;
+        title: string;
+        source: string;
+        publishedAt: string;
+        link: string;
+        description: string;
+      }[]
+    > {
       return [
         {
           id: await this.hashId("mock-1"),
@@ -43,6 +50,10 @@ const loggerMock = {
   error: vi.fn(),
 };
 
+const dbMock = {
+  upsertNewsItems: vi.fn().mockResolvedValue(0),
+};
+
 describe("NewsJob", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -54,17 +65,16 @@ describe("NewsJob", () => {
   });
 
   it("fetches and aggregates items from all services", async () => {
-    fetchMock.mockImplementation(
-      () => new Response("<rss/>", { status: 200 }),
-    );
+    fetchMock.mockImplementation(() => new Response("<rss/>", { status: 200 }));
 
-    const job = new NewsJob(loggerMock as never);
+    const job = new NewsJob(loggerMock as never, dbMock as never);
     await job.run();
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(dbMock.upsertNewsItems).toHaveBeenCalledOnce();
     expect(loggerMock.info).toHaveBeenCalledWith(
       "news job completed",
-      expect.objectContaining({ totalItems: 2, failed: 0 }),
+      expect.objectContaining({ totalItems: 2, failed: 0 })
     );
   });
 
@@ -73,24 +83,26 @@ describe("NewsJob", () => {
       .mockResolvedValueOnce(new Response("<rss/>", { status: 200 }))
       .mockResolvedValueOnce(new Response("Not Found", { status: 404 }));
 
-    const job = new NewsJob(loggerMock as never);
+    const job = new NewsJob(loggerMock as never, dbMock as never);
     await job.run();
 
+    expect(dbMock.upsertNewsItems).toHaveBeenCalledOnce();
     expect(loggerMock.info).toHaveBeenCalledWith(
       "news job completed",
-      expect.objectContaining({ totalItems: 1 }),
+      expect.objectContaining({ totalItems: 1 })
     );
   });
 
   it("handles all services failing gracefully", async () => {
     fetchMock.mockRejectedValue(new Error("network timeout"));
 
-    const job = new NewsJob(loggerMock as never);
+    const job = new NewsJob(loggerMock as never, dbMock as never);
     await job.run();
 
+    expect(dbMock.upsertNewsItems).toHaveBeenCalledWith([]);
     expect(loggerMock.info).toHaveBeenCalledWith(
       "news job completed",
-      expect.objectContaining({ totalItems: 0 }),
+      expect.objectContaining({ totalItems: 0 })
     );
   });
 });

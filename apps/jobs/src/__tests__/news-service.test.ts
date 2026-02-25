@@ -1,5 +1,5 @@
-import type { NewsItem } from "../jobs/news/types";
 import { NewsService } from "../jobs/news/services/news-service";
+import type { NewsItem } from "../jobs/news/types";
 
 class TestNewsService extends NewsService {
   readonly slug = "test-source";
@@ -37,9 +37,7 @@ describe("NewsService", () => {
   });
 
   it("fetches and delegates to parse on success", async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      new Response("<rss/>", { status: 200 }),
-    );
+    vi.mocked(fetch).mockResolvedValue(new Response("<rss/>", { status: 200 }));
 
     const service = new TestNewsService(loggerMock as never);
     const items = await service.fetch();
@@ -48,13 +46,13 @@ describe("NewsService", () => {
     expect(items[0]?.id).toMatch(/^[0-9a-f]{64}$/);
     expect(loggerMock.info).toHaveBeenCalledWith(
       "feed parsed",
-      expect.objectContaining({ source: "test-source", itemCount: 1 }),
+      expect.objectContaining({ source: "test-source", itemCount: 1 })
     );
   });
 
   it("returns empty array on HTTP error", async () => {
     vi.mocked(fetch).mockResolvedValue(
-      new Response("Not Found", { status: 404 }),
+      new Response("Not Found", { status: 404 })
     );
 
     const service = new TestNewsService(loggerMock as never);
@@ -63,7 +61,7 @@ describe("NewsService", () => {
     expect(items).toHaveLength(0);
     expect(loggerMock.error).toHaveBeenCalledWith(
       "feed fetch failed",
-      expect.objectContaining({ status: 404, source: "test-source" }),
+      expect.objectContaining({ status: 404, source: "test-source" })
     );
   });
 
@@ -76,7 +74,7 @@ describe("NewsService", () => {
     expect(items).toHaveLength(0);
     expect(loggerMock.error).toHaveBeenCalledWith(
       "feed processing failed",
-      expect.objectContaining({ error: "network timeout" }),
+      expect.objectContaining({ error: "network timeout" })
     );
   });
 });

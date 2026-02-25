@@ -41,9 +41,7 @@ describe("BbcNewsService", () => {
   });
 
   it("parses BBC RSS feed", async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(BBC_RSS, { status: 200 }),
-    );
+    vi.mocked(fetch).mockResolvedValue(new Response(BBC_RSS, { status: 200 }));
 
     const service = new BbcNewsService(loggerMock as never);
     const items = await service.fetch();
@@ -62,17 +60,16 @@ describe("BbcNewsService", () => {
 
   it("returns empty array for invalid feed structure", async () => {
     vi.mocked(fetch).mockResolvedValue(
-      new Response("<notRss/>", { status: 200 }),
+      new Response("<notRss/>", { status: 200 })
     );
 
     const service = new BbcNewsService(loggerMock as never);
     const items = await service.fetch();
 
     expect(items).toHaveLength(0);
-    expect(loggerMock.warn).toHaveBeenCalledWith(
-      "invalid BBC feed structure",
-      { source: "bbc-world" },
-    );
+    expect(loggerMock.warn).toHaveBeenCalledWith("invalid BBC feed structure", {
+      source: "bbc-world",
+    });
   });
 
   it("returns empty array for empty channel", async () => {

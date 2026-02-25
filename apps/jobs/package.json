@@ -12,11 +12,15 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "postinstall": "wrangler types",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply rehoboam-jobs-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply rehoboam-jobs-db --remote"
   },
   "dependencies": {
     "@repo/logger": "workspace:*",
-    "fast-xml-parser": "5.3.4",
+    "drizzle-orm": "0.45.1",
+    "fast-xml-parser": "5.3.7",
     "zod": "4.3.6"
   },
   "devDependencies": {
@@ -25,6 +29,7 @@
     "@repo/typescript": "workspace:*",
     "@types/node": "25.2.3",
     "@types/service-worker-mock": "2.0.4",
+    "drizzle-kit": "0.31.9",
     "eslint": "9.39.1",
     "prettier": "3.8.1",
     "typescript": "5.9.3",
