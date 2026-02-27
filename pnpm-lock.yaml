@@ -26,12 +26,18 @@ importers:
       '@hono/zod-validator':
         specifier: 0.7.6
         version: 0.7.6(hono@4.11.10)(zod@4.3.6)
+      '@repo/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@repo/logger':
         specifier: workspace:*
         version: link:../../packages/logger
       '@repo/types':
         specifier: workspace:*
         version: link:../../packages/types
+      drizzle-orm:
+        specifier: 0.45.1
+        version: 0.45.1
       hono:
         specifier: 4.11.10
         version: 4.11.10
@@ -72,9 +78,15 @@ importers:
 
   apps/jobs:
     dependencies:
+      '@repo/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@repo/logger':
         specifier: workspace:*
         version: link:../../packages/logger
+      '@repo/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       drizzle-orm:
         specifier: 0.45.1
         version: 0.45.1
@@ -182,6 +194,34 @@ importers:
       zx:
         specifier: 8.8.5
         version: 8.8.5
+
+  packages/db:
+    dependencies:
+      drizzle-orm:
+        specifier: 0.45.1
+        version: 0.45.1
+    devDependencies:
+      '@repo/eslint':
+        specifier: workspace:*
+        version: link:../../tooling/eslint
+      '@repo/prettier':
+        specifier: workspace:*
+        version: link:../../tooling/prettier
+      '@repo/typescript':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
+      eslint:
+        specifier: 9.39.1
+        version: 9.39.1(jiti@2.6.1)
+      prettier:
+        specifier: 3.8.1
+        version: 3.8.1
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 4.0.18
+        version: 4.0.18(@types/node@25.2.3)(jiti@2.6.1)(jsdom@28.1.0)(terser@5.46.0)(yaml@2.8.2)
 
   packages/logger:
     devDependencies:
@@ -1494,11 +1534,6 @@ packages:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
     peerDependencies:
       acorn: ^6.0.0 || ^7.0.0 || ^8.0.0
-
-  acorn@8.15.0:
-    resolution: {integrity: sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg==}
-    engines: {node: '>=0.4.0'}
-    hasBin: true
 
   acorn@8.16.0:
     resolution: {integrity: sha512-UVJyE9MttOsBQIDKw1skb9nAwQuR5wuGD3+82K6JgJlm/Y+KI92oNsMNGZCYdDsVtRHSak0pcV5Dno5+4jh9sw==}
@@ -3985,14 +4020,11 @@ snapshots:
       '@vitest/pretty-format': 4.0.18
       tinyrainbow: 3.0.3
 
-  acorn-jsx@5.3.2(acorn@8.15.0):
+  acorn-jsx@5.3.2(acorn@8.16.0):
     dependencies:
-      acorn: 8.15.0
+      acorn: 8.16.0
 
-  acorn@8.15.0: {}
-
-  acorn@8.16.0:
-    optional: true
+  acorn@8.16.0: {}
 
   agent-base@7.1.4: {}
 
@@ -4585,8 +4617,8 @@ snapshots:
 
   espree@10.4.0:
     dependencies:
-      acorn: 8.15.0
-      acorn-jsx: 5.3.2(acorn@8.15.0)
+      acorn: 8.16.0
+      acorn-jsx: 5.3.2(acorn@8.16.0)
       eslint-visitor-keys: 4.2.1
 
   esquery@1.7.0:

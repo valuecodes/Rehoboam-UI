@@ -2,8 +2,8 @@ import type { Logger } from "@repo/logger";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 
-import * as schema from "../db/schema";
-import type { NewsItem } from "../jobs/news/types";
+import { newsItems } from "@repo/db/schema";
+import type { NewsItem } from "@repo/types";
 
 export class DatabaseClient {
   private readonly db;
@@ -12,7 +12,7 @@ export class DatabaseClient {
     d1: D1Database,
     private readonly logger: Logger
   ) {
-    this.db = drizzle(d1, { schema });
+    this.db = drizzle(d1, { schema: { newsItems } });
   }
 
   async upsertNewsItems(items: NewsItem[]): Promise<number> {
@@ -40,10 +40,10 @@ export class DatabaseClient {
       }));
 
       await this.db
-        .insert(schema.newsItems)
+        .insert(newsItems)
         .values(values)
         .onConflictDoUpdate({
-          target: schema.newsItems.id,
+          target: newsItems.id,
           set: {
             title: sql`excluded.title`,
             source: sql`excluded.source`,

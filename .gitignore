@@ -17,5 +17,6 @@ playwright-report
 .tmp
 plans
 
-# Cloudflare Workers generated types
+# Cloudflare Workers
 worker-configuration.d.ts
+.wrangler/

@@ -34,7 +34,8 @@ flowchart LR
     NOSTORE --> CACHE["createCacheMiddleware (300s, Vary: Origin)"]
     CACHE --> ROUTE["Route: /api/events"]
     ROUTE --> HANDLER["events.ts handler"]
-    HANDLER --> SCHEMA["EventsResponseSchema.parse(mockEvents)"]
+    HANDLER --> DB["DatabaseClient.getEvents() (D1, max 50)"]
+    DB --> SCHEMA["EventsResponseSchema.parse(events)"]
     SCHEMA --> RESP["JSON 200 response"]
 
     ROUTE -. unmatched .-> NF["notFoundHandler (404)"]
@@ -50,8 +51,11 @@ flowchart TD
     IDX --> LOG["src/middleware/logger.ts"]
     IDX --> ERR["src/middleware/error-handlers.ts"]
     IDX --> EVT["src/routes/events.ts"]
+    EVT --> DBC["src/clients/database-client.ts"]
+    DBC --> DB["@repo/db (Drizzle schema)"]
+    DBC --> D1["D1 (rehoboam-jobs-db)"]
     EVT --> TYPES["@repo/types (EventsResponseSchema)"]
-    IDX --> CFG["wrangler.jsonc (Worker runtime + routes)"]
+    IDX --> CFG["wrangler.jsonc (Worker runtime + routes + D1)"]
 ```
 
 ## Local Development
@@ -86,8 +90,9 @@ pnpm dev
 
 - Worker entry + middleware composition: `src/index.ts`
 - Events route: `src/routes/events.ts`
+- Database client (Drizzle ORM, D1): `src/clients/database-client.ts`
 - Security middleware: `src/middleware/security.ts`
 - Cache middleware (ETag, Cloudflare Cache API, default no-store): `src/middleware/cache.ts`
 - Request logger middleware: `src/middleware/logger.ts`
 - Error + not-found handlers: `src/middleware/error-handlers.ts`
-- Worker config and route deployment: `wrangler.jsonc`
+- Worker config, route deployment, and D1 binding: `wrangler.jsonc`

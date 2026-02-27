@@ -5,7 +5,7 @@ import type { Job } from "./index";
 import { BbcNewsService } from "./news/services/bbc-service";
 import { CnnNewsService } from "./news/services/cnn-service";
 import type { NewsService } from "./news/services/news-service";
-import type { NewsItem } from "./news/types";
+import type { NewsItem } from "@repo/types";
 
 export class NewsJob implements Job {
   readonly name = "news";

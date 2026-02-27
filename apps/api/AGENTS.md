@@ -12,7 +12,9 @@ Use it with the repo-level guide at root: `AGENTS.md`.
 - App type: Worker API that serves timeline events for `apps/ui`
 - Primary endpoint: `GET /api/events`
 - Contract source: `@repo/types` (`EventsResponseSchema`)
-- Tests: Vitest (middleware-focused)
+- Data source: D1 database (`rehoboam-jobs-db`, shared with `apps/jobs`)
+- Database schema: `@repo/db` (shared package)
+- Tests: Vitest (middleware + database client)
 
 ## Architecture Map
 
@@ -22,7 +24,9 @@ Use it with the repo-level guide at root: `AGENTS.md`.
 - Security middleware (CORS, secure headers): `src/middleware/security.ts`
 - Cache middleware (ETag, Cloudflare Cache API, Cache-Control): `src/middleware/cache.ts`
 - Error + not-found handlers: `src/middleware/error-handlers.ts`
+- Database client (Drizzle ORM, D1): `src/clients/database-client.ts`
 - Worker/Hono app env typing: `src/types.ts`
+- Database client tests: `src/clients/__tests__/database-client.test.ts`
 - Middleware tests: `src/middleware/__tests__/logger.test.ts`, `src/middleware/__tests__/security.test.ts`, `src/middleware/__tests__/cache.test.ts`
 - Worker config and route deployment: `wrangler.jsonc`
 - Generated Cloudflare env types: `worker-configuration.d.ts`
@@ -35,7 +39,8 @@ Use it with the repo-level guide at root: `AGENTS.md`.
 - `security.ts` configures CORS (allowed origins: production domain and localhost:3000) and secure response headers via Hono built-ins.
 - `cache.ts` provides two caching layers: `etagMiddleware` (global, weak ETags for conditional requests) and `createCacheMiddleware` (per-route, Cloudflare Cache API with `vary: "Origin"` so cached responses are keyed per origin, preventing CORS cache poisoning). The `cacheControl` utility allows setting custom `Cache-Control` directives per route.
 - `src/routes/events.ts` validates the response with `EventsResponseSchema.parse(...)` before returning JSON.
-- Current data source is in-file `mockEvents`; treat this as the active behavior unless explicitly migrating to storage or external APIs.
+- Events are sourced from the D1 database (`rehoboam-jobs-db`) via `DatabaseClient`. The `apps/jobs` worker populates `news_items` rows, and the API maps them to events: `source` -> `location`, `publishedAt` truncated to date, severity defaults to `"medium"`. Results are capped at 50 items ordered by `publishedAt` descending.
+- Database schema is shared via `@repo/db` package (used by both `apps/api` and `apps/jobs`).
 - If `wrangler.jsonc` bindings change, regenerate `worker-configuration.d.ts`.
 
 ## API Commands

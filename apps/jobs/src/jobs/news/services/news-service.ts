@@ -1,6 +1,6 @@
 import type { Logger } from "@repo/logger";
 
-import type { NewsItem } from "../types";
+import type { NewsItem } from "@repo/types";
 
 export abstract class NewsService {
   abstract readonly slug: string;

@@ -1,70 +1,15 @@
 import { EventsResponseSchema } from "@repo/types";
 import { Hono } from "hono";
 
+import { DatabaseClient } from "../clients/database-client";
 import type { AppEnv } from "../types";
 
-const mockEvents = [
-  {
-    id: "dotcom-bubble-burst",
-    date: "2000-03-10",
-    title: "Dot-com bubble burst",
-    location: "New York",
-    severity: "high",
-  },
-  {
-    id: "global-financial-crisis",
-    date: "2008-09-15",
-    title: "Global financial crisis escalation",
-    location: "New York",
-    severity: "critical",
-  },
-  {
-    id: "eurozone-debt-crisis",
-    date: "2010-05-02",
-    title: "Eurozone debt crisis",
-    location: "Brussels",
-    severity: "high",
-  },
-  {
-    id: "oil-price-crash",
-    date: "2014-11-27",
-    title: "Oil price crash",
-    location: "Global oil markets",
-    severity: "medium",
-  },
-  {
-    id: "covid-pandemic",
-    date: "2020-03-11",
-    title: "COVID-19 global pandemic",
-    location: "Worldwide",
-    severity: "critical",
-  },
-  {
-    id: "supply-chain-crunch",
-    date: "2021-10-01",
-    title: "Global supply chain crunch",
-    location: "Shanghai",
-    severity: "high",
-  },
-  {
-    id: "ukraine-war",
-    date: "2022-02-24",
-    title: "Russia-Ukraine war escalation",
-    location: "Kyiv",
-    severity: "critical",
-  },
-  {
-    id: "red-sea-shipping-crisis",
-    date: "2024-01-15",
-    title: "Red Sea shipping crisis",
-    location: "Suez",
-    severity: "high",
-  },
-];
-
-export const events = new Hono<AppEnv>().get("/", (c) => {
+export const events = new Hono<AppEnv>().get("/", async (c) => {
   const logger = c.get("logger");
-  logger.debug("fetching events", { count: mockEvents.length });
+  const db = new DatabaseClient(c.env.DB, logger);
+  const items = await db.getEvents();
 
-  return c.json(EventsResponseSchema.parse(mockEvents));
+  logger.debug("returning events", { count: items.length });
+
+  return c.json(EventsResponseSchema.parse(items));
 });

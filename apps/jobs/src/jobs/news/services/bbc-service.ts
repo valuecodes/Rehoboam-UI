@@ -2,7 +2,7 @@ import type { Logger } from "@repo/logger";
 import { XMLParser } from "fast-xml-parser";
 import { z } from "zod";
 
-import type { NewsItem } from "../types";
+import type { NewsItem } from "@repo/types";
 import { NewsService } from "./news-service";
 
 const BbcItemSchema = z.object({
