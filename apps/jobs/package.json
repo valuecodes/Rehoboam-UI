@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc --noEmit",
     "deploy": "wrangler deploy",
-    "dev": "wrangler dev --port 3002 --test-scheduled",
+    "dev": "wrangler dev --port 3002 --inspector-port 9230 --persist-to ../../packages/db/.wrangler/state --test-scheduled",
     "start": "wrangler dev",
     "cf-typegen": "wrangler types",
     "typecheck": "tsc --noEmit",
@@ -14,11 +14,13 @@
     "postinstall": "wrangler types",
     "test": "vitest run --passWithNoTests",
     "db:generate": "drizzle-kit generate",
-    "db:migrate:local": "wrangler d1 migrations apply rehoboam-jobs-db --local",
+    "db:migrate:local": "wrangler d1 migrations apply rehoboam-jobs-db --local --persist-to ../../packages/db/.wrangler/state",
     "db:migrate:remote": "wrangler d1 migrations apply rehoboam-jobs-db --remote"
   },
   "dependencies": {
+    "@repo/db": "workspace:*",
     "@repo/logger": "workspace:*",
+    "@repo/types": "workspace:*",
     "drizzle-orm": "0.45.1",
     "fast-xml-parser": "5.3.7",
     "zod": "4.3.6"

@@ -10,7 +10,7 @@ Cloudflare Worker jobs workspace for scheduled background tasks.
 
 ## Database (Cloudflare D1)
 
-News items are persisted to a D1 SQLite database using Drizzle ORM.
+News items are persisted to a D1 SQLite database using Drizzle ORM. The database schema is shared via the `@repo/db` package (also used by `apps/api` to read news items).
 
 ### First-Time Setup
 
@@ -26,13 +26,13 @@ News items are persisted to a D1 SQLite database using Drizzle ORM.
 
 ### Database Scripts
 
-- `pnpm --filter rehoboam-jobs db:generate` - generate a new migration from schema changes in `src/db/schema.ts`
+- `pnpm --filter rehoboam-jobs db:generate` - generate a new migration from schema changes in `@repo/db`
 - `pnpm --filter rehoboam-jobs db:migrate:local` - apply migrations to local D1
 - `pnpm --filter rehoboam-jobs db:migrate:remote` - apply migrations to production D1 (used by manual GitHub workflow `Migrations`, job `migrate-jobs-d1`)
 
 ### Schema Change Workflow
 
-1. Edit `src/db/schema.ts`
+1. Edit the schema in `packages/db/src/schema.ts` (shared via `@repo/db`)
 2. `pnpm --filter rehoboam-jobs db:generate` — creates a new `.sql` file in `drizzle/`
 3. `pnpm --filter rehoboam-jobs db:migrate:local` — apply to local DB for testing
 4. Merge to `main`, then trigger the GitHub Actions workflow `Migrations` (job `migrate-jobs-d1`, requires `production` environment approval)
@@ -80,8 +80,8 @@ curl "http://localhost:3002/__scheduled?cron=0+*/6+*+*+*"
 - Scheduled dispatcher: `src/scheduled.ts`
 - Job registry and contract: `src/jobs/index.ts`
 - Jobs implementations: `src/jobs/*`
-- Database schema (Drizzle ORM): `src/db/schema.ts`
+- Database schema: `@repo/db` (shared package at `packages/db`)
 - Database client: `src/clients/database-client.ts`
+- Drizzle Kit config: `drizzle.config.ts`
 - Migrations: `drizzle/`
-- Drizzle config: `drizzle.config.ts`
 - Worker runtime and cron triggers: `wrangler.jsonc`
