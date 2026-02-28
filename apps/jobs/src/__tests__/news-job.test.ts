@@ -39,10 +39,6 @@ vi.mock("../jobs/news/services/bbc-service", () => ({
   BbcNewsService: MockService,
 }));
 
-vi.mock("../jobs/news/services/cnn-service", () => ({
-  CnnNewsService: MockService,
-}));
-
 const loggerMock = {
   debug: vi.fn(),
   info: vi.fn(),
@@ -71,27 +67,30 @@ describe("NewsJob", () => {
     const job = new NewsJob(loggerMock as never, dbMock as never);
     await job.run();
 
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(dbMock.upsertNewsItems).toHaveBeenCalledOnce();
     expect(dbMock.deleteOldNewsItems).toHaveBeenCalledWith(200);
     expect(loggerMock.info).toHaveBeenCalledWith(
       "news job completed",
-      expect.objectContaining({ totalItems: 2, deletedCount: 0, failed: 0 })
+      expect.objectContaining({
+        totalItems: 1,
+        deletedCount: 0,
+        failed: 0,
+        services: 1,
+      })
     );
   });
 
-  it("continues when one service fails", async () => {
-    fetchMock
-      .mockResolvedValueOnce(new Response("<rss/>", { status: 200 }))
-      .mockResolvedValueOnce(new Response("Not Found", { status: 404 }));
+  it("handles a feed failure gracefully", async () => {
+    fetchMock.mockResolvedValueOnce(new Response("Not Found", { status: 404 }));
 
     const job = new NewsJob(loggerMock as never, dbMock as never);
     await job.run();
 
-    expect(dbMock.upsertNewsItems).toHaveBeenCalledOnce();
+    expect(dbMock.upsertNewsItems).toHaveBeenCalledWith([]);
     expect(loggerMock.info).toHaveBeenCalledWith(
       "news job completed",
-      expect.objectContaining({ totalItems: 1 })
+      expect.objectContaining({ totalItems: 0, services: 1 })
     );
   });
 

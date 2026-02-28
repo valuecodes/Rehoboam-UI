@@ -29,22 +29,22 @@ News items are persisted to a D1 SQLite database using Drizzle ORM. The database
 
 - `pnpm --filter rehoboam-jobs db:generate` - generate a new migration from schema changes in `@repo/db`
 - `pnpm --filter rehoboam-jobs db:migrate:local` - apply migrations to local D1
-- `pnpm --filter rehoboam-jobs db:migrate:remote` - apply migrations to production D1 (used by manual GitHub workflow `Migrations`, job `migrate-jobs-d1`)
+- `pnpm --filter rehoboam-jobs db:migrate:remote` - apply migrations to production D1 (used automatically in `.github/workflows/main.yml`, and by manual GitHub workflow `Migrations` for retries/backfills)
 
 ### Schema Change Workflow
 
 1. Edit the schema in `packages/db/src/schema.ts` (shared via `@repo/db`)
 2. `pnpm --filter rehoboam-jobs db:generate` — creates a new `.sql` file in `drizzle/`
 3. `pnpm --filter rehoboam-jobs db:migrate:local` — apply to local DB for testing
-4. Merge to `main`, then trigger the GitHub Actions workflow `Migrations` (job `migrate-jobs-d1`, requires `production` environment approval)
-5. `pnpm --filter rehoboam-jobs deploy` — deploy updated worker code (no remote migrations)
+4. Merge to `main` — `.github/workflows/main.yml` runs `migrate-jobs-d1` before `deploy-api` and `deploy-jobs`
+5. Use the manual GitHub Actions workflow `Migrations` only for retries/backfills when an explicit rerun is needed
 
 ### Production Migration Runbook
 
 1. Merge schema/code changes to `main`
-2. Trigger GitHub Actions workflow `Migrations` with the target ref (`ref` input defaults to `main`)
-3. Approve the `production` environment gate and verify migration logs
-4. If needed, rerun the `deploy-jobs` workflow to roll out worker code changes
+2. Verify `.github/workflows/main.yml` completes `migrate-jobs-d1` before `deploy-api` and `deploy-jobs`
+3. If the automatic migration needs a manual retry or backfill, trigger GitHub Actions workflow `Migrations` with the target ref (`ref` input defaults to `main`)
+4. Approve the `production` environment gate and verify migration logs
 
 ## Local Development
 

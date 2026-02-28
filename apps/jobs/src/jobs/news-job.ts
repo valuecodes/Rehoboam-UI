@@ -4,7 +4,6 @@ import type { NewsItem } from "@repo/types";
 import type { DatabaseClient } from "../clients/database-client";
 import type { Job } from "./index";
 import { BbcNewsService } from "./news/services/bbc-service";
-import { CnnNewsService } from "./news/services/cnn-service";
 import type { NewsService } from "./news/services/news-service";
 
 export class NewsJob implements Job {
@@ -17,7 +16,7 @@ export class NewsJob implements Job {
     private readonly logger: Logger,
     private readonly db: DatabaseClient
   ) {
-    this.services = [new BbcNewsService(logger), new CnnNewsService(logger)];
+    this.services = [new BbcNewsService(logger)];
   }
 
   async run(): Promise<void> {

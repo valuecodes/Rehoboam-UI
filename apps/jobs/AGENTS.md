@@ -62,6 +62,6 @@ Run from repo root:
 2. If adding a new cron schedule, update both `wrangler.jsonc` and the job's `cron` field.
 3. If changing Cloudflare bindings/config, update `wrangler.jsonc` and run `pnpm --filter rehoboam-jobs cf-typegen`.
 4. If changing schema, update `packages/db/src/schema.ts` (shared via `@repo/db`), generate migrations in `drizzle/`, and validate locally with `pnpm --filter rehoboam-jobs db:migrate:local`.
-5. For production schema rollout, trigger `.github/workflows/migrations.yml` (`Migrations`, job `migrate-jobs-d1`) after merge.
+5. For production schema rollout, merge to `main` so `.github/workflows/main.yml` runs `migrate-jobs-d1` before worker deploys; use `.github/workflows/migrations.yml` only for manual retries/backfills.
 6. Make minimal edits and preserve existing job registry + dispatcher composition.
 7. Run at minimum: `pnpm --filter rehoboam-jobs typecheck`, `pnpm --filter rehoboam-jobs lint`, and `pnpm --filter rehoboam-jobs test`.

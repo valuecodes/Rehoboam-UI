@@ -86,9 +86,31 @@ jobs:
       - name: Test
         run: pnpm test
 
+  migrate-jobs-d1:
+    name: migrate-jobs-d1
+    needs: [typecheck, lint, format-check, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Run D1 remote migrations for Jobs
+        run: pnpm --filter rehoboam-jobs db:migrate:remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
   deploy-api:
     name: deploy-api
-    needs: [typecheck, lint, format-check, test]
+    needs: [migrate-jobs-d1]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -111,7 +133,7 @@ jobs:
 
   deploy-jobs:
     name: deploy-jobs
-    needs: [typecheck, lint, format-check, test]
+    needs: [migrate-jobs-d1]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
