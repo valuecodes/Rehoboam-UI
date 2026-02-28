@@ -39,6 +39,73 @@
     />
   </head>
   <body>
+    <noscript>
+      <style>
+        .rehoboam-noscript {
+          min-height: 100vh;
+          margin: 0;
+          display: grid;
+          place-items: center;
+          padding: 24px;
+          box-sizing: border-box;
+          background:
+            radial-gradient(
+              circle at 50% 38%,
+              rgba(255, 255, 255, 0.96) 0%,
+              transparent 56%
+            ),
+            linear-gradient(180deg, #f1f1ef, #e7e7e4);
+          color: rgba(10, 10, 10, 0.95);
+          font-family:
+            "Barlow Condensed", system-ui, -apple-system, "Segoe UI", Roboto,
+            Arial, sans-serif;
+          text-transform: uppercase;
+        }
+
+        .rehoboam-noscript__panel {
+          width: min(100%, 560px);
+          padding: clamp(24px, 4vw, 40px);
+          border: 1px solid rgba(192, 192, 192, 0.74);
+          background: rgba(255, 255, 255, 0.72);
+          box-sizing: border-box;
+        }
+
+        .rehoboam-noscript__status,
+        .rehoboam-noscript__title,
+        .rehoboam-noscript__message {
+          margin: 0;
+        }
+
+        .rehoboam-noscript__status {
+          color: rgba(88, 88, 88, 0.95);
+          letter-spacing: 0.18em;
+          font-size: 0.95rem;
+        }
+
+        .rehoboam-noscript__title {
+          margin-top: 12px;
+          font-size: clamp(2rem, 4vw, 3rem);
+          line-height: 0.92;
+          font-weight: 400;
+        }
+
+        .rehoboam-noscript__message {
+          margin-top: 12px;
+          color: rgba(110, 110, 110, 0.9);
+          font-size: clamp(1rem, 1.8vw, 1.3rem);
+          line-height: 1.1;
+        }
+      </style>
+      <main class="rehoboam-noscript">
+        <section class="rehoboam-noscript__panel">
+          <p class="rehoboam-noscript__status">JavaScript Required</p>
+          <h1 class="rehoboam-noscript__title">The interface cannot start.</h1>
+          <p class="rehoboam-noscript__message">
+            Enable JavaScript in your browser to load the Rehoboam UI.
+          </p>
+        </section>
+      </main>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
