@@ -1,4 +1,3 @@
-import { EventsResponseSchema } from "@repo/types";
 import { Hono } from "hono";
 
 import { DatabaseClient } from "../clients/database-client";
@@ -11,5 +10,5 @@ export const events = new Hono<AppEnv>().get("/", async (c) => {
 
   logger.debug("returning events", { count: items.length });
 
-  return c.json(EventsResponseSchema.parse(items));
+  return c.json(items);
 });

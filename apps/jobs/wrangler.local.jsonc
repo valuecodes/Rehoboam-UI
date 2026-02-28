@@ -1,0 +1,30 @@
+/**
+ * Local development config that avoids remote AI bindings.
+ * Uses the shared local D1 state and enables a mock AI client in code.
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "rehoboam-jobs-local",
+  "main": "src/index.ts",
+  "workers_dev": false,
+  "compatibility_date": "2025-09-27",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+  },
+  "vars": {
+    "MOCK_AI": "true",
+    "AI_ITEM_LIMIT": "3",
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "rehoboam-jobs-db",
+      "database_id": "0a4c36ee-f8ef-415e-ae45-6b985510fad4",
+      "migrations_dir": "drizzle",
+    },
+  ],
+  "triggers": {
+    "crons": ["0 */6 * * *"],
+  },
+}

@@ -2,7 +2,8 @@ import { DatabaseClient } from "../database-client";
 
 const limitMock = vi.fn();
 const orderByMock = vi.fn().mockReturnValue({ limit: limitMock });
-const fromMock = vi.fn().mockReturnValue({ orderBy: orderByMock });
+const whereMock = vi.fn().mockReturnValue({ orderBy: orderByMock });
+const fromMock = vi.fn().mockReturnValue({ where: whereMock });
 const selectMock = vi.fn().mockReturnValue({ from: fromMock });
 
 vi.mock("drizzle-orm/d1", () => ({
@@ -11,6 +12,7 @@ vi.mock("drizzle-orm/d1", () => ({
 
 vi.mock("drizzle-orm", () => ({
   desc: (col: unknown) => ({ desc: col }),
+  eq: (col: unknown, val: unknown) => ({ eq: { col, val } }),
 }));
 
 const loggerMock = {
@@ -19,6 +21,20 @@ const loggerMock = {
   warn: vi.fn(),
   error: vi.fn(),
 };
+
+const makeEventRow = (overrides: Record<string, unknown> = {}) => ({
+  id: "abc123",
+  newsItemId: "abc123",
+  title: "Test Event",
+  category: "politics",
+  severity: "medium",
+  locationLabel: "London, UK",
+  publishedAt: "2024-06-15T14:30:00.000Z",
+  skipped: false,
+  createdAt: "2024-06-15T14:30:00.000Z",
+  updatedAt: "2024-06-15T14:30:00.000Z",
+  ...overrides,
+});
 
 describe("DatabaseClient", () => {
   beforeEach(() => {
@@ -32,27 +48,13 @@ describe("DatabaseClient", () => {
     const result = await client.getEvents();
 
     expect(result).toEqual([]);
-    expect(loggerMock.debug).toHaveBeenCalledWith(
-      "fetched news items from D1",
-      {
-        count: 0,
-      }
-    );
+    expect(loggerMock.debug).toHaveBeenCalledWith("fetched events from D1", {
+      count: 0,
+    });
   });
 
-  it("maps news item rows to Event format", async () => {
-    limitMock.mockResolvedValue([
-      {
-        id: "abc123",
-        title: "Test Article",
-        source: "bbc-world",
-        publishedAt: "2024-06-15T14:30:00.000Z",
-        link: "https://example.com/article",
-        description: "A test article",
-        createdAt: "2024-06-15T14:30:00.000Z",
-        updatedAt: "2024-06-15T14:30:00.000Z",
-      },
-    ]);
+  it("maps event rows to RehoboamEvent format", async () => {
+    limitMock.mockResolvedValue([makeEventRow()]);
     const client = new DatabaseClient({} as D1Database, loggerMock as never);
 
     const result = await client.getEvents();
@@ -61,25 +63,17 @@ describe("DatabaseClient", () => {
       {
         id: "abc123",
         date: "2024-06-15",
-        title: "Test Article",
-        location: "bbc-world",
+        title: "Test Event",
+        location: "London, UK",
         severity: "medium",
+        category: "politics",
       },
     ]);
   });
 
   it("truncates publishedAt to date-only format", async () => {
     limitMock.mockResolvedValue([
-      {
-        id: "date-test",
-        title: "Date Test",
-        source: "cnn",
-        publishedAt: "2025-12-31T23:59:59.999Z",
-        link: "https://example.com",
-        description: null,
-        createdAt: "2025-12-31T23:59:59.999Z",
-        updatedAt: "2025-12-31T23:59:59.999Z",
-      },
+      makeEventRow({ publishedAt: "2025-12-31T23:59:59.999Z" }),
     ]);
     const client = new DatabaseClient({} as D1Database, loggerMock as never);
 
@@ -88,24 +82,47 @@ describe("DatabaseClient", () => {
     expect(result[0]?.date).toBe("2025-12-31");
   });
 
-  it("sets severity to medium for all items", async () => {
+  it("rejects rows with invalid publishedAt values", async () => {
     limitMock.mockResolvedValue([
-      {
-        id: "sev-test",
-        title: "Severity Test",
-        source: "bbc-world",
-        publishedAt: "2024-01-01T00:00:00.000Z",
-        link: "https://example.com",
-        description: null,
-        createdAt: "2024-01-01T00:00:00.000Z",
-        updatedAt: "2024-01-01T00:00:00.000Z",
-      },
+      makeEventRow({ publishedAt: "invalid-date" }),
     ]);
+    const client = new DatabaseClient({} as D1Database, loggerMock as never);
+
+    await expect(client.getEvents()).rejects.toThrow();
+  });
+
+  it("uses severity from database row", async () => {
+    limitMock.mockResolvedValue([makeEventRow({ severity: "critical" })]);
     const client = new DatabaseClient({} as D1Database, loggerMock as never);
 
     const result = await client.getEvents();
 
-    expect(result[0]?.severity).toBe("medium");
+    expect(result[0]?.severity).toBe("critical");
+  });
+
+  it("uses category from database row", async () => {
+    limitMock.mockResolvedValue([makeEventRow({ category: "conflict" })]);
+    const client = new DatabaseClient({} as D1Database, loggerMock as never);
+
+    const result = await client.getEvents();
+
+    expect(result[0]?.category).toBe("conflict");
+  });
+
+  it("rejects rows with invalid category values", async () => {
+    limitMock.mockResolvedValue([makeEventRow({ category: "sports" })]);
+    const client = new DatabaseClient({} as D1Database, loggerMock as never);
+
+    await expect(client.getEvents()).rejects.toThrow();
+  });
+
+  it("falls back to Unknown when locationLabel is null", async () => {
+    limitMock.mockResolvedValue([makeEventRow({ locationLabel: null })]);
+    const client = new DatabaseClient({} as D1Database, loggerMock as never);
+
+    const result = await client.getEvents();
+
+    expect(result[0]?.location).toBe("Unknown");
   });
 
   it("enforces max 50 event limit", async () => {
@@ -115,6 +132,18 @@ describe("DatabaseClient", () => {
     await client.getEvents();
 
     expect(limitMock).toHaveBeenCalledWith(50);
+  });
+
+  it("filters out skipped events", async () => {
+    limitMock.mockResolvedValue([]);
+    const client = new DatabaseClient({} as D1Database, loggerMock as never);
+
+    await client.getEvents();
+
+    expect(whereMock).toHaveBeenCalledWith(
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- vitest matcher
+      expect.objectContaining({ eq: expect.anything() })
+    );
   });
 
   it("orders by publishedAt descending", async () => {

@@ -8,6 +8,13 @@
       "when": 1771963157722,
       "tag": "0000_little_silverclaw",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1772278278412,
+      "tag": "0001_lean_jazinda",
+      "breakpoints": true
     }
   ]
 }
