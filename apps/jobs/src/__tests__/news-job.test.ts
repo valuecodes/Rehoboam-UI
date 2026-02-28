@@ -52,6 +52,7 @@ const loggerMock = {
 
 const dbMock = {
   upsertNewsItems: vi.fn().mockResolvedValue(0),
+  deleteOldNewsItems: vi.fn().mockResolvedValue(0),
 };
 
 describe("NewsJob", () => {
@@ -72,9 +73,10 @@ describe("NewsJob", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(dbMock.upsertNewsItems).toHaveBeenCalledOnce();
+    expect(dbMock.deleteOldNewsItems).toHaveBeenCalledWith(200);
     expect(loggerMock.info).toHaveBeenCalledWith(
       "news job completed",
-      expect.objectContaining({ totalItems: 2, failed: 0 })
+      expect.objectContaining({ totalItems: 2, deletedCount: 0, failed: 0 })
     );
   });
 

@@ -5,9 +5,10 @@ const valuesMock = vi
   .fn()
   .mockReturnValue({ onConflictDoUpdate: onConflictDoUpdateMock });
 const insertMock = vi.fn().mockReturnValue({ values: valuesMock });
+const runMock = vi.fn().mockResolvedValue({ meta: { changes: 0 } });
 
 vi.mock("drizzle-orm/d1", () => ({
-  drizzle: () => ({ insert: insertMock }),
+  drizzle: () => ({ insert: insertMock, run: runMock }),
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -105,5 +106,41 @@ describe("DatabaseClient", () => {
     expect(valuesMock).toHaveBeenCalledWith(
       expect.arrayContaining([expect.objectContaining({ description: null })])
     );
+  });
+
+  it("deletes old news items beyond the max limit", async () => {
+    runMock.mockResolvedValueOnce({ meta: { changes: 5 } });
+    const client = new DatabaseClient({} as D1Database, loggerMock as never);
+
+    const result = await client.deleteOldNewsItems(200);
+
+    expect(result).toBe(5);
+    expect(runMock).toHaveBeenCalledOnce();
+    expect(loggerMock.info).toHaveBeenCalledWith("old news items deleted", {
+      deletedCount: 5,
+      maxItems: 200,
+    });
+  });
+
+  it("returns 0 when no old items to delete", async () => {
+    runMock.mockResolvedValueOnce({ meta: { changes: 0 } });
+    const client = new DatabaseClient({} as D1Database, loggerMock as never);
+
+    const result = await client.deleteOldNewsItems(200);
+
+    expect(result).toBe(0);
+    expect(loggerMock.info).toHaveBeenCalledWith("old news items deleted", {
+      deletedCount: 0,
+      maxItems: 200,
+    });
+  });
+
+  it("throws when maxItems is 0", async () => {
+    const client = new DatabaseClient({} as D1Database, loggerMock as never);
+
+    await expect(client.deleteOldNewsItems(0)).rejects.toThrow(
+      "maxItems must be at least 1"
+    );
+    expect(runMock).not.toHaveBeenCalled();
   });
 });

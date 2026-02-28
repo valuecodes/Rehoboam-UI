@@ -60,4 +60,19 @@ export class DatabaseClient {
     this.logger.info("news items upserted", { count: processedCount });
     return processedCount;
   }
+
+  async deleteOldNewsItems(maxItems: number): Promise<number> {
+    if (maxItems < 1) {
+      throw new Error("maxItems must be at least 1");
+    }
+
+    const result = await this.db.run(
+      sql`DELETE FROM news_items WHERE id NOT IN (SELECT id FROM news_items ORDER BY published_at DESC, id DESC LIMIT ${maxItems})`
+    );
+
+    const deletedCount = result.meta.changes;
+
+    this.logger.info("old news items deleted", { deletedCount, maxItems });
+    return deletedCount;
+  }
 }
