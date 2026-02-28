@@ -9,7 +9,7 @@ import type { NewsService } from "./news/services/news-service";
 
 export class NewsJob implements Job {
   readonly name = "news";
-  readonly cron = "0 */6 * * *";
+  readonly cron = "0 9 * * *";
 
   private readonly services: NewsService[];
 
