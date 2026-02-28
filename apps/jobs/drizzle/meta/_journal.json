@@ -15,6 +15,13 @@
       "when": 1772278278412,
       "tag": "0001_lean_jazinda",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1772289600000,
+      "tag": "0002_calm_talos",
+      "breakpoints": true
     }
   ]
 }
