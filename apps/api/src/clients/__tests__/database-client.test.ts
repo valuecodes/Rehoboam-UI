@@ -1,9 +1,14 @@
 import { DatabaseClient } from "../database-client";
 
-const limitMock = vi.fn();
-const orderByMock = vi.fn().mockReturnValue({ limit: limitMock });
-const whereMock = vi.fn().mockReturnValue({ orderBy: orderByMock });
-const fromMock = vi.fn().mockReturnValue({ where: whereMock });
+const eventLimitMock = vi.fn();
+const eventOrderByMock = vi.fn().mockReturnValue({ limit: eventLimitMock });
+const whereMock = vi.fn().mockReturnValue({ orderBy: eventOrderByMock });
+const newsLimitMock = vi.fn();
+const newsOrderByMock = vi.fn().mockReturnValue({ limit: newsLimitMock });
+const fromMock = vi.fn().mockReturnValue({
+  where: whereMock,
+  orderBy: newsOrderByMock,
+});
 const selectMock = vi.fn().mockReturnValue({ from: fromMock });
 
 vi.mock("drizzle-orm/d1", () => ({
@@ -41,8 +46,9 @@ describe("DatabaseClient", () => {
     vi.clearAllMocks();
   });
 
-  it("returns empty array when database has no rows", async () => {
-    limitMock.mockResolvedValue([]);
+  it("returns empty array when both events and fallback news items are empty", async () => {
+    eventLimitMock.mockResolvedValue([]);
+    newsLimitMock.mockResolvedValue([]);
     const client = new DatabaseClient({} as D1Database, loggerMock as never);
 
     const result = await client.getEvents();
@@ -51,10 +57,14 @@ describe("DatabaseClient", () => {
     expect(loggerMock.debug).toHaveBeenCalledWith("fetched events from D1", {
       count: 0,
     });
+    expect(loggerMock.debug).toHaveBeenCalledWith(
+      "falling back to news items from D1",
+      { count: 0 }
+    );
   });
 
   it("maps event rows to RehoboamEvent format", async () => {
-    limitMock.mockResolvedValue([makeEventRow()]);
+    eventLimitMock.mockResolvedValue([makeEventRow()]);
     const client = new DatabaseClient({} as D1Database, loggerMock as never);
 
     const result = await client.getEvents();
@@ -72,7 +82,7 @@ describe("DatabaseClient", () => {
   });
 
   it("truncates publishedAt to date-only format", async () => {
-    limitMock.mockResolvedValue([
+    eventLimitMock.mockResolvedValue([
       makeEventRow({ publishedAt: "2025-12-31T23:59:59.999Z" }),
     ]);
     const client = new DatabaseClient({} as D1Database, loggerMock as never);
@@ -83,7 +93,7 @@ describe("DatabaseClient", () => {
   });
 
   it("rejects rows with invalid publishedAt values", async () => {
-    limitMock.mockResolvedValue([
+    eventLimitMock.mockResolvedValue([
       makeEventRow({ publishedAt: "invalid-date" }),
     ]);
     const client = new DatabaseClient({} as D1Database, loggerMock as never);
@@ -92,7 +102,7 @@ describe("DatabaseClient", () => {
   });
 
   it("uses severity from database row", async () => {
-    limitMock.mockResolvedValue([makeEventRow({ severity: "critical" })]);
+    eventLimitMock.mockResolvedValue([makeEventRow({ severity: "critical" })]);
     const client = new DatabaseClient({} as D1Database, loggerMock as never);
 
     const result = await client.getEvents();
@@ -101,7 +111,7 @@ describe("DatabaseClient", () => {
   });
 
   it("uses category from database row", async () => {
-    limitMock.mockResolvedValue([makeEventRow({ category: "conflict" })]);
+    eventLimitMock.mockResolvedValue([makeEventRow({ category: "conflict" })]);
     const client = new DatabaseClient({} as D1Database, loggerMock as never);
 
     const result = await client.getEvents();
@@ -110,14 +120,14 @@ describe("DatabaseClient", () => {
   });
 
   it("rejects rows with invalid category values", async () => {
-    limitMock.mockResolvedValue([makeEventRow({ category: "sports" })]);
+    eventLimitMock.mockResolvedValue([makeEventRow({ category: "sports" })]);
     const client = new DatabaseClient({} as D1Database, loggerMock as never);
 
     await expect(client.getEvents()).rejects.toThrow();
   });
 
   it("falls back to Unknown when locationLabel is null", async () => {
-    limitMock.mockResolvedValue([makeEventRow({ locationLabel: null })]);
+    eventLimitMock.mockResolvedValue([makeEventRow({ locationLabel: null })]);
     const client = new DatabaseClient({} as D1Database, loggerMock as never);
 
     const result = await client.getEvents();
@@ -126,16 +136,16 @@ describe("DatabaseClient", () => {
   });
 
   it("enforces max 50 event limit", async () => {
-    limitMock.mockResolvedValue([]);
+    eventLimitMock.mockResolvedValue([]);
     const client = new DatabaseClient({} as D1Database, loggerMock as never);
 
     await client.getEvents();
 
-    expect(limitMock).toHaveBeenCalledWith(50);
+    expect(eventLimitMock).toHaveBeenCalledWith(50);
   });
 
   it("filters out skipped events", async () => {
-    limitMock.mockResolvedValue([]);
+    eventLimitMock.mockResolvedValue([]);
     const client = new DatabaseClient({} as D1Database, loggerMock as never);
 
     await client.getEvents();
@@ -147,14 +157,44 @@ describe("DatabaseClient", () => {
   });
 
   it("orders by publishedAt descending", async () => {
-    limitMock.mockResolvedValue([]);
+    eventLimitMock.mockResolvedValue([]);
     const client = new DatabaseClient({} as D1Database, loggerMock as never);
 
     await client.getEvents();
 
-    expect(orderByMock).toHaveBeenCalledWith(
+    expect(eventOrderByMock).toHaveBeenCalledWith(
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- vitest matcher
       expect.objectContaining({ desc: expect.anything() })
+    );
+  });
+
+  it("falls back to news items when there are no processed events", async () => {
+    eventLimitMock.mockResolvedValue([]);
+    newsLimitMock.mockResolvedValue([
+      {
+        id: "news-1",
+        title: "Fallback Headline",
+        publishedAt: "2024-06-15T14:30:00.000Z",
+      },
+    ]);
+    const client = new DatabaseClient({} as D1Database, loggerMock as never);
+
+    const result = await client.getEvents();
+
+    expect(result).toEqual([
+      {
+        id: "news-1",
+        date: "2024-06-15",
+        title: "Fallback Headline",
+        location: "Unknown",
+        severity: "medium",
+        category: "general",
+      },
+    ]);
+    expect(newsLimitMock).toHaveBeenCalledWith(50);
+    expect(loggerMock.debug).toHaveBeenCalledWith(
+      "falling back to news items from D1",
+      { count: 1 }
     );
   });
 });
