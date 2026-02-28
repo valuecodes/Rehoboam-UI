@@ -40,6 +40,15 @@ export class DatabaseClient {
       return EventsResponseSchema.parse(items);
     }
 
+    const existingEventRows = await this.db.select().from(events).limit(1);
+
+    if (existingEventRows.length > 0) {
+      this.logger.debug("processed events exist but none are displayable", {
+        count: existingEventRows.length,
+      });
+      return [];
+    }
+
     const fallbackRows = await this.db
       .select({
         id: newsItems.id,
