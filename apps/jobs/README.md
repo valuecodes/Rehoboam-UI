@@ -68,7 +68,7 @@ Default local URL for scheduled testing: `http://localhost:3002`
 Trigger cron locally:
 
 ```bash
-curl "http://localhost:3002/__scheduled?cron=0+*/6+*+*+*"
+curl "http://localhost:3002/__scheduled?cron=0+9+*+*+*"
 ```
 
 ## Workspace Scripts

@@ -56,7 +56,7 @@ Run from repo root:
 - Clear local D1 data: `pnpm --filter rehoboam-jobs db:clear:local`
 - Apply migrations (local): `pnpm --filter rehoboam-jobs db:migrate:local`
 - Apply migrations (remote): `pnpm --filter rehoboam-jobs db:migrate:remote`
-- Trigger cron locally: `curl http://localhost:3002/__scheduled?cron=0+*/6+*+*+*`
+- Trigger cron locally: `curl http://localhost:3002/__scheduled?cron=0+9+*+*+*`
 
 ## Jobs Code Standards
 

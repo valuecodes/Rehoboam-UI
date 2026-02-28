@@ -39,15 +39,15 @@ describe("handleScheduled", () => {
     const runNews = vi.fn().mockResolvedValue(undefined);
     const runDigest = vi.fn().mockResolvedValue(undefined);
     const jobs: TestJob[] = [
-      { name: "news", cron: "0 */6 * * *", run: runNews },
-      { name: "digest", cron: "0 */6 * * *", run: runDigest },
+      { name: "news", cron: "0 9 * * *", run: runNews },
+      { name: "digest", cron: "0 9 * * *", run: runDigest },
     ];
 
     getJobsForCronMock.mockReturnValue(jobs);
 
     await expect(
       handleScheduled(
-        createController("0 */6 * * *"),
+        createController("0 9 * * *"),
         {} as Env,
         {} as ExecutionContext
       )
@@ -60,15 +60,15 @@ describe("handleScheduled", () => {
     const runSuccess = vi.fn().mockResolvedValue(undefined);
     const runFailure = vi.fn().mockRejectedValue(new Error("job failed"));
     const jobs: TestJob[] = [
-      { name: "news", cron: "0 */6 * * *", run: runSuccess },
-      { name: "failing-job", cron: "0 */6 * * *", run: runFailure },
+      { name: "news", cron: "0 9 * * *", run: runSuccess },
+      { name: "failing-job", cron: "0 9 * * *", run: runFailure },
     ];
 
     getJobsForCronMock.mockReturnValue(jobs);
 
     await expect(
       handleScheduled(
-        createController("0 */6 * * *"),
+        createController("0 9 * * *"),
         {} as Env,
         {} as ExecutionContext
       )
@@ -82,14 +82,14 @@ describe("handleScheduled", () => {
 
     await expect(
       handleScheduled(
-        createController("0 */6 * * *"),
+        createController("0 9 * * *"),
         {} as Env,
         {} as ExecutionContext
       )
     ).resolves.toBeUndefined();
     expect(warnMock).toHaveBeenCalledWith(
       "no jobs registered for cron pattern",
-      { cron: "0 */6 * * *" }
+      { cron: "0 9 * * *" }
     );
   });
 });
