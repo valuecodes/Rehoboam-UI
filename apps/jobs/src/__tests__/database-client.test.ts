@@ -5,7 +5,10 @@ const valuesMock = vi
   .fn()
   .mockReturnValue({ onConflictDoUpdate: onConflictDoUpdateMock });
 const insertMock = vi.fn().mockReturnValue({ values: valuesMock });
-const updateWhereMock = vi.fn().mockResolvedValue(undefined);
+const updateReturningMock = vi.fn().mockResolvedValue([]);
+const updateWhereMock = vi
+  .fn()
+  .mockReturnValue({ returning: updateReturningMock });
 const setMock = vi.fn().mockReturnValue({ where: updateWhereMock });
 const updateMock = vi.fn().mockReturnValue({ set: setMock });
 const runMock = vi.fn().mockResolvedValue({ meta: { changes: 0 } });
@@ -176,7 +179,7 @@ describe("DatabaseClient", () => {
       {
         newsItemId: "item-1",
         title: "Short Title",
-        category: "politics",
+        category: "politics" as const,
         severity: "medium" as const,
         locationLabel: "London, UK",
         publishedAt: "2024-01-01T00:00:00.000Z",
@@ -185,7 +188,7 @@ describe("DatabaseClient", () => {
       {
         newsItemId: "item-2",
         title: "Skipped Item",
-        category: "general",
+        category: "general" as const,
         severity: "low" as const,
         locationLabel: null,
         publishedAt: "2024-01-01T00:00:00.000Z",
@@ -216,6 +219,15 @@ describe("DatabaseClient", () => {
     expect(loggerMock.info).toHaveBeenCalledWith("events upserted", {
       count: 2,
     });
+    const onConflictArg = onConflictDoUpdateMock.mock.calls[0]?.[0] as
+      | {
+          set: {
+            publishedAt?: unknown;
+          };
+        }
+      | undefined;
+
+    expect(onConflictArg?.set.publishedAt).toEqual(expect.anything());
   });
 
   it("queries unprocessed news items via LEFT JOIN", async () => {
@@ -259,14 +271,15 @@ describe("DatabaseClient", () => {
 
     const result = await client.reserveNewsItemsForAi([]);
 
-    expect(result).toBe(0);
+    expect(result).toEqual([]);
     expect(loggerMock.debug).toHaveBeenCalledWith(
       "no news items to reserve for AI"
     );
     expect(updateMock).not.toHaveBeenCalled();
   });
 
-  it("reserves news items before AI processing", async () => {
+  it("returns only the news item ids reserved for AI", async () => {
+    updateReturningMock.mockResolvedValueOnce([{ id: "item-1" }]);
     const client = new DatabaseClient({} as D1Database, loggerMock as never);
 
     const result = await client.reserveNewsItemsForAi(["item-1", "item-2"]);
@@ -282,13 +295,20 @@ describe("DatabaseClient", () => {
         }
       | undefined;
 
-    expect(result).toBe(2);
+    expect(result).toEqual(["item-1"]);
     expect(updateMock).toHaveBeenCalledWith(expect.anything());
     expect(setArg?.aiReservedAt).toEqual(expect.any(String));
     expect(setArg?.updatedAt).toEqual(expect.any(String));
     expect(whereArg?.and).toHaveLength(2);
     expect(loggerMock.info).toHaveBeenCalledWith("news items reserved for AI", {
-      count: 2,
+      count: 1,
     });
+    const returningArg = updateReturningMock.mock.calls[0]?.[0] as
+      | {
+          id: unknown;
+        }
+      | undefined;
+
+    expect(returningArg?.id).toBeDefined();
   });
 });

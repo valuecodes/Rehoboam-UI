@@ -1,7 +1,7 @@
 import type { Logger } from "@repo/logger";
 import type { NewsItem } from "@repo/types";
 
-import type { AiProcessor } from "../clients/ai-client";
+import type { AiProcessingResult, AiProcessor } from "../clients/ai-client";
 import type { DatabaseClient } from "../clients/database-client";
 import type { Job } from "./index";
 import { BbcNewsService } from "./news/services/bbc-service";
@@ -44,18 +44,28 @@ export class NewsJob implements Job {
         ? unprocessedItems
         : unprocessedItems.slice(0, this.aiItemLimit);
 
-    const reservedForAi = await this.db.reserveNewsItemsForAi(
+    const reservedItemIds = await this.db.reserveNewsItemsForAi(
       itemsForAi.map((item) => item.id)
     );
-    const aiResult = await this.ai.processNewsItems(itemsForAi);
-    const eventCount = await this.db.upsertEvents(aiResult.events);
+    const reservedItemIdSet = new Set(reservedItemIds);
+    const reservedItemsForAi = itemsForAi.filter((item) =>
+      reservedItemIdSet.has(item.id)
+    );
+
+    let aiResult: AiProcessingResult = { events: [], failed: 0 };
+    let eventCount = 0;
+
+    if (reservedItemsForAi.length > 0) {
+      aiResult = await this.ai.processNewsItems(reservedItemsForAi);
+      eventCount = await this.db.upsertEvents(aiResult.events);
+    }
 
     this.logger.info("news job completed", {
       totalItems: allItems.length,
       processedCount,
       deletedCount,
       unprocessedItems: unprocessedItems.length,
-      reservedForAi,
+      reservedForAi: reservedItemsForAi.length,
       aiProcessed: aiResult.events.length,
       aiSkipped: aiResult.events.filter((e) => e.skipped).length,
       aiFailed: aiResult.failed,

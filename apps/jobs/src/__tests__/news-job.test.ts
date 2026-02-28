@@ -50,7 +50,7 @@ const dbMock = {
   upsertNewsItems: vi.fn().mockResolvedValue(0),
   deleteOldNewsItems: vi.fn().mockResolvedValue(0),
   getUnprocessedNewsItems: vi.fn().mockResolvedValue([]),
-  reserveNewsItemsForAi: vi.fn().mockResolvedValue(0),
+  reserveNewsItemsForAi: vi.fn().mockResolvedValue([]),
   upsertEvents: vi.fn().mockResolvedValue(0),
 };
 
@@ -104,7 +104,7 @@ describe("NewsJob", () => {
       },
     ];
     dbMock.getUnprocessedNewsItems.mockResolvedValueOnce(unprocessedItems);
-    dbMock.reserveNewsItemsForAi.mockResolvedValueOnce(1);
+    dbMock.reserveNewsItemsForAi.mockResolvedValueOnce(["item-1"]);
     aiMock.processNewsItems.mockResolvedValueOnce({
       events: [
         {
@@ -141,6 +141,61 @@ describe("NewsJob", () => {
         reservedForAi: 1,
         aiProcessed: 1,
         eventsUpserted: expect.any(Number) as number,
+      })
+    );
+  });
+
+  it("skips AI work for items this run did not reserve", async () => {
+    fetchMock.mockImplementation(() => new Response("<rss/>", { status: 200 }));
+    const unprocessedItems = [
+      {
+        id: "item-1",
+        title: "Reserved Elsewhere",
+        source: "test",
+        publishedAt: "2024-01-01T00:00:00.000Z",
+        link: "https://example.com/1",
+      },
+      {
+        id: "item-2",
+        title: "Still Ours",
+        source: "test",
+        publishedAt: "2024-01-01T00:00:00.000Z",
+        link: "https://example.com/2",
+      },
+    ];
+    dbMock.getUnprocessedNewsItems.mockResolvedValueOnce(unprocessedItems);
+    dbMock.reserveNewsItemsForAi.mockResolvedValueOnce(["item-2"]);
+    aiMock.processNewsItems.mockResolvedValueOnce({
+      events: [
+        {
+          newsItemId: "item-2",
+          title: "Still Ours",
+          category: "politics",
+          severity: "medium",
+          locationLabel: null,
+          publishedAt: "2024-01-01T00:00:00.000Z",
+          skipped: false,
+        },
+      ],
+      failed: 0,
+    });
+
+    const job = new NewsJob(
+      loggerMock as never,
+      dbMock as never,
+      aiMock as never
+    );
+    await job.run();
+
+    expect(aiMock.processNewsItems).toHaveBeenCalledWith([unprocessedItems[1]]);
+    expect(dbMock.upsertEvents).toHaveBeenCalledWith([
+      expect.objectContaining({ newsItemId: "item-2" }),
+    ]);
+    expect(loggerMock.info).toHaveBeenCalledWith(
+      "news job completed",
+      expect.objectContaining({
+        reservedForAi: 1,
+        aiProcessed: 1,
       })
     );
   });
