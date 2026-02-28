@@ -6,7 +6,7 @@ Cloudflare Worker API workspace for timeline events consumed by `apps/ui`.
 
 - `GET /api/events`
 - Response body is validated with `EventsResponseSchema` from `@repo/types`
-- The API prefers processed `events`; if none exist yet, it falls back to recent `news_items` mapped into the same response shape
+- The API prefers processed `events`; if the `events` table is still empty, it falls back to recent `news_items` mapped into the same response shape
 
 ```json
 [
