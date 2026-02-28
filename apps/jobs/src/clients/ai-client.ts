@@ -1,5 +1,6 @@
 import type { Logger } from "@repo/logger";
-import type { NewsItem } from "@repo/types";
+import { CategorySchema } from "@repo/types";
+import type { Category, NewsItem } from "@repo/types";
 import { z } from "zod";
 
 const BATCH_SIZE = 5;
@@ -89,17 +90,7 @@ const AiIncludedItemSchema = z.object({
   title: z.string(),
   location: z.string().nullable(),
   severity: z.enum(["low", "medium", "high", "critical"]),
-  category: z.enum([
-    "conflict",
-    "politics",
-    "climate",
-    "health",
-    "economy",
-    "diplomacy",
-    "disaster",
-    "science",
-    "general",
-  ]),
+  category: CategorySchema,
 });
 
 const AiSkippedItemSchema = z.object({
@@ -114,7 +105,7 @@ const AiResponseSchema = z.object({
 export type ProcessedEvent = {
   newsItemId: string;
   title: string;
-  category: string;
+  category: Category;
   severity: "low" | "medium" | "high" | "critical";
   locationLabel: string | null;
   publishedAt: string;

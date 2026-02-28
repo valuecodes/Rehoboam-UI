@@ -98,6 +98,7 @@ export class DatabaseClient {
             category: sql`excluded.category`,
             severity: sql`excluded.severity`,
             locationLabel: sql`excluded.location_label`,
+            publishedAt: sql`excluded.published_at`,
             skipped: sql`excluded.skipped`,
             updatedAt: sql`excluded.updated_at`,
           },
@@ -110,20 +111,20 @@ export class DatabaseClient {
     return processedCount;
   }
 
-  async reserveNewsItemsForAi(itemIds: string[]): Promise<number> {
+  async reserveNewsItemsForAi(itemIds: string[]): Promise<string[]> {
     if (itemIds.length === 0) {
       this.logger.debug("no news items to reserve for AI");
-      return 0;
+      return [];
     }
 
     const now = new Date().toISOString();
-    let reservedCount = 0;
+    const reservedIds: string[] = [];
     const batchSize = 25;
 
     for (let i = 0; i < itemIds.length; i += batchSize) {
       const batchIds = itemIds.slice(i, i + batchSize);
 
-      await this.db
+      const reservedBatch = await this.db
         .update(newsItems)
         .set({
           aiReservedAt: now,
@@ -131,13 +132,16 @@ export class DatabaseClient {
         })
         .where(
           and(inArray(newsItems.id, batchIds), isNull(newsItems.aiReservedAt))
-        );
+        )
+        .returning({ id: newsItems.id });
 
-      reservedCount += batchIds.length;
+      reservedIds.push(...reservedBatch.map((item) => item.id));
     }
 
-    this.logger.info("news items reserved for AI", { count: reservedCount });
-    return reservedCount;
+    this.logger.info("news items reserved for AI", {
+      count: reservedIds.length,
+    });
+    return reservedIds;
   }
 
   async getUnprocessedNewsItems(): Promise<NewsItem[]> {

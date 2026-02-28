@@ -3,6 +3,17 @@ import { expect, test } from "@playwright/test";
 const API_BASE = "http://127.0.0.1:3001";
 
 const SEVERITY_VALUES = ["low", "medium", "high", "critical"];
+const CATEGORY_VALUES = [
+  "conflict",
+  "politics",
+  "climate",
+  "health",
+  "economy",
+  "diplomacy",
+  "disaster",
+  "science",
+  "general",
+];
 
 test.describe("API contract tests (local-only, requires API server)", () => {
   test.skip(
@@ -34,6 +45,8 @@ test.describe("API contract tests (local-only, requires API server)", () => {
       expect(typeof event.location).toBe("string");
       expect(typeof event.severity).toBe("string");
       expect(SEVERITY_VALUES).toContain(event.severity);
+      expect(typeof event.category).toBe("string");
+      expect(CATEGORY_VALUES).toContain(event.category);
     }
   });
 
