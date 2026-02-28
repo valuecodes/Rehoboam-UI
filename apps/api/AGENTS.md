@@ -38,7 +38,7 @@ Use it with the repo-level guide at root: `AGENTS.md`.
 - `loggerMiddleware` sets `logger` and `requestId` in context variables and exposes `X-Request-Id` on the response; downstream handlers depend on these values.
 - `security.ts` configures CORS (allowed origins: production domain and localhost:3000) and secure response headers via Hono built-ins.
 - `cache.ts` provides two caching layers: `etagMiddleware` (global, weak ETags for conditional requests) and `createCacheMiddleware` (per-route, Cloudflare Cache API with `vary: "Origin"` so cached responses are keyed per origin, preventing CORS cache poisoning). The `cacheControl` utility allows setting custom `Cache-Control` directives per route.
-- `src/routes/events.ts` validates the response with `EventsResponseSchema.parse(...)` before returning JSON.
+- `src/routes/events.ts` returns the already-validated payload from `DatabaseClient`; `src/clients/database-client.ts` validates and normalizes rows with `EventPublishedAtSchema` and `EventsResponseSchema` before the route responds.
 - Events are sourced from the `events` table in D1 (`rehoboam-jobs-db`) via `DatabaseClient`. The `apps/jobs` worker fetches news, processes them with Workers AI (filtering, title shortening, location extraction, severity/category assignment), and stores the results in the `events` table. The API reads non-skipped events, mapping `locationLabel` to `location` (with `"Unknown"` fallback) and passing through AI-assigned `severity` and `category`. Results are capped at 50 items ordered by `publishedAt` descending.
 - Database schema is shared via `@repo/db` package (used by both `apps/api` and `apps/jobs`).
 - If `wrangler.jsonc` bindings change, regenerate `worker-configuration.d.ts`.
