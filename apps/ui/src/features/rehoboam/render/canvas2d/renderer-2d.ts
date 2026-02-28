@@ -105,7 +105,9 @@ export const createRenderer2D = (
   const { context } = options;
   let theme = options.theme;
   let ringSpecs = buildRingSpecs(theme);
-  const divergenceClusterTracker = createDivergenceClusterTracker();
+  const divergenceClusterTracker = createDivergenceClusterTracker({
+    seed: theme.ringSeed,
+  });
   const divergencePulseTracker = createDivergencePulseTracker();
   let isDestroyed = false;
   let cachedEvents: readonly unknown[] = [];

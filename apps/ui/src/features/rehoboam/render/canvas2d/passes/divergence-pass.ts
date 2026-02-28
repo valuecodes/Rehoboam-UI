@@ -1347,7 +1347,6 @@ export const drawDivergencePass = (input: DivergencePassInput): void => {
     viewport,
     theme,
     interaction,
-    events,
     eventAnglesByEventId,
     pulses,
     clusters,
@@ -1356,9 +1355,6 @@ export const drawDivergencePass = (input: DivergencePassInput): void => {
     entranceScale,
   } = input;
 
-  if (events.length === 0) {
-    return;
-  }
   const renderablePulses = resolveRenderablePulses(
     pulses,
     eventAnglesByEventId,
