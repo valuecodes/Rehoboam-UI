@@ -12,6 +12,9 @@
   "observability": {
     "enabled": true,
   },
+  "vars": {
+    "AI_ITEM_LIMIT": "50",
+  },
   /**
    * Workers AI binding
    * https://developers.cloudflare.com/workers-ai/configuration/bindings/
