@@ -61,7 +61,7 @@ For a real Workers AI-backed local run, use:
 pnpm --filter rehoboam-jobs dev:remote
 ```
 
-Both local dev modes cap AI processing to 3 unprocessed items per run. Production remains uncapped.
+Both local dev modes cap AI processing to 3 unprocessed items per run. Production caps AI processing to 50 items per run.
 
 Default local URL for scheduled testing: `http://localhost:3002`
 
