@@ -7,6 +7,7 @@ Cloudflare Worker jobs workspace for scheduled background tasks.
 - Runs cron-triggered jobs (no public HTTP API)
 - Dispatches scheduled events to registered jobs in `src/jobs`
 - Executes matching jobs in parallel with isolated failures via `Promise.allSettled`
+- Applies an 8-second per-source timeout to external news feed fetches so slow providers do not block the full run
 
 ## Database (Cloudflare D1)
 

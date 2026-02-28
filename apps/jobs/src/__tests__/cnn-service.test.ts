@@ -61,6 +61,12 @@ describe("CnnNewsService", () => {
     });
   });
 
+  it("uses the expected feed URL", () => {
+    const service = new CnnNewsService(loggerMock as never);
+
+    expect(service.url).toBe("http://rss.cnn.com/rss/cnn_topstories.rss");
+  });
+
   it("extracts guid from object form with isPermaLink", async () => {
     vi.mocked(fetch).mockResolvedValue(new Response(CNN_RSS, { status: 200 }));
 

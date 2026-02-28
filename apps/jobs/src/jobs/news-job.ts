@@ -1,11 +1,11 @@
 import type { Logger } from "@repo/logger";
+import type { NewsItem } from "@repo/types";
 
 import type { DatabaseClient } from "../clients/database-client";
 import type { Job } from "./index";
 import { BbcNewsService } from "./news/services/bbc-service";
 import { CnnNewsService } from "./news/services/cnn-service";
 import type { NewsService } from "./news/services/news-service";
-import type { NewsItem } from "@repo/types";
 
 export class NewsJob implements Job {
   readonly name = "news";

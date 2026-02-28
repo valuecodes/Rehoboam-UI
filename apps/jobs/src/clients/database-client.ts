@@ -1,9 +1,8 @@
+import { newsItems } from "@repo/db/schema";
 import type { Logger } from "@repo/logger";
+import type { NewsItem } from "@repo/types";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-
-import { newsItems } from "@repo/db/schema";
-import type { NewsItem } from "@repo/types";
 
 export class DatabaseClient {
   private readonly db;

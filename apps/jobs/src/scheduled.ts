@@ -7,7 +7,7 @@ export const handleScheduled: ExportedHandlerScheduledHandler<Env> = async (
   env,
   _ctx
 ) => {
-  const logger = new Logger({ context: "jobs" });
+  const logger = new Logger({ context: "jobs", level: "info" });
   const cron = controller.cron;
 
   logger.info("scheduled event received", { cron });

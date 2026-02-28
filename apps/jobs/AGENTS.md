@@ -30,8 +30,10 @@ Use it with the repo-level guide at root: `AGENTS.md`.
 
 - `src/index.ts` exports only `{ scheduled }` — no `fetch` export. The `--test-scheduled` flag in the dev script handles local cron testing via `/__scheduled`.
 - `src/scheduled.ts` receives cron events, looks up matching jobs from the registry via `controller.cron`, and runs them with `Promise.allSettled` so failures are isolated.
+- `src/scheduled.ts` initializes `Logger` at `info` level for cron runs, so debug-only service logs are suppressed unless you intentionally lower the threshold.
 - Jobs declare their cron pattern and are registered in `src/jobs/index.ts`. Adding a new job requires creating a file in `src/jobs/` and adding it to the registry array.
 - `JobRegistry` constructs `DatabaseClient` using `env.DB`; jobs that persist data should depend on injected clients instead of creating their own runtime bindings.
+- `NewsService.fetch()` applies an 8-second timeout per source and returns an empty result on timeout or fetch failure so one feed cannot stall the job.
 
 ## Jobs Commands
 
