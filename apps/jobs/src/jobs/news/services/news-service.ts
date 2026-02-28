@@ -1,6 +1,7 @@
 import type { Logger } from "@repo/logger";
-
 import type { NewsItem } from "@repo/types";
+
+const FEED_FETCH_TIMEOUT_MS = 8000;
 
 export abstract class NewsService {
   abstract readonly slug: string;
@@ -11,8 +12,13 @@ export abstract class NewsService {
   async fetch(): Promise<NewsItem[]> {
     this.logger.debug("fetching feed", { source: this.slug, url: this.url });
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, FEED_FETCH_TIMEOUT_MS);
+
     try {
-      const response = await fetch(this.url);
+      const response = await fetch(this.url, { signal: controller.signal });
 
       if (!response.ok) {
         this.logger.error("feed fetch failed", {
@@ -30,24 +36,25 @@ export abstract class NewsService {
         itemCount: items.length,
       });
 
-      for (const item of items) {
-        this.logger.debug("news item", {
-          id: item.id,
-          title: item.title,
-          source: item.source,
-          publishedAt: item.publishedAt,
-          link: item.link,
-        });
-      }
-
       return items;
     } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        this.logger.error("feed fetch timed out", {
+          source: this.slug,
+          url: this.url,
+          timeoutMs: FEED_FETCH_TIMEOUT_MS,
+        });
+        return [];
+      }
+
       const message = error instanceof Error ? error.message : String(error);
       this.logger.error("feed processing failed", {
         source: this.slug,
         error: message,
       });
       return [];
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 

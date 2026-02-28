@@ -1,8 +1,8 @@
 import type { Logger } from "@repo/logger";
+import type { NewsItem } from "@repo/types";
 import { XMLParser } from "fast-xml-parser";
 import { z } from "zod";
 
-import type { NewsItem } from "@repo/types";
 import { NewsService } from "./news-service";
 
 const CnnItemSchema = z.object({

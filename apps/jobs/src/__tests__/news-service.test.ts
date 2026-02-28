@@ -1,5 +1,6 @@
-import { NewsService } from "../jobs/news/services/news-service";
 import type { NewsItem } from "@repo/types";
+
+import { NewsService } from "../jobs/news/services/news-service";
 
 class TestNewsService extends NewsService {
   readonly slug = "test-source";
@@ -33,6 +34,7 @@ describe("NewsService", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
   });
 
@@ -47,6 +49,10 @@ describe("NewsService", () => {
     expect(loggerMock.info).toHaveBeenCalledWith(
       "feed parsed",
       expect.objectContaining({ source: "test-source", itemCount: 1 })
+    );
+    expect(loggerMock.debug).not.toHaveBeenCalledWith(
+      "news item",
+      expect.anything()
     );
   });
 
@@ -76,5 +82,36 @@ describe("NewsService", () => {
       "feed processing failed",
       expect.objectContaining({ error: "network timeout" })
     );
+  });
+
+  it("returns empty array on fetch timeout", async () => {
+    vi.useFakeTimers();
+    vi.mocked(fetch).mockImplementation((_input, init) => {
+      const signal = init?.signal as AbortSignal | undefined;
+
+      return new Promise<Response>((_resolve, reject) => {
+        signal?.addEventListener(
+          "abort",
+          () => {
+            reject(
+              Object.assign(new Error("timed out"), { name: "AbortError" })
+            );
+          },
+          { once: true }
+        );
+      });
+    });
+
+    const service = new TestNewsService(loggerMock as never);
+    const pending = service.fetch();
+
+    await vi.advanceTimersByTimeAsync(8000);
+
+    await expect(pending).resolves.toEqual([]);
+    expect(loggerMock.error).toHaveBeenCalledWith("feed fetch timed out", {
+      source: "test-source",
+      url: "https://example.com/rss.xml",
+      timeoutMs: 8000,
+    });
   });
 });
