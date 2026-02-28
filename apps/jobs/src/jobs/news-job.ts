@@ -34,10 +34,12 @@ export class NewsJob implements Job {
     );
 
     const processedCount = await this.db.upsertNewsItems(allItems);
+    const deletedCount = await this.db.deleteOldNewsItems(200);
 
     this.logger.info("news job completed", {
       totalItems: allItems.length,
       processedCount,
+      deletedCount,
       services: this.services.length,
       failed: results.filter((r) => r.status === "rejected").length,
     });
