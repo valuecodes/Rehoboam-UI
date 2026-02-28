@@ -8,6 +8,7 @@ import "@fontsource/barlow-condensed/600.css";
 import "./index.css";
 
 import { App } from "./app";
+import { AppErrorBoundary } from "./shared/errors/app-error-boundary";
 
 const rootElement = document.getElementById("root");
 
@@ -17,6 +18,8 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <React.StrictMode>
-    <App />
+    <AppErrorBoundary>
+      <App />
+    </AppErrorBoundary>
   </React.StrictMode>
 );

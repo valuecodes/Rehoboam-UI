@@ -1,0 +1,98 @@
+.app-error-boundary {
+  --error-boundary-shadow: rgba(26, 26, 26, 0.12);
+  --error-boundary-surface: rgba(255, 255, 255, 0.72);
+  --error-boundary-button-bg: rgba(20, 20, 20, 0.92);
+  --error-boundary-button-bg-hover: rgba(10, 10, 10, 0.98);
+  min-height: 100dvh;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  padding: clamp(20px, 4vw, 40px);
+  box-sizing: border-box;
+  font-family: var(--hud-font);
+  text-transform: uppercase;
+  color: var(--hud-strong);
+  background:
+    radial-gradient(
+      circle at 50% 38%,
+      rgba(255, 255, 255, 0.96) 0%,
+      transparent 56%
+    ),
+    linear-gradient(180deg, #f1f1ef, #e7e7e4);
+}
+
+.app-error-boundary__panel {
+  width: min(100%, 560px);
+  padding: clamp(24px, 4vw, 40px);
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--hud-line);
+  background: var(--error-boundary-surface);
+  box-shadow: 0 18px 48px var(--error-boundary-shadow);
+  backdrop-filter: blur(10px);
+}
+
+.app-error-boundary__status,
+.app-error-boundary__title,
+.app-error-boundary__message {
+  margin: 0;
+}
+
+.app-error-boundary__status {
+  font-size: clamp(0.9rem, 1.4vw, 1.1rem);
+  letter-spacing: 0.18em;
+  color: var(--hud-time);
+}
+
+.app-error-boundary__title {
+  font-size: clamp(1.9rem, 4vw, 3.1rem);
+  line-height: 0.92;
+  font-weight: 400;
+}
+
+.app-error-boundary__message {
+  font-size: clamp(1rem, 1.8vw, 1.35rem);
+  line-height: 1;
+  color: var(--hud-mid);
+}
+
+.app-error-boundary__reload {
+  margin-top: 8px;
+  width: fit-content;
+  min-width: 220px;
+  padding: 12px 18px;
+  border: 1px solid rgba(18, 18, 18, 0.18);
+  background: var(--error-boundary-button-bg);
+  color: rgba(255, 255, 255, 0.96);
+  font: inherit;
+  font-size: clamp(0.95rem, 1.4vw, 1.05rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.app-error-boundary__reload:hover {
+  background: var(--error-boundary-button-bg-hover);
+  transform: translateY(-1px);
+}
+
+.app-error-boundary__reload:focus-visible {
+  outline: 2px solid rgba(20, 20, 20, 0.32);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.72);
+}
+
+@media (max-width: 700px) {
+  .app-error-boundary {
+    align-items: start;
+    padding-top: max(24px, 8dvh);
+  }
+
+  .app-error-boundary__reload {
+    width: 100%;
+  }
+}
