@@ -128,6 +128,9 @@ Both workflows run:
 - `format:check`
 - test
 
+On pushes to `main`, `.github/workflows/main.yml` also applies Jobs D1 migrations
+before deploying the API and Jobs workers.
+
 Manual operations workflow:
 
-- `.github/workflows/migrations.yml`: manually applies Jobs D1 migrations to production (`workflow_dispatch`, environment-gated)
+- `.github/workflows/migrations.yml`: manually applies Jobs D1 migrations to production for retries/backfills (`workflow_dispatch`, environment-gated)
