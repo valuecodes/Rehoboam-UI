@@ -91,6 +91,7 @@ jobs:
     needs: [typecheck, lint, format-check, test]
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    environment: production
     permissions:
       contents: read
     steps:

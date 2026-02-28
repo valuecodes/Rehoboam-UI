@@ -6,7 +6,7 @@ import { z } from "zod";
 import { NewsService } from "./news-service";
 
 const BbcItemSchema = z.object({
-  guid: z.object({ "#text": z.string() }),
+  guid: z.union([z.object({ "#text": z.string() }), z.string()]),
   title: z.string(),
   link: z.string(),
   pubDate: z.string(),
@@ -51,15 +51,33 @@ export class BbcNewsService extends NewsService {
         ? [rawItems]
         : [];
 
-    return Promise.all(
-      items.map(async (item) => ({
-        id: await this.hashId(item.guid["#text"]),
-        title: item.title,
-        source: this.slug,
-        publishedAt: new Date(item.pubDate).toISOString(),
-        link: item.link,
-        description: item.description,
-      }))
+    const mapped = await Promise.all(
+      items.map(async (item) => {
+        const guidText =
+          typeof item.guid === "string" ? item.guid : item.guid["#text"];
+        const date = new Date(item.pubDate);
+
+        if (Number.isNaN(date.getTime())) {
+          this.logger.warn("skipping item with invalid pubDate", {
+            source: this.slug,
+            title: item.title,
+          });
+          return null;
+        }
+
+        return {
+          id: await this.hashId(guidText),
+          title: item.title,
+          source: this.slug,
+          publishedAt: date.toISOString(),
+          link: item.link,
+          ...(item.description !== undefined && {
+            description: item.description,
+          }),
+        } satisfies NewsItem;
+      })
     );
+
+    return mapped.filter((item): item is NewsItem => item !== null);
   }
 }

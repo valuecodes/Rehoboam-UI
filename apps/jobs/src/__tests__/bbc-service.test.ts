@@ -107,4 +107,59 @@ describe("BbcNewsService", () => {
     expect(items).toHaveLength(1);
     expect(items[0]?.id).toMatch(/^[0-9a-f]{64}$/);
   });
+
+  it("parses feed with plain-string guid (no attributes)", async () => {
+    const xml = `<?xml version="1.0"?>
+    <rss version="2.0">
+      <channel>
+        <item>
+          <title>Plain GUID</title>
+          <link>https://www.bbc.com/news/articles/plain</link>
+          <guid>https://www.bbc.com/news/articles/plain</guid>
+          <pubDate>Mon, 01 Jan 2024 12:00:00 GMT</pubDate>
+        </item>
+      </channel>
+    </rss>`;
+
+    vi.mocked(fetch).mockResolvedValue(new Response(xml, { status: 200 }));
+
+    const service = new BbcNewsService(loggerMock as never);
+    const items = await service.fetch();
+
+    expect(items).toHaveLength(1);
+    expect(items[0]?.id).toMatch(/^[0-9a-f]{64}$/);
+    expect(items[0]?.title).toBe("Plain GUID");
+  });
+
+  it("skips items with invalid pubDate and keeps valid ones", async () => {
+    const xml = `<?xml version="1.0"?>
+    <rss version="2.0">
+      <channel>
+        <item>
+          <title>Valid Item</title>
+          <link>https://www.bbc.com/news/articles/valid</link>
+          <guid>valid-id</guid>
+          <pubDate>Mon, 01 Jan 2024 12:00:00 GMT</pubDate>
+        </item>
+        <item>
+          <title>Bad Date Item</title>
+          <link>https://www.bbc.com/news/articles/bad</link>
+          <guid>bad-id</guid>
+          <pubDate>not-a-real-date</pubDate>
+        </item>
+      </channel>
+    </rss>`;
+
+    vi.mocked(fetch).mockResolvedValue(new Response(xml, { status: 200 }));
+
+    const service = new BbcNewsService(loggerMock as never);
+    const items = await service.fetch();
+
+    expect(items).toHaveLength(1);
+    expect(items[0]?.title).toBe("Valid Item");
+    expect(loggerMock.warn).toHaveBeenCalledWith(
+      "skipping item with invalid pubDate",
+      { source: "bbc-world", title: "Bad Date Item" }
+    );
+  });
 });
