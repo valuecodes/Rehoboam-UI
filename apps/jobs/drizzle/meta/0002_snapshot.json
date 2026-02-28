@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "c33f9201-7941-4dea-8814-1a73f4e069c0",
-  "prevId": "3fdbd1c4-fb74-41b4-aa4e-1e54ca86f098",
+  "id": "99f9de1a-f880-4a00-987d-f9d6741dfb13",
+  "prevId": "c33f9201-7941-4dea-8814-1a73f4e069c0",
   "tables": {
     "events": {
       "name": "events",
@@ -156,6 +156,13 @@
           "notNull": false,
           "autoincrement": false
         },
+        "ai_reserved_at": {
+          "name": "ai_reserved_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "text",
@@ -180,6 +187,11 @@
         "idx_news_items_published_at": {
           "name": "idx_news_items_published_at",
           "columns": ["published_at"],
+          "isUnique": false
+        },
+        "idx_news_items_ai_reserved_at": {
+          "name": "idx_news_items_ai_reserved_at",
+          "columns": ["ai_reserved_at"],
           "isUnique": false
         }
       },
