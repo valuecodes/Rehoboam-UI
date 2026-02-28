@@ -1,4 +1,10 @@
-import { EventSchema, EventsResponseSchema, SeveritySchema } from "../rehoboam";
+import {
+  CategorySchema,
+  EventPublishedAtSchema,
+  EventSchema,
+  EventsResponseSchema,
+  SeveritySchema,
+} from "../rehoboam";
 
 describe("SeveritySchema", () => {
   it("accepts valid severity values", () => {
@@ -13,6 +19,36 @@ describe("SeveritySchema", () => {
   });
 });
 
+describe("CategorySchema", () => {
+  it("accepts valid category values", () => {
+    expect(CategorySchema.parse("conflict")).toBe("conflict");
+    expect(CategorySchema.parse("politics")).toBe("politics");
+    expect(CategorySchema.parse("climate")).toBe("climate");
+    expect(CategorySchema.parse("health")).toBe("health");
+    expect(CategorySchema.parse("economy")).toBe("economy");
+    expect(CategorySchema.parse("diplomacy")).toBe("diplomacy");
+    expect(CategorySchema.parse("disaster")).toBe("disaster");
+    expect(CategorySchema.parse("science")).toBe("science");
+    expect(CategorySchema.parse("general")).toBe("general");
+  });
+
+  it("rejects invalid category values", () => {
+    expect(() => CategorySchema.parse("sports")).toThrow();
+  });
+});
+
+describe("EventPublishedAtSchema", () => {
+  it("normalizes an ISO datetime to date-only format", () => {
+    expect(EventPublishedAtSchema.parse("2024-06-15T14:30:00.000Z")).toBe(
+      "2024-06-15"
+    );
+  });
+
+  it("rejects invalid datetime strings", () => {
+    expect(() => EventPublishedAtSchema.parse("not-a-datetime")).toThrow();
+  });
+});
+
 describe("EventSchema", () => {
   const validEvent = {
     id: "test-event",
@@ -20,6 +56,7 @@ describe("EventSchema", () => {
     title: "Test event",
     location: "Test location",
     severity: "high",
+    category: "politics",
   };
 
   it("accepts a valid event object", () => {
@@ -34,6 +71,12 @@ describe("EventSchema", () => {
   it("rejects an event with invalid severity", () => {
     expect(() =>
       EventSchema.parse({ ...validEvent, severity: "extreme" })
+    ).toThrow();
+  });
+
+  it("rejects an event with invalid category", () => {
+    expect(() =>
+      EventSchema.parse({ ...validEvent, category: "sports" })
     ).toThrow();
   });
 
@@ -65,6 +108,7 @@ describe("EventsResponseSchema", () => {
         title: "First",
         location: "A",
         severity: "low",
+        category: "general",
       },
       {
         id: "evt-2",
@@ -72,6 +116,7 @@ describe("EventsResponseSchema", () => {
         title: "Second",
         location: "B",
         severity: "critical",
+        category: "conflict",
       },
     ];
 

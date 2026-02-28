@@ -1,8 +1,9 @@
 import { Logger } from "@repo/logger";
 
 import { JobRegistry } from "./jobs";
+import type { JobsEnv } from "./types";
 
-export const handleScheduled: ExportedHandlerScheduledHandler<Env> = async (
+export const handleScheduled: ExportedHandlerScheduledHandler<JobsEnv> = async (
   controller,
   env,
   _ctx

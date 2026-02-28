@@ -54,6 +54,15 @@ Run from repo root:
 pnpm --filter rehoboam-jobs dev
 ```
 
+This uses a local mock AI client by default, so it does not require Cloudflare authentication.
+For a real Workers AI-backed local run, use:
+
+```bash
+pnpm --filter rehoboam-jobs dev:remote
+```
+
+Both local dev modes cap AI processing to 3 unprocessed items per run. Production remains uncapped.
+
 Default local URL for scheduled testing: `http://localhost:3002`
 
 Trigger cron locally:
@@ -64,7 +73,8 @@ curl "http://localhost:3002/__scheduled?cron=0+*/6+*+*+*"
 
 ## Workspace Scripts
 
-- `pnpm --filter rehoboam-jobs dev` - start Wrangler local worker on port `3002` with scheduled testing enabled
+- `pnpm --filter rehoboam-jobs dev` - start Wrangler local worker on port `3002` with scheduled testing enabled, mock AI enabled, and AI processing capped to 3 items
+- `pnpm --filter rehoboam-jobs dev:remote` - start Wrangler local worker against the real Workers AI binding with AI processing capped to 3 items
 - `pnpm --filter rehoboam-jobs start` - start Wrangler local worker with defaults
 - `pnpm --filter rehoboam-jobs deploy` - deploy Worker code only (no remote migrations)
 - `pnpm --filter rehoboam-jobs cf-typegen` - generate `worker-configuration.d.ts`
@@ -72,6 +82,7 @@ curl "http://localhost:3002/__scheduled?cron=0+*/6+*+*+*"
 - `pnpm --filter rehoboam-jobs lint` - run ESLint
 - `pnpm --filter rehoboam-jobs test` - run Vitest
 - `pnpm --filter rehoboam-jobs db:generate` - generate migration from schema
+- `pnpm --filter rehoboam-jobs db:clear:local` - delete all local `news_items` rows (and cascaded `events`)
 - `pnpm --filter rehoboam-jobs db:migrate:local` - apply migrations locally
 - `pnpm --filter rehoboam-jobs db:migrate:remote` - apply migrations to production
 
@@ -85,4 +96,4 @@ curl "http://localhost:3002/__scheduled?cron=0+*/6+*+*+*"
 - Database client: `src/clients/database-client.ts`
 - Drizzle Kit config: `drizzle.config.ts`
 - Migrations: `drizzle/`
-- Worker runtime and cron triggers: `wrangler.jsonc`
+- Worker runtime and cron triggers: `wrangler.jsonc` (production), `wrangler.local.jsonc` (mock AI local dev), and `wrangler.remote-dev.jsonc` (real AI local dev)

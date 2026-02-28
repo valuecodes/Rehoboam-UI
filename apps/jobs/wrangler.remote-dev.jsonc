@@ -1,10 +1,9 @@
 /**
- * For more details on how to configure Wrangler, refer to:
- * https://developers.cloudflare.com/workers/wrangler/configuration/
+ * Local development config for real Workers AI with a small AI processing cap.
  */
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "rehoboam-jobs",
+  "name": "rehoboam-jobs-remote-dev",
   "main": "src/index.ts",
   "workers_dev": false,
   "compatibility_date": "2025-09-27",
@@ -12,17 +11,12 @@
   "observability": {
     "enabled": true,
   },
-  /**
-   * Workers AI binding
-   * https://developers.cloudflare.com/workers-ai/configuration/bindings/
-   */
+  "vars": {
+    "AI_ITEM_LIMIT": "3",
+  },
   "ai": {
     "binding": "AI",
   },
-  /**
-   * D1 Database bindings
-   * https://developers.cloudflare.com/d1/
-   */
   "d1_databases": [
     {
       "binding": "DB",
@@ -31,11 +25,7 @@
       "migrations_dir": "drizzle",
     },
   ],
-  /**
-   * Cron Triggers
-   * https://developers.cloudflare.com/workers/configuration/cron-triggers/
-   */
   "triggers": {
-    "crons": ["0 */6 * * *"], // Run every 6 hours
+    "crons": ["0 */6 * * *"],
   },
 }

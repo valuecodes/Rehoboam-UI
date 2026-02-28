@@ -13,13 +13,15 @@ Cloudflare Worker API workspace for timeline events consumed by `apps/ui`.
     "id": "dotcom-bubble-burst",
     "date": "2000-03-10",
     "title": "Dot-com bubble burst",
-    "location": "New York",
-    "severity": "high"
+    "location": "New York, US",
+    "severity": "high",
+    "category": "economy"
   }
 ]
 ```
 
 `severity` is one of `low | medium | high | critical`.
+`category` is one of `conflict | politics | climate | health | economy | diplomacy | disaster | science | general`.
 
 ## Request Lifecycle
 

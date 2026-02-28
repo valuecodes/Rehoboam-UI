@@ -1,6 +1,7 @@
 import type { Logger } from "@repo/logger";
 import type { NewsItem } from "@repo/types";
 
+import type { AiProcessor } from "../clients/ai-client";
 import type { DatabaseClient } from "../clients/database-client";
 import type { Job } from "./index";
 import { BbcNewsService } from "./news/services/bbc-service";
@@ -14,7 +15,9 @@ export class NewsJob implements Job {
 
   constructor(
     private readonly logger: Logger,
-    private readonly db: DatabaseClient
+    private readonly db: DatabaseClient,
+    private readonly ai: AiProcessor,
+    private readonly aiItemLimit?: number
   ) {
     this.services = [new BbcNewsService(logger)];
   }
@@ -35,10 +38,28 @@ export class NewsJob implements Job {
     const processedCount = await this.db.upsertNewsItems(allItems);
     const deletedCount = await this.db.deleteOldNewsItems(200);
 
+    const unprocessedItems = await this.db.getUnprocessedNewsItems();
+    const itemsForAi =
+      this.aiItemLimit === undefined
+        ? unprocessedItems
+        : unprocessedItems.slice(0, this.aiItemLimit);
+
+    const reservedForAi = await this.db.reserveNewsItemsForAi(
+      itemsForAi.map((item) => item.id)
+    );
+    const aiResult = await this.ai.processNewsItems(itemsForAi);
+    const eventCount = await this.db.upsertEvents(aiResult.events);
+
     this.logger.info("news job completed", {
       totalItems: allItems.length,
       processedCount,
       deletedCount,
+      unprocessedItems: unprocessedItems.length,
+      reservedForAi,
+      aiProcessed: aiResult.events.length,
+      aiSkipped: aiResult.events.filter((e) => e.skipped).length,
+      aiFailed: aiResult.failed,
+      eventsUpserted: eventCount,
       services: this.services.length,
       failed: results.filter((r) => r.status === "rejected").length,
     });

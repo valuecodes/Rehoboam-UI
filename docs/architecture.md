@@ -192,13 +192,14 @@ Behavior:
 
 ### API Event Payload Contract
 
-`apps/api` currently returns event rows with:
+`apps/api` returns AI-processed event rows with:
 
 - `id` (`string`)
 - `date` (`YYYY-MM-DD`)
-- `title` (`string`)
-- `location` (`string`)
-- `severity` (`low | medium | high | critical`)
+- `title` (`string`) — AI-shortened, concise title
+- `location` (`string`) — AI-extracted location (e.g. `"London, UK"`), or `"Unknown"`
+- `severity` (`low | medium | high | critical`) — AI-assigned severity
+- `category` (`conflict | politics | climate | health | economy | diplomacy | disaster | science | general`) — AI-assigned category
 
 `runEventPipeline` normalizes this API payload into `WorldEvent[]`.
 
