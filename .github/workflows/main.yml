@@ -114,6 +114,7 @@ jobs:
     needs: [migrate-jobs-d1]
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    environment: production
     permissions:
       contents: read
       deployments: write
@@ -137,6 +138,7 @@ jobs:
     needs: [migrate-jobs-d1]
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    environment: production
     permissions:
       contents: read
       deployments: write
@@ -160,6 +162,7 @@ jobs:
     needs: [typecheck, lint, format-check, test]
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    environment: production
     permissions:
       contents: read
       deployments: write

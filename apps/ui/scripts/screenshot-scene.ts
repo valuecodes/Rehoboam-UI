@@ -258,9 +258,9 @@ for (let captureIndex = 0; captureIndex < captureCount; captureIndex += 1) {
 
   try {
     if (options.headed) {
-      await run`pnpm exec playwright test -c playwright.config.ts --headed`;
+      await run`pnpm exec playwright test -c playwright.config.ts --project=screenshot --headed`;
     } else {
-      await run`pnpm exec playwright test -c playwright.config.ts`;
+      await run`pnpm exec playwright test -c playwright.config.ts --project=screenshot`;
     }
   } catch (error) {
     if (error instanceof ProcessOutput) {
