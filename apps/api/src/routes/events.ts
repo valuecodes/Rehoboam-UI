@@ -8,7 +8,7 @@ export const events = new Hono<AppEnv>().get("/", async (c) => {
   const db = new DatabaseClient(c.env.DB, logger);
   const items = await db.getEvents();
 
-  logger.debug("returning events", { count: items.length });
+  logger.debug("returning timeline items", { count: items.length });
 
   return c.json(items);
 });
