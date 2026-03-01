@@ -44,6 +44,7 @@ API worker on port `3001`.
 
 ```bash
 pnpm build
+pnpm --filter rehoboam-ui bundle:analyze
 pnpm --filter rehoboam-ui preview
 ```
 
@@ -111,6 +112,7 @@ be visible, and then applies a short settle delay before capturing.
 - `pnpm --filter rehoboam-api dev` - run only the API worker (`http://localhost:3001`)
 - `pnpm --filter rehoboam-jobs dev` - run only the jobs worker with scheduled testing (`http://localhost:3002`)
 - `pnpm --filter rehoboam-ui preview` - preview the web production build
+- `pnpm --filter rehoboam-ui bundle:analyze` - launch `vite-bundle-analyzer` for the UI build
 - `pnpm --filter rehoboam-ui screenshot:scene` - capture deterministic full + scene screenshots
 - `pnpm --filter rehoboam-ui screenshot:scene:headed` - run screenshot capture with headed browser
 
