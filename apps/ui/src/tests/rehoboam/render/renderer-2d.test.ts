@@ -100,7 +100,7 @@ describe("createRenderer2D", () => {
     expect(firstDashOffsets).not.toStrictEqual(secondDashOffsets);
   });
 
-  it("returns diagnostics and draws the contour layer for visible events", () => {
+  it("returns diagnostics while keeping the contour layer inactive", () => {
     const frame = createFrame(1_000, [createEvent()]);
     const mock = createMockCanvasContext();
 
@@ -118,7 +118,6 @@ describe("createRenderer2D", () => {
     expect(snapshot.diagnostics?.divergenceSampleCount).toBe(
       frame.theme.divergenceSampleCount
     );
-    expect(snapshot.diagnostics?.passMs.contour).toBeGreaterThanOrEqual(0);
-    expect(mock.commands).toContain("strokeStyle(#171717)");
+    expect(snapshot.diagnostics?.passMs.contour).toBe(0);
   });
 });
