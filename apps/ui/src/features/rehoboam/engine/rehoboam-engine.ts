@@ -109,6 +109,7 @@ export const createRehoboamEngine = (
 
   const renderer = rendererFactory({
     context,
+    diagnosticsEnabled: options.diagnosticsEnabled,
     viewport,
     theme,
   });

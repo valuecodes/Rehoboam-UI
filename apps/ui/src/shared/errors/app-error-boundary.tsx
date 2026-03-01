@@ -32,11 +32,7 @@ export class AppErrorBoundary extends Component<
   public render(): ReactNode {
     if (this.state.hasError) {
       return (
-        <main
-          aria-live="assertive"
-          className="app-error-boundary"
-          role="alert"
-        >
+        <main aria-live="assertive" className="app-error-boundary" role="alert">
           <section className="app-error-boundary__panel">
             <p className="app-error-boundary__status">System Interruption</p>
             <h1 className="app-error-boundary__title">

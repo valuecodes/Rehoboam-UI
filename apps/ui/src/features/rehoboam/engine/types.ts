@@ -91,9 +91,26 @@ export type DivergenceCalloutTarget = Readonly<{
   strength: number;
 }>;
 
+export type RehoboamRenderDiagnostics = Readonly<{
+  fps: number;
+  frameMs: number;
+  passMs: Readonly<{
+    background: number;
+    rings: number;
+    contour: number;
+    divergence: number;
+    sweep: number;
+  }>;
+  activePulseCount: number;
+  activeClusterCount: number;
+  ringCount: number;
+  divergenceSampleCount: number;
+}>;
+
 export type RehoboamRenderSnapshot = Readonly<{
   timeMs: number;
   divergenceCalloutTargets: readonly DivergenceCalloutTarget[];
+  diagnostics?: RehoboamRenderDiagnostics;
 }>;
 
 export type RehoboamRenderer = Readonly<{
@@ -105,6 +122,7 @@ export type RehoboamRenderer = Readonly<{
 
 export type RehoboamRendererFactoryOptions = Readonly<{
   context: CanvasRenderingContext2D;
+  diagnosticsEnabled?: boolean;
   viewport: ViewportState;
   theme: RehoboamTheme;
 }>;
@@ -125,6 +143,7 @@ export type RehoboamEngine = Readonly<{
 
 export type RehoboamEngineOptions = Readonly<{
   canvas: HTMLCanvasElement;
+  diagnosticsEnabled?: boolean;
   dprCap?: number;
   now?: () => number;
   requestAnimationFrame?: (callback: FrameRequestCallback) => number;

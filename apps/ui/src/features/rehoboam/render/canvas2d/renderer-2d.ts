@@ -11,6 +11,7 @@ import {
   DEFAULT_LAYOUT_WINDOW_MS,
   DEFAULT_MAX_VISIBLE_EVENT_COUNT,
 } from "../../layout/compute-angles";
+import type { ComputedEventAngle } from "../../layout/compute-angles";
 import { getLayoutNowMs } from "../../layout/layout-time";
 import { normalizeAngle, TAU } from "../../layout/polar";
 import { createDivergenceClusterTracker } from "./divergence-cluster-tracker";
@@ -21,10 +22,13 @@ import { drawBackgroundPass } from "./passes/background-pass";
 import type { BackgroundPassInput } from "./passes/background-pass";
 import { drawDivergencePass } from "./passes/divergence-pass";
 import type { DivergencePassInput } from "./passes/divergence-pass";
+import { drawEventContourPass } from "./passes/event-contour-pass";
+import type { EventContourPassInput } from "./passes/event-contour-pass";
 import { createRingSpecs, drawRingsPass } from "./passes/rings-pass";
 import type { RingsPassInput, RingSpec } from "./passes/rings-pass";
 import { drawSweepPass } from "./passes/sweep-pass";
 import type { SweepPassInput } from "./passes/sweep-pass";
+import { createRenderDiagnosticsCollector } from "./render-diagnostics";
 
 const CLUSTER_MODULATION_SPEED_SCALE = 0.52;
 const EMPTY_DIVERGENCE_CALLOUT_TARGETS = [] as const;
@@ -103,6 +107,7 @@ export const createRenderer2D = (
   options: RehoboamRendererFactoryOptions
 ): RehoboamRenderer => {
   const { context } = options;
+  const diagnosticsEnabled = options.diagnosticsEnabled === true;
   let theme = options.theme;
   let ringSpecs = buildRingSpecs(theme);
   const divergenceClusterTracker = createDivergenceClusterTracker({
@@ -111,6 +116,7 @@ export const createRenderer2D = (
   const divergencePulseTracker = createDivergencePulseTracker();
   let isDestroyed = false;
   let cachedEvents: readonly unknown[] = [];
+  let cachedEventAngles: readonly ComputedEventAngle[] = [];
   let cachedEventAnglesByEventId: ReadonlyMap<string, number> = new Map();
 
   const resize: RehoboamRenderer["resize"] = () => {
@@ -139,6 +145,8 @@ export const createRenderer2D = (
     }
 
     theme = frame.theme;
+    const diagnosticsCollector =
+      createRenderDiagnosticsCollector(diagnosticsEnabled);
 
     context.setTransform(1, 0, 0, 1, 0, 0);
     context.clearRect(
@@ -179,6 +187,7 @@ export const createRenderer2D = (
         maxVisibleCount: DEFAULT_MAX_VISIBLE_EVENT_COUNT,
         distributionMode: "ordered",
       });
+      cachedEventAngles = eventAngles;
       const angleByEventId = new Map<string, number>();
 
       for (const eventAngle of eventAngles) {
@@ -189,6 +198,16 @@ export const createRenderer2D = (
 
       cachedEventAnglesByEventId = angleByEventId;
     }
+
+    const eventContourInput: EventContourPassInput = {
+      context,
+      viewport: frame.viewport,
+      theme,
+      interaction: frame.interaction,
+      eventAngles: cachedEventAngles,
+      elapsedMs: frame.elapsedMs,
+      entranceScale: 1,
+    };
 
     divergencePulseTracker.updateEvents(frame.events, frame.timeMs);
     const activePulses = divergencePulseTracker.getActivePulses(frame.timeMs);
@@ -210,10 +229,27 @@ export const createRenderer2D = (
       entranceScale: 1,
     };
 
-    drawBackgroundPass(backgroundInput);
-    drawRingsPass(ringsInput);
-    drawDivergencePass(divergenceInput);
-    drawSweepPass(sweepInput);
+    diagnosticsCollector.measure("background", () => {
+      drawBackgroundPass(backgroundInput);
+    });
+    diagnosticsCollector.measure("rings", () => {
+      drawRingsPass(ringsInput);
+    });
+    diagnosticsCollector.measure("contour", () => {
+      drawEventContourPass(eventContourInput);
+    });
+    diagnosticsCollector.measure("divergence", () => {
+      drawDivergencePass(divergenceInput);
+    });
+    diagnosticsCollector.measure("sweep", () => {
+      drawSweepPass(sweepInput);
+    });
+    const diagnostics = diagnosticsCollector.finish({
+      activeClusterCount: activeClusters.length,
+      activePulseCount: activePulses.length,
+      frame,
+      theme,
+    });
 
     const snapshot: RehoboamRenderSnapshot = {
       timeMs: frame.timeMs,
@@ -222,6 +258,7 @@ export const createRenderer2D = (
         frame.elapsedMs,
         frame.timeMs
       ),
+      ...(diagnostics === undefined ? {} : { diagnostics }),
     };
 
     return snapshot;
