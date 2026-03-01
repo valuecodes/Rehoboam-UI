@@ -40,8 +40,8 @@ Use it with the repo-level guide at the root: `AGENTS.md`.
 ## Implementation Notes
 
 - Active implementation is V2 under `src/features/rehoboam/**`; legacy V1 sources were removed.
-- Current Canvas2D frame pipeline: background -> rings -> divergence -> sweep.
-- `src/features/rehoboam/render/canvas2d/passes/event-contour-pass.ts` exists but is not wired into `Renderer2D`.
+- Current Canvas2D frame pipeline: background -> rings -> event contour -> divergence -> sweep.
+- `src/features/rehoboam/render/canvas2d/passes/event-contour-pass.ts` is wired into `Renderer2D`.
 - Scene boot is cache-first via IndexedDB persistence, then API refresh via `/api/events` in background.
 - Playback sequencing relies on timers/RAF and refs for interaction synchronization.
 - Rendering quality is tiered by viewport/device capability (ring count + divergence samples).
