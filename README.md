@@ -44,8 +44,14 @@ API worker on port `3001`.
 
 ```bash
 pnpm build
-pnpm --filter rehoboam-ui bundle:analyze
 pnpm --filter rehoboam-ui preview
+```
+
+Optional bundle analysis (starts the analyzer server and does not exit on its
+own):
+
+```bash
+pnpm --filter rehoboam-ui bundle:analyze
 ```
 
 ## Quality Checks
