@@ -53,6 +53,7 @@ Run from repo root:
 - Dev server (`http://localhost:3000`): `pnpm --filter rehoboam-ui dev`
 - Start alias (`http://localhost:3000`): `pnpm --filter rehoboam-ui start`
 - Build: `pnpm --filter rehoboam-ui build`
+- Bundle analysis: `pnpm --filter rehoboam-ui bundle:analyze`
 - Preview build: `pnpm --filter rehoboam-ui preview`
 - Typecheck: `pnpm --filter rehoboam-ui typecheck`
 - Lint: `pnpm --filter rehoboam-ui lint`
