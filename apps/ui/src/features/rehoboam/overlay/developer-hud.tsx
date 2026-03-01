@@ -105,7 +105,7 @@ export const DeveloperHud = ({
     <aside
       aria-label="Developer HUD"
       className="rehoboam-scene__developer-hud"
-      role="status"
+      aria-live="off"
     >
       <p className="rehoboam-scene__developer-hud-title">Developer HUD</p>
       <div className="rehoboam-scene__developer-hud-grid">
