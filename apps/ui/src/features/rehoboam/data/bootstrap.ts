@@ -12,6 +12,11 @@ export type RefreshEventsFromSourceOptions = Readonly<{
   persistence?: EventPersistenceOptions;
 }>;
 
+export type RefreshEventsFromSourceResult = Readonly<{
+  events: readonly WorldEvent[];
+  status: "success" | "fallback";
+}>;
+
 const normalizeSnapshot = (
   events: unknown,
   options: EventPipelineOptions = {}
@@ -33,9 +38,9 @@ export const mergeEventSnapshots = (
   );
 };
 
-export const refreshEventsFromSource = async (
+export const refreshEventsFromSourceWithStatus = async (
   options: RefreshEventsFromSourceOptions
-): Promise<readonly WorldEvent[]> => {
+): Promise<RefreshEventsFromSourceResult> => {
   const existingSnapshot = normalizeSnapshot(
     options.existingEvents,
     options.pipeline
@@ -51,8 +56,22 @@ export const refreshEventsFromSource = async (
       pipeline: options.pipeline,
     });
 
-    return refreshedSnapshot;
+    return {
+      events: refreshedSnapshot,
+      status: "success",
+    };
   } catch {
-    return existingSnapshot;
+    return {
+      events: existingSnapshot,
+      status: "fallback",
+    };
   }
+};
+
+export const refreshEventsFromSource = async (
+  options: RefreshEventsFromSourceOptions
+): Promise<readonly WorldEvent[]> => {
+  const result = await refreshEventsFromSourceWithStatus(options);
+
+  return result.events;
 };

@@ -1,10 +1,8 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 
-import "@fontsource/barlow-condensed/300.css";
-import "@fontsource/barlow-condensed/400.css";
-import "@fontsource/barlow-condensed/500.css";
-import "@fontsource/barlow-condensed/600.css";
+import "@fontsource/barlow-condensed/latin-400.css";
+import "@fontsource/barlow-condensed/latin-500.css";
 import "./index.css";
 
 import { App } from "./app";

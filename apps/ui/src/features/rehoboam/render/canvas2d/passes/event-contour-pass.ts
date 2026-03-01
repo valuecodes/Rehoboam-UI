@@ -3,15 +3,8 @@ import type {
   InteractionState,
   RehoboamTheme,
   ViewportState,
-  WorldEvent,
 } from "../../../engine/types";
-import {
-  computeAngles,
-  DEFAULT_LAYOUT_WINDOW_MS,
-  DEFAULT_MAX_VISIBLE_EVENT_COUNT,
-} from "../../../layout/compute-angles";
 import type { ComputedEventAngle } from "../../../layout/compute-angles";
-import { getLayoutNowMs } from "../../../layout/layout-time";
 import {
   polarToCartesian,
   shortestAngularDistance,
@@ -25,7 +18,7 @@ export type EventContourPassInput = Readonly<{
   viewport: ViewportState;
   theme: RehoboamTheme;
   interaction: InteractionState;
-  events: readonly WorldEvent[];
+  eventAngles: readonly ComputedEventAngle[];
   elapsedMs: number;
   entranceScale: number;
 }>;
@@ -249,19 +242,19 @@ const drawContourStroke = (
 };
 
 export const drawEventContourPass = (input: EventContourPassInput): void => {
-  const { context, viewport, interaction, events, elapsedMs, entranceScale } =
-    input;
+  const {
+    context,
+    viewport,
+    interaction,
+    eventAngles,
+    elapsedMs,
+    entranceScale,
+  } = input;
 
-  if (events.length === 0) {
+  if (eventAngles.length === 0) {
     return;
   }
 
-  const eventAngles = computeAngles(events, {
-    nowMs: getLayoutNowMs(events),
-    windowMs: DEFAULT_LAYOUT_WINDOW_MS,
-    maxVisibleCount: DEFAULT_MAX_VISIBLE_EVENT_COUNT,
-    distributionMode: "ordered",
-  });
   const contourTargets = resolveContourTargets(eventAngles, interaction);
 
   if (contourTargets.length === 0) {

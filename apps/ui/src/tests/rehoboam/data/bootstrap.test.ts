@@ -1,6 +1,7 @@
 import {
   mergeEventSnapshots,
   refreshEventsFromSource,
+  refreshEventsFromSourceWithStatus,
 } from "../../../features/rehoboam/data/bootstrap";
 import { loadPersistedEvents } from "../../../features/rehoboam/data/persistence";
 import type { EventPersistenceStore } from "../../../features/rehoboam/data/persistence";
@@ -119,6 +120,43 @@ describe("data/bootstrap", () => {
         source,
       })
     ).resolves.toStrictEqual(existingEvents);
+  });
+
+  it("reports whether the refresh path succeeded or fell back", async () => {
+    const existingEvents: readonly WorldEvent[] = [
+      createEvent({
+        id: "event-4",
+        title: "Existing cached event",
+        severity: "medium",
+      }),
+    ];
+    const source: RehoboamEventSource = {
+      loadEvents: () => {
+        return Promise.resolve([
+          createEvent({
+            id: "event-5",
+            title: "Fresh event",
+            severity: "high",
+          }),
+        ] satisfies readonly WorldEvent[]);
+      },
+    };
+
+    await expect(
+      refreshEventsFromSourceWithStatus({
+        existingEvents,
+        source,
+      })
+    ).resolves.toStrictEqual({
+      events: [
+        createEvent({
+          id: "event-5",
+          title: "Fresh event",
+          severity: "high",
+        }),
+      ],
+      status: "success",
+    });
   });
 
   it("normalizes and dedupes merged snapshots deterministically", () => {

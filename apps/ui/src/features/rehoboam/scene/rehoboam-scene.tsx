@@ -1,6 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
-import { refreshEventsFromSource } from "../data/bootstrap";
+import { refreshEventsFromSourceWithStatus } from "../data/bootstrap";
 import { loadPersistedEvents } from "../data/persistence";
 import { createApiEventSource } from "../data/source";
 import { DEFAULT_DPR_CAP, DEFAULT_THEME } from "../engine/defaults";
@@ -10,6 +18,7 @@ import type {
   DivergenceCalloutTarget,
   InteractionState,
   RehoboamEngine,
+  RehoboamRenderDiagnostics,
   RehoboamRenderSnapshot,
   WorldEvent,
 } from "../engine/types";
@@ -26,11 +35,14 @@ import type {
 } from "../overlay/callout-overlay";
 import { IntroCalloutOverlay } from "../overlay/intro-callout-overlay";
 import { getChronologicalCycleIds } from "./event-cycle";
+import type { SceneQualityTier } from "./quality";
 import { resolveSceneQualityProfile } from "./quality";
 
 import "./rehoboam-scene.css";
 
 const INTRO_DEBUG_QUERY_KEY = "intro-debug";
+const HUD_DEBUG_QUERY_KEY = "hud";
+const HUD_PUBLISH_INTERVAL_MS = 240;
 const CALLOUT_DEBUG_QUERY_KEYS = [
   "callout-debug",
   "callout-debug-half",
@@ -39,8 +51,20 @@ const CALLOUT_DEBUG_QUERY_KEYS = [
 
 type OverlayDebugState = Readonly<{
   hasCalloutDebugQuery: boolean;
+  isHudEnabled: boolean;
   isIntroDebugMode: boolean;
 }>;
+
+type HudCacheStatus = "idle" | "hit" | "miss";
+type HudNetworkStatus = "idle" | "loading" | "success" | "fallback";
+
+const LazyDeveloperHud = lazy(async () => {
+  const module = await import("../overlay/developer-hud");
+
+  return {
+    default: module.DeveloperHud,
+  };
+});
 
 const isDebugFlagEnabled = (value: string | null): boolean => {
   if (value === null) {
@@ -67,6 +91,7 @@ const readOverlayDebugState = (): OverlayDebugState => {
 
   return {
     hasCalloutDebugQuery,
+    isHudEnabled: isDebugFlagEnabled(searchParams.get(HUD_DEBUG_QUERY_KEY)),
     isIntroDebugMode,
   };
 };
@@ -196,10 +221,17 @@ export const RehoboamScene = () => {
   const [activeClusterTarget, setActiveClusterTarget] =
     useState<DivergenceCalloutTarget | null>(null);
   const [calloutCycleToken, setCalloutCycleToken] = useState(0);
+  const [cacheStatus, setCacheStatus] = useState<HudCacheStatus>("idle");
+  const [networkStatus, setNetworkStatus] = useState<HudNetworkStatus>("idle");
+  const [publishedHudDiagnostics, setPublishedHudDiagnostics] =
+    useState<RehoboamRenderDiagnostics | null>(null);
   const activeClusterTargetRef = useRef<DivergenceCalloutTarget | null>(null);
   const clusterTargetsRef = useRef<readonly DivergenceCalloutTarget[]>([]);
   const autoCycleEventIdsRef = useRef<readonly string[]>([]);
   const activeEventIdRef = useRef<string | null>(null);
+  const latestRenderDiagnosticsRef = useRef<RehoboamRenderDiagnostics | null>(
+    null
+  );
   const eventSource = useMemo(() => createApiEventSource("/api/events"), []);
   const qualityProfile = useMemo(() => {
     return resolveSceneQualityProfile({
@@ -251,6 +283,7 @@ export const RehoboamScene = () => {
       anchorRadius: getMarkerAnchorRadius(instrumentSize),
     };
   }, [activeClusterTarget, activeEventAngle, instrumentSize]);
+  const hudQualityTier: SceneQualityTier = qualityProfile.tier;
 
   useEffect(() => {
     autoCycleEventIdsRef.current = autoCycleEventIds;
@@ -302,6 +335,7 @@ export const RehoboamScene = () => {
   const handleRenderSnapshot = useCallback(
     (snapshot: RehoboamRenderSnapshot) => {
       clusterTargetsRef.current = snapshot.divergenceCalloutTargets;
+      latestRenderDiagnosticsRef.current = snapshot.diagnostics ?? null;
 
       if (
         activeClusterTargetRef.current === null &&
@@ -317,6 +351,26 @@ export const RehoboamScene = () => {
     },
     []
   );
+
+  useEffect(() => {
+    if (!overlayDebugState.isHudEnabled) {
+      return;
+    }
+
+    const publishDiagnostics = () => {
+      setPublishedHudDiagnostics(latestRenderDiagnosticsRef.current);
+    };
+
+    publishDiagnostics();
+    const intervalHandle = window.setInterval(
+      publishDiagnostics,
+      HUD_PUBLISH_INTERVAL_MS
+    );
+
+    return () => {
+      window.clearInterval(intervalHandle);
+    };
+  }, [overlayDebugState.isHudEnabled]);
 
   useEffect(() => {
     if (autoCycleEventIds.length === 0) {
@@ -345,29 +399,43 @@ export const RehoboamScene = () => {
     (overlayDebugState.isIntroDebugMode || !isIntroComplete);
 
   useEffect(() => {
-    let isCancelled = false;
+    const abortController = new AbortController();
+    const shouldAbort = (): boolean => {
+      return abortController.signal.aborted;
+    };
 
     const bootEvents = async () => {
+      setCacheStatus("idle");
+      setNetworkStatus("loading");
       const cachedEvents = await loadPersistedEvents();
 
-      if (!isCancelled && cachedEvents.length > 0) {
+      if (shouldAbort()) {
+        return;
+      }
+
+      setCacheStatus(cachedEvents.length > 0 ? "hit" : "miss");
+
+      if (cachedEvents.length > 0) {
         setEvents(cachedEvents);
       }
 
-      const refreshedEvents = await refreshEventsFromSource({
+      const refreshedResult = await refreshEventsFromSourceWithStatus({
         existingEvents: cachedEvents,
         source: eventSource,
       });
 
-      if (!isCancelled) {
-        setEvents(refreshedEvents);
+      if (shouldAbort()) {
+        return;
       }
+
+      setNetworkStatus(refreshedResult.status);
+      setEvents(refreshedResult.events);
     };
 
     void bootEvents();
 
     return () => {
-      isCancelled = true;
+      abortController.abort();
     };
   }, [eventSource]);
 
@@ -395,6 +463,7 @@ export const RehoboamScene = () => {
 
     const engine = createRehoboamEngine({
       canvas,
+      diagnosticsEnabled: overlayDebugState.isHudEnabled,
       dprCap: DEFAULT_DPR_CAP,
       onRenderSnapshot: handleRenderSnapshot,
     });
@@ -442,7 +511,7 @@ export const RehoboamScene = () => {
       engine.destroy();
       engineRef.current = null;
     };
-  }, [handleRenderSnapshot]);
+  }, [handleRenderSnapshot, overlayDebugState.isHudEnabled]);
 
   useEffect(() => {
     const engine = engineRef.current;
@@ -492,6 +561,17 @@ export const RehoboamScene = () => {
             onCycleComplete={handleCalloutCycleComplete}
           />
         )}
+        {overlayDebugState.isHudEnabled ? (
+          <Suspense fallback={null}>
+            <LazyDeveloperHud
+              cacheStatus={cacheStatus}
+              diagnostics={publishedHudDiagnostics}
+              eventCount={events.length}
+              networkStatus={networkStatus}
+              qualityTier={hudQualityTier}
+            />
+          </Suspense>
+        ) : null}
       </section>
     </main>
   );

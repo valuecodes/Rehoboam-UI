@@ -3,11 +3,27 @@ import {
   DEFAULT_THEME,
 } from "../../../features/rehoboam/engine/defaults";
 import { createInitialInteractionState } from "../../../features/rehoboam/engine/input";
-import type { RehoboamRendererFrame } from "../../../features/rehoboam/engine/types";
+import type {
+  RehoboamRendererFrame,
+  WorldEvent,
+} from "../../../features/rehoboam/engine/types";
 import { createRenderer2D } from "../../../features/rehoboam/render/canvas2d/renderer-2d";
 import { createMockCanvasContext } from "./mock-canvas-context";
 
-const createFrame = (elapsedMs: number): RehoboamRendererFrame => {
+const createEvent = (): WorldEvent => {
+  return {
+    id: "event-1",
+    title: "Event 1",
+    timestampMs: 1_770_500_000_000,
+    severity: "critical",
+    category: "system",
+  };
+};
+
+const createFrame = (
+  elapsedMs: number,
+  events: readonly WorldEvent[] = []
+): RehoboamRendererFrame => {
   const viewport = createViewportState({
     width: 420,
     height: 420,
@@ -17,7 +33,7 @@ const createFrame = (elapsedMs: number): RehoboamRendererFrame => {
 
   return {
     viewport,
-    events: [],
+    events,
     interaction: createInitialInteractionState(),
     theme: {
       ...DEFAULT_THEME,
@@ -82,5 +98,27 @@ describe("createRenderer2D", () => {
       mock.commands.some((command) => command.startsWith("setLineDash("))
     ).toBe(true);
     expect(firstDashOffsets).not.toStrictEqual(secondDashOffsets);
+  });
+
+  it("returns diagnostics and draws the contour layer for visible events", () => {
+    const frame = createFrame(1_000, [createEvent()]);
+    const mock = createMockCanvasContext();
+
+    const renderer = createRenderer2D({
+      context: mock.context,
+      diagnosticsEnabled: true,
+      viewport: frame.viewport,
+      theme: frame.theme,
+    });
+
+    const snapshot = renderer.render(frame);
+
+    expect(snapshot.diagnostics).toBeDefined();
+    expect(snapshot.diagnostics?.ringCount).toBe(frame.theme.ringCount);
+    expect(snapshot.diagnostics?.divergenceSampleCount).toBe(
+      frame.theme.divergenceSampleCount
+    );
+    expect(snapshot.diagnostics?.passMs.contour).toBeGreaterThanOrEqual(0);
+    expect(mock.commands).toContain("strokeStyle(#171717)");
   });
 });

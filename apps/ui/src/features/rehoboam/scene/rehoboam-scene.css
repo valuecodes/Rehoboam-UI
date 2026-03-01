@@ -202,3 +202,68 @@
   font-size: clamp(0.62rem, 0.78vw, 0.8rem);
   pointer-events: none;
 }
+
+.rehoboam-scene__developer-hud {
+  position: absolute;
+  inset: clamp(14px, 2vw, 20px) auto auto clamp(14px, 2vw, 20px);
+  min-width: min(78vw, 260px);
+  padding: 12px 14px;
+  border: 1px solid rgba(18, 18, 18, 0.1);
+  background: rgba(255, 255, 255, 0.84);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 24px rgba(10, 10, 10, 0.08);
+  color: var(--hud-strong);
+  font-family: var(--hud-font);
+  text-transform: uppercase;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.rehoboam-scene__developer-hud-title {
+  margin: 0 0 8px;
+  color: var(--hud-time);
+  font-size: 0.84rem;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
+.rehoboam-scene__developer-hud-grid {
+  display: grid;
+  gap: 4px;
+}
+
+.rehoboam-scene__developer-hud-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: baseline;
+  line-height: 1;
+}
+
+.rehoboam-scene__developer-hud-label {
+  color: var(--hud-mid);
+  font-size: 0.76rem;
+  letter-spacing: 0.04em;
+}
+
+.rehoboam-scene__developer-hud-value {
+  color: var(--hud-strong);
+  font-size: 0.88rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .rehoboam-scene__developer-hud {
+    min-width: min(84vw, 232px);
+    padding: 10px 12px;
+  }
+
+  .rehoboam-scene__developer-hud-label {
+    font-size: 0.7rem;
+  }
+
+  .rehoboam-scene__developer-hud-value {
+    font-size: 0.8rem;
+  }
+}
