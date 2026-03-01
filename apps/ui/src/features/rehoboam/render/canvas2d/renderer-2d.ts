@@ -11,7 +11,6 @@ import {
   DEFAULT_LAYOUT_WINDOW_MS,
   DEFAULT_MAX_VISIBLE_EVENT_COUNT,
 } from "../../layout/compute-angles";
-import type { ComputedEventAngle } from "../../layout/compute-angles";
 import { getLayoutNowMs } from "../../layout/layout-time";
 import { normalizeAngle, TAU } from "../../layout/polar";
 import { createDivergenceClusterTracker } from "./divergence-cluster-tracker";
@@ -22,8 +21,6 @@ import { drawBackgroundPass } from "./passes/background-pass";
 import type { BackgroundPassInput } from "./passes/background-pass";
 import { drawDivergencePass } from "./passes/divergence-pass";
 import type { DivergencePassInput } from "./passes/divergence-pass";
-import { drawEventContourPass } from "./passes/event-contour-pass";
-import type { EventContourPassInput } from "./passes/event-contour-pass";
 import { createRingSpecs, drawRingsPass } from "./passes/rings-pass";
 import type { RingsPassInput, RingSpec } from "./passes/rings-pass";
 import { drawSweepPass } from "./passes/sweep-pass";
@@ -116,7 +113,6 @@ export const createRenderer2D = (
   const divergencePulseTracker = createDivergencePulseTracker();
   let isDestroyed = false;
   let cachedEvents: readonly unknown[] = [];
-  let cachedEventAngles: readonly ComputedEventAngle[] = [];
   let cachedEventAnglesByEventId: ReadonlyMap<string, number> = new Map();
 
   const resize: RehoboamRenderer["resize"] = () => {
@@ -187,7 +183,6 @@ export const createRenderer2D = (
         maxVisibleCount: DEFAULT_MAX_VISIBLE_EVENT_COUNT,
         distributionMode: "ordered",
       });
-      cachedEventAngles = eventAngles;
       const angleByEventId = new Map<string, number>();
 
       for (const eventAngle of eventAngles) {
@@ -198,16 +193,6 @@ export const createRenderer2D = (
 
       cachedEventAnglesByEventId = angleByEventId;
     }
-
-    const eventContourInput: EventContourPassInput = {
-      context,
-      viewport: frame.viewport,
-      theme,
-      interaction: frame.interaction,
-      eventAngles: cachedEventAngles,
-      elapsedMs: frame.elapsedMs,
-      entranceScale: 1,
-    };
 
     divergencePulseTracker.updateEvents(frame.events, frame.timeMs);
     const activePulses = divergencePulseTracker.getActivePulses(frame.timeMs);
@@ -234,9 +219,6 @@ export const createRenderer2D = (
     });
     diagnosticsCollector.measure("rings", () => {
       drawRingsPass(ringsInput);
-    });
-    diagnosticsCollector.measure("contour", () => {
-      drawEventContourPass(eventContourInput);
     });
     diagnosticsCollector.measure("divergence", () => {
       drawDivergencePass(divergenceInput);
