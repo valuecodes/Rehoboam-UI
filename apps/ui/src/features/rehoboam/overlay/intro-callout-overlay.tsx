@@ -65,11 +65,17 @@ const getIntroCalloutGeometry = (
 
   const centerX = instrumentSize.width / 2;
   const centerY = instrumentSize.height / 2;
+  const isCompactViewport = instrumentSize.width <= 700;
   const margin = Math.max(16, instrumentSize.width * 0.03);
   const maxLabelWidth = Math.max(300, instrumentSize.width - margin * 2);
-  const labelWidth = clampNumber(520, 280, maxLabelWidth);
+  const labelWidth = clampNumber(
+    isCompactViewport ? 300 : 520,
+    isCompactViewport ? 220 : 280,
+    maxLabelWidth
+  );
+  const labelOffsetX = isCompactViewport ? -10 : INTRO_LABEL_OFFSET_X_PX;
   const labelX = clampNumber(
-    centerX - labelWidth * 0.45 + INTRO_LABEL_OFFSET_X_PX,
+    centerX - labelWidth * 0.45 + labelOffsetX,
     margin,
     instrumentSize.width - labelWidth - margin
   );

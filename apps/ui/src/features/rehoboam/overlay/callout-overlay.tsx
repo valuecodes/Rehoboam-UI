@@ -69,6 +69,7 @@ const BOTTOM_LAYOUT_FIFTH_FRAME_OFFSET_PX = 0;
 const CALLOUT_DEBUG_QUERY_KEY = "callout-debug";
 const CALLOUT_DEBUG_HALF_QUERY_KEY = "callout-debug-half";
 const CALLOUT_DEBUG_SIDE_QUERY_KEY = "callout-debug-side";
+const CALLOUT_CENTER_KEEP_OUT_PX = 12;
 
 const formatCalloutDate = (timestampMs: number): string => {
   const date = new Date(timestampMs);
@@ -180,7 +181,10 @@ const getCalloutGeometry = (
     },
     center
   );
-  const margin = Math.max(12, instrumentSize.width * 0.02);
+  const isCompactViewport = instrumentSize.width <= 700;
+  const margin = isCompactViewport
+    ? Math.max(20, instrumentSize.width * 0.05)
+    : Math.max(12, instrumentSize.width * 0.02);
   const maxPanelWidth = Math.max(180, instrumentSize.width - margin * 2);
   const minPanelWidth = Math.min(260, maxPanelWidth);
   const panelWidth = clampNumber(600, minPanelWidth, maxPanelWidth);
@@ -284,7 +288,27 @@ const getCalloutGeometry = (
     },
   ];
   const textAlign = panelX < center.x ? "left" : "right";
-  const labelX = panelX > center.x ? panelX - panelWidth / 3 : panelX;
+  const preferredLabelX = panelX > center.x ? panelX - panelWidth / 3 : panelX;
+  const desiredCenterGap = Math.max(CALLOUT_CENTER_KEEP_OUT_PX, margin);
+  const safeLabelLeftEdge = center.x + desiredCenterGap;
+  const safeLabelRightEdge = center.x - desiredCenterGap;
+  const viewportRightEdge = instrumentSize.width - margin;
+  const availableLeftWidth = Math.max(0, safeLabelRightEdge - margin);
+  const availableRightWidth = Math.max(0, viewportRightEdge - safeLabelLeftEdge);
+  const labelWidth = isLeftLayout
+    ? Math.min(panelWidth, availableLeftWidth)
+    : Math.min(panelWidth, availableRightWidth);
+  const labelX = isLeftLayout
+    ? clampNumber(
+        preferredLabelX,
+        margin,
+        Math.max(margin, safeLabelRightEdge - labelWidth)
+      )
+    : clampNumber(
+        preferredLabelX,
+        Math.min(viewportRightEdge, safeLabelLeftEdge),
+        Math.max(margin, viewportRightEdge - labelWidth)
+      );
   const labelY = panelY;
   const timeMarginTop = panelY < 300 ? TOP_LAYOUT_TIME_MARGIN_PX : 0;
 
@@ -292,13 +316,9 @@ const getCalloutGeometry = (
     event: target.event,
     anchorX: anchor.x,
     anchorY: anchor.y,
-    labelX: clampNumber(
-      labelX,
-      margin,
-      instrumentSize.width - panelWidth - margin
-    ),
+    labelX,
     labelY,
-    labelWidth: panelWidth,
+    labelWidth,
     textAlign,
     connectorPath: `M ${anchor.x} ${anchor.y} L ${lineEndX} ${lineEndY}`,
     framePoints: toPointList(framePointList),

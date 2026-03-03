@@ -9,7 +9,6 @@ import {
 } from "react";
 
 import { refreshEventsFromSourceWithStatus } from "../data/bootstrap";
-import { loadPersistedEvents } from "../data/persistence";
 import { createApiEventSource } from "../data/source";
 import { DEFAULT_DPR_CAP, DEFAULT_THEME } from "../engine/defaults";
 import { createInitialInteractionState } from "../engine/input";
@@ -55,8 +54,11 @@ type OverlayDebugState = Readonly<{
   isIntroDebugMode: boolean;
 }>;
 
-type HudCacheStatus = "idle" | "hit" | "miss";
 type HudNetworkStatus = "idle" | "loading" | "success" | "fallback";
+
+export type RehoboamSceneProps = Readonly<{
+  forceHudEnabled?: boolean;
+}>;
 
 const LazyDeveloperHud = lazy(async () => {
   const module = await import("../overlay/developer-hud");
@@ -202,10 +204,13 @@ const pickRandomClusterTarget = (
   return candidateTargets[randomIndex] ?? clusterTargets[0];
 };
 
-export const RehoboamScene = () => {
+export const RehoboamScene = ({
+  forceHudEnabled = false,
+}: RehoboamSceneProps) => {
   const overlayDebugState = useMemo(() => {
     return readOverlayDebugState();
   }, []);
+  const isHudEnabled = forceHudEnabled || overlayDebugState.isHudEnabled;
   const instrumentRef = useRef<HTMLElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const engineRef = useRef<RehoboamEngine | null>(null);
@@ -221,7 +226,6 @@ export const RehoboamScene = () => {
   const [activeClusterTarget, setActiveClusterTarget] =
     useState<DivergenceCalloutTarget | null>(null);
   const [calloutCycleToken, setCalloutCycleToken] = useState(0);
-  const [cacheStatus, setCacheStatus] = useState<HudCacheStatus>("idle");
   const [networkStatus, setNetworkStatus] = useState<HudNetworkStatus>("idle");
   const [publishedHudDiagnostics, setPublishedHudDiagnostics] =
     useState<RehoboamRenderDiagnostics | null>(null);
@@ -353,7 +357,7 @@ export const RehoboamScene = () => {
   );
 
   useEffect(() => {
-    if (!overlayDebugState.isHudEnabled) {
+    if (!isHudEnabled) {
       return;
     }
 
@@ -370,7 +374,7 @@ export const RehoboamScene = () => {
     return () => {
       window.clearInterval(intervalHandle);
     };
-  }, [overlayDebugState.isHudEnabled]);
+  }, [isHudEnabled]);
 
   useEffect(() => {
     if (autoCycleEventIds.length === 0) {
@@ -395,6 +399,7 @@ export const RehoboamScene = () => {
     advanceCalloutClusterTarget();
   }, [advanceCalloutClusterTarget]);
   const shouldRenderIntro =
+    !isHudEnabled &&
     !overlayDebugState.hasCalloutDebugQuery &&
     (overlayDebugState.isIntroDebugMode || !isIntroComplete);
 
@@ -405,22 +410,9 @@ export const RehoboamScene = () => {
     };
 
     const bootEvents = async () => {
-      setCacheStatus("idle");
       setNetworkStatus("loading");
-      const cachedEvents = await loadPersistedEvents();
-
-      if (shouldAbort()) {
-        return;
-      }
-
-      setCacheStatus(cachedEvents.length > 0 ? "hit" : "miss");
-
-      if (cachedEvents.length > 0) {
-        setEvents(cachedEvents);
-      }
-
       const refreshedResult = await refreshEventsFromSourceWithStatus({
-        existingEvents: cachedEvents,
+        existingEvents: [],
         source: eventSource,
       });
 
@@ -463,7 +455,7 @@ export const RehoboamScene = () => {
 
     const engine = createRehoboamEngine({
       canvas,
-      diagnosticsEnabled: overlayDebugState.isHudEnabled,
+      diagnosticsEnabled: isHudEnabled,
       dprCap: DEFAULT_DPR_CAP,
       onRenderSnapshot: handleRenderSnapshot,
     });
@@ -511,7 +503,7 @@ export const RehoboamScene = () => {
       engine.destroy();
       engineRef.current = null;
     };
-  }, [handleRenderSnapshot, overlayDebugState.isHudEnabled]);
+  }, [handleRenderSnapshot, isHudEnabled]);
 
   useEffect(() => {
     const engine = engineRef.current;
@@ -561,12 +553,12 @@ export const RehoboamScene = () => {
             onCycleComplete={handleCalloutCycleComplete}
           />
         )}
-        {overlayDebugState.isHudEnabled ? (
+        {isHudEnabled ? (
           <Suspense fallback={null}>
             <LazyDeveloperHud
-              cacheStatus={cacheStatus}
               diagnostics={publishedHudDiagnostics}
               eventCount={events.length}
+              instrumentSize={instrumentSize}
               networkStatus={networkStatus}
               qualityTier={hudQualityTier}
             />

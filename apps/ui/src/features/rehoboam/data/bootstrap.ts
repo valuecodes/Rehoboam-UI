@@ -1,7 +1,5 @@
 import type { WorldEvent } from "../engine/types";
 import { dedupeEvents } from "./dedupe";
-import type { EventPersistenceOptions } from "./persistence";
-import { savePersistedEvents } from "./persistence";
 import { loadEventsFromSource, runEventPipeline } from "./source";
 import type { EventPipelineOptions, RehoboamEventSource } from "./source";
 
@@ -9,7 +7,6 @@ export type RefreshEventsFromSourceOptions = Readonly<{
   existingEvents: readonly WorldEvent[];
   source: RehoboamEventSource;
   pipeline?: EventPipelineOptions;
-  persistence?: EventPersistenceOptions;
 }>;
 
 export type RefreshEventsFromSourceResult = Readonly<{
@@ -51,10 +48,6 @@ export const refreshEventsFromSourceWithStatus = async (
       options.source,
       options.pipeline
     );
-    await savePersistedEvents(refreshedSnapshot, {
-      ...(options.persistence ?? {}),
-      pipeline: options.pipeline,
-    });
 
     return {
       events: refreshedSnapshot,

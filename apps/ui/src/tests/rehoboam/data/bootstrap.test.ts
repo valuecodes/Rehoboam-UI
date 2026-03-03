@@ -3,8 +3,6 @@ import {
   refreshEventsFromSource,
   refreshEventsFromSourceWithStatus,
 } from "../../../features/rehoboam/data/bootstrap";
-import { loadPersistedEvents } from "../../../features/rehoboam/data/persistence";
-import type { EventPersistenceStore } from "../../../features/rehoboam/data/persistence";
 import type { RehoboamEventSource } from "../../../features/rehoboam/data/source";
 import type { WorldEvent } from "../../../features/rehoboam/engine/types";
 
@@ -19,28 +17,8 @@ const createEvent = (overrides: Partial<WorldEvent>): WorldEvent => {
   };
 };
 
-const createInMemoryEventStore = (
-  initialValue: unknown
-): EventPersistenceStore => {
-  let storedValue = initialValue;
-
-  return {
-    read: () => Promise.resolve(storedValue),
-    write: (value) => {
-      storedValue = value;
-
-      return Promise.resolve();
-    },
-    clear: () => {
-      storedValue = undefined;
-
-      return Promise.resolve();
-    },
-  };
-};
-
 describe("data/bootstrap", () => {
-  it("replaces stale cached events with refreshed source snapshot", async () => {
+  it("replaces stale events with the refreshed source snapshot", async () => {
     const existingEvents: readonly WorldEvent[] = [
       createEvent({
         id: "event-1",
@@ -76,17 +54,10 @@ describe("data/bootstrap", () => {
         ] satisfies readonly WorldEvent[]);
       },
     };
-    const store = createInMemoryEventStore(undefined);
 
     const refreshed = await refreshEventsFromSource({
       existingEvents,
       source,
-      persistence: {
-        store,
-      },
-    });
-    const persisted = await loadPersistedEvents({
-      store,
     });
 
     expect(refreshed).toHaveLength(2);
@@ -97,14 +68,13 @@ describe("data/bootstrap", () => {
     expect(
       refreshed.find((event) => event.id === "event-stale")
     ).toBeUndefined();
-    expect(persisted).toStrictEqual(refreshed);
   });
 
-  it("keeps cached snapshot when refresh source throws", async () => {
+  it("keeps the existing snapshot when refresh source throws", async () => {
     const existingEvents: readonly WorldEvent[] = [
       createEvent({
         id: "event-3",
-        title: "Cached fallback",
+        title: "Existing fallback",
         severity: "high",
       }),
     ];
@@ -126,7 +96,7 @@ describe("data/bootstrap", () => {
     const existingEvents: readonly WorldEvent[] = [
       createEvent({
         id: "event-4",
-        title: "Existing cached event",
+        title: "Existing event",
         severity: "medium",
       }),
     ];

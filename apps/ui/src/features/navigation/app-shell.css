@@ -1,0 +1,364 @@
+.app-shell {
+  --app-shell-gutter: clamp(16px, 2vw, 24px);
+  --app-shell-bottom-nav-height: 68px;
+  min-height: 100dvh;
+  position: relative;
+  color: var(--hud-strong);
+}
+
+.app-shell__rail {
+  position: fixed;
+  inset: var(--app-shell-gutter) auto auto var(--app-shell-gutter);
+  width: auto;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.app-shell__nav {
+  display: grid;
+  gap: 10px;
+  width: max-content;
+  pointer-events: auto;
+}
+
+@keyframes app-shell-nav-sweep {
+  from {
+    opacity: 0;
+    background-position-x: 132%;
+  }
+
+  16% {
+    opacity: 0.38;
+  }
+
+  52% {
+    opacity: 0.16;
+  }
+
+  to {
+    opacity: 0;
+    background-position-x: -36%;
+  }
+}
+
+.app-shell__nav-link {
+  --app-shell-nav-line: rgba(18, 18, 18, 0.24);
+  --app-shell-nav-fill: rgba(255, 255, 255, 0.02);
+  position: relative;
+  display: grid;
+  min-height: 44px;
+  box-sizing: border-box;
+  min-width: 150px;
+  padding: 7px 12px 10px 18px;
+  border: none;
+  border-radius: 0;
+  background:
+    linear-gradient(
+      45deg,
+      transparent calc(50% - 0.75px),
+      var(--app-shell-nav-line) calc(50% - 0.75px),
+      var(--app-shell-nav-line) calc(50% + 0.75px),
+      transparent calc(50% + 0.75px)
+    )
+    left bottom / 12px 12px no-repeat,
+    linear-gradient(var(--app-shell-nav-line), var(--app-shell-nav-line))
+    left top / 1px calc(100% - 12px) no-repeat,
+    linear-gradient(var(--app-shell-nav-line), var(--app-shell-nav-line))
+    12px bottom / calc(100% - 12px) 1px no-repeat,
+    var(--app-shell-nav-fill);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+  backdrop-filter: blur(1px);
+  box-shadow: none;
+  color: rgba(18, 18, 18, 0.88);
+  text-decoration: none;
+  text-transform: uppercase;
+  font-family: var(--hud-font);
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease;
+  overflow: hidden;
+}
+
+.app-shell__nav-link:hover {
+  --app-shell-nav-line: rgba(18, 18, 18, 0.34);
+  --app-shell-nav-fill: rgba(255, 255, 255, 0.05);
+  color: rgba(12, 12, 12, 0.94);
+}
+
+.app-shell__nav-link[aria-current="page"] {
+  --app-shell-nav-line: rgba(10, 10, 10, 0.68);
+  --app-shell-nav-fill: rgba(255, 255, 255, 0.11);
+  color: rgba(8, 8, 8, 0.98);
+}
+
+.app-shell__nav-link::before {
+  content: "";
+  position: absolute;
+  inset: 16px auto auto 18px;
+  width: clamp(28px, 42%, 78px);
+  height: 1px;
+  background: rgba(18, 18, 18, 0.14);
+  transform-origin: left center;
+}
+
+.app-shell__nav-link::after {
+  content: "";
+  position: absolute;
+  inset: 22px auto auto 12px;
+  width: 54px;
+  height: 1px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(18, 18, 18, 0) 0%,
+      rgba(18, 18, 18, 0.02) 38%,
+      rgba(18, 18, 18, 0.22) 50%,
+      rgba(18, 18, 18, 0.02) 62%,
+      rgba(18, 18, 18, 0) 100%
+    );
+  background-repeat: no-repeat;
+  background-size: 220% 100%;
+  background-position-x: 132%;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.app-shell__nav-link[aria-current="page"]::before {
+  background: rgba(12, 12, 12, 0.24);
+}
+
+.app-shell__nav-link[aria-current="page"]::after {
+  animation: app-shell-nav-sweep 6.4s linear infinite;
+}
+
+.app-shell__nav-link--home {
+  min-width: 134px;
+}
+
+.app-shell__nav-link--hud {
+  min-width: 152px;
+}
+
+.app-shell__nav-link--privacy {
+  min-width: 202px;
+}
+
+.app-shell__nav-meta {
+  position: relative;
+  z-index: 1;
+  color: rgba(18, 18, 18, 0.46);
+  font-size: 0.52rem;
+  letter-spacing: 0.18em;
+  line-height: 1;
+}
+
+.app-shell__nav-title {
+  position: relative;
+  z-index: 1;
+  margin-top: 3px;
+  color: inherit;
+  font-size: 0.92rem;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
+.app-shell__nav-link:focus-visible {
+  outline: 2px solid rgba(16, 16, 16, 0.26);
+  outline-offset: 2px;
+}
+
+.app-shell__content {
+  min-height: 100dvh;
+}
+
+.app-shell__view {
+  min-height: 100dvh;
+}
+
+.app-shell__view--scene {
+  height: 100dvh;
+}
+
+.app-shell__view--privacy {
+  min-height: 100dvh;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  padding: clamp(24px, 3vw, 40px) clamp(24px, 4vw, 56px);
+}
+
+.privacy-policy-view {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.privacy-policy-view__panel {
+  width: min(100%, 860px);
+  padding: clamp(24px, 3vw, 40px);
+  border: 1px solid rgba(18, 18, 18, 0.1);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 18px 42px rgba(10, 10, 10, 0.08);
+  font-family: var(--hud-font);
+}
+
+.privacy-policy-view__eyebrow,
+.privacy-policy-view__title,
+.privacy-policy-view__section-title {
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.privacy-policy-view__eyebrow {
+  color: var(--hud-time);
+  font-size: 0.82rem;
+  letter-spacing: 0.12em;
+}
+
+.privacy-policy-view__title {
+  margin-top: 8px;
+  color: var(--hud-strong);
+  font-size: clamp(2.2rem, 4.2vw, 3.6rem);
+  font-weight: 500;
+  line-height: 0.9;
+}
+
+.privacy-policy-view__intro,
+.privacy-policy-view__paragraph {
+  margin: 0;
+  color: var(--hud-mid);
+  font-size: clamp(1rem, 1.8vw, 1.24rem);
+  line-height: 1.12;
+}
+
+.privacy-policy-view__intro {
+  margin-top: 16px;
+  max-width: 28ch;
+}
+
+.privacy-policy-view__section {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(18, 18, 18, 0.08);
+}
+
+.privacy-policy-view__section-title {
+  color: var(--hud-strong);
+  font-size: 1.18rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.privacy-policy-view__paragraph + .privacy-policy-view__paragraph {
+  margin-top: 10px;
+}
+
+.privacy-policy-view__section-title + .privacy-policy-view__paragraph {
+  margin-top: 10px;
+}
+
+@media (max-width: 960px) {
+  .app-shell {
+    --app-shell-gutter: clamp(12px, 4vw, 18px);
+    --app-shell-bottom-nav-height: 64px;
+  }
+
+  .app-shell__rail {
+    position: fixed;
+    inset: 0;
+    width: auto;
+  }
+
+  .app-shell__nav {
+    position: fixed;
+    left: 50%;
+    bottom: calc(env(safe-area-inset-bottom) + var(--app-shell-gutter));
+    width: min(calc(100vw - var(--app-shell-gutter) * 2), 480px);
+    transform: translateX(-50%);
+  }
+
+  .app-shell__nav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .app-shell__nav-link {
+    min-height: 48px;
+    min-width: 0;
+    padding: 8px 8px 10px 12px;
+    text-align: center;
+    justify-items: center;
+  }
+
+  .app-shell__nav-link::before {
+    inset: 15px auto auto 50%;
+    width: min(42px, calc(100% - 28px));
+    transform: translateX(-50%);
+  }
+
+  .app-shell__nav-link::after {
+    inset: 21px auto auto 50%;
+    width: min(32px, calc(100% - 36px));
+    transform: translateX(-50%);
+  }
+
+  .app-shell__nav-link[aria-current="page"]::after {
+    animation-duration: 5.2s;
+  }
+
+  .app-shell__nav-meta {
+    font-size: 0.48rem;
+    letter-spacing: 0.14em;
+  }
+
+  .app-shell__nav-title {
+    margin-top: 4px;
+    font-size: 0.74rem;
+    letter-spacing: 0.05em;
+  }
+
+  .app-shell__content {
+    padding-left: 0;
+  }
+
+  .app-shell__view--scene {
+    box-sizing: border-box;
+    padding-bottom: calc(
+      var(--app-shell-bottom-nav-height) + env(safe-area-inset-bottom) +
+        var(--app-shell-gutter) * 2
+    );
+  }
+
+  .app-shell__view--privacy {
+    align-items: flex-start;
+    padding:
+      clamp(18px, 5vw, 24px)
+      var(--app-shell-gutter)
+      calc(
+        var(--app-shell-bottom-nav-height) + env(safe-area-inset-bottom) +
+          var(--app-shell-gutter) * 2
+      );
+  }
+
+  .privacy-policy-view__panel {
+    width: 100%;
+    padding: clamp(20px, 5vw, 28px);
+  }
+
+  .privacy-policy-view__intro,
+  .privacy-policy-view__paragraph {
+    max-width: none;
+    line-height: 1.08;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell__nav-link::after {
+    animation: none !important;
+  }
+}

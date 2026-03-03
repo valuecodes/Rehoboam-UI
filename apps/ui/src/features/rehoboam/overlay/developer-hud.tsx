@@ -1,13 +1,15 @@
+import type { CSSProperties } from "react";
+
 import type { RehoboamRenderDiagnostics } from "../engine/types";
+import type { InstrumentSize } from "./callout-overlay";
 import type { SceneQualityTier } from "../scene/quality";
 
-type DeveloperHudCacheStatus = "idle" | "hit" | "miss";
 type DeveloperHudNetworkStatus = "idle" | "loading" | "success" | "fallback";
 
 export type DeveloperHudProps = Readonly<{
-  cacheStatus: DeveloperHudCacheStatus;
   diagnostics: RehoboamRenderDiagnostics | null;
   eventCount: number;
+  instrumentSize: InstrumentSize;
   networkStatus: DeveloperHudNetworkStatus;
   qualityTier: SceneQualityTier;
 }>;
@@ -16,6 +18,15 @@ type HudMetric = Readonly<{
   label: string;
   value: string;
 }>;
+
+type HudMetricStyle = CSSProperties & {
+  "--hud-angle": string;
+  "--hud-angle-inverse": string;
+};
+
+type HudRootStyle = CSSProperties & {
+  "--rehoboam-hud-size": string;
+};
 
 const formatFixed = (value: number, fractionDigits: number): string => {
   if (!Number.isFinite(value)) {
@@ -87,33 +98,56 @@ const getDiagnosticsMetrics = (
 };
 
 export const DeveloperHud = ({
-  cacheStatus,
   diagnostics,
   eventCount,
+  instrumentSize,
   networkStatus,
   qualityTier,
 }: DeveloperHudProps) => {
   const metrics: readonly HudMetric[] = [
     { label: "Quality", value: qualityTier },
     { label: "Events", value: `${eventCount}` },
-    { label: "Cache", value: cacheStatus },
     { label: "Network", value: networkStatus },
     ...getDiagnosticsMetrics(diagnostics),
   ];
+  const angleStep = 360 / metrics.length;
+  const hudDiameter = Math.max(
+    0,
+    Math.min(instrumentSize.width, instrumentSize.height) * 0.92
+  );
+  const rootStyle: HudRootStyle = {
+    "--rehoboam-hud-size": `${hudDiameter}px`,
+  };
 
   return (
     <aside
       aria-label="Developer HUD"
       className="rehoboam-scene__developer-hud"
       aria-live="off"
+      style={rootStyle}
     >
-      <p className="rehoboam-scene__developer-hud-title">Developer HUD</p>
+      <div aria-hidden className="rehoboam-scene__developer-hud-core" />
+      <div className="rehoboam-scene__developer-hud-handle">
+        <div className="rehoboam-scene__developer-hud-handle-label">
+          <p className="rehoboam-scene__developer-hud-title">Developer HUD</p>
+          <p className="rehoboam-scene__developer-hud-subtitle">
+            Telemetry Ring
+          </p>
+        </div>
+      </div>
       <div className="rehoboam-scene__developer-hud-grid">
-        {metrics.map((metric) => {
+        {metrics.map((metric, index) => {
+          const angle = index * angleStep - 90;
+          const style: HudMetricStyle = {
+            "--hud-angle": `${angle}deg`,
+            "--hud-angle-inverse": `${angle * -1}deg`,
+          };
+
           return (
             <div
               className="rehoboam-scene__developer-hud-row"
               key={metric.label}
+              style={style}
             >
               <span className="rehoboam-scene__developer-hud-label">
                 {metric.label}
