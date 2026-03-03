@@ -14,8 +14,8 @@ verified against source on February 18, 2026.
   sweep.
 - `apps/ui/src/features/rehoboam/render/canvas2d/passes/event-contour-pass.ts`
   exists but is not wired into `Renderer2D`.
-- Scene boot is cache-first from IndexedDB, then background refresh/replace from
-  API endpoint `/api/events`.
+- Scene boot loads directly from API endpoint `/api/events` with no client-side
+  event persistence.
 - Automated tests are present under `apps/ui/src/tests/rehoboam/**` for data, layout,
   engine, renderer, overlay, and quality behavior.
 
@@ -66,7 +66,6 @@ graph TD
         Norm["Normalize"]
         Dedup["Dedupe"]
         Boot["Bootstrap"]
-        Persist["Persistence (IndexedDB)"]
     end
 
     subgraph Layout["Layout"]
@@ -97,7 +96,6 @@ graph TD
 
     Scene --> Boot
     Boot --> Source
-    Boot --> Persist
     Source --> Norm
     Norm --> Dedup
 
@@ -161,32 +159,26 @@ flowchart LR
 
 ## Data Flow
 
-### Boot Sequence (cache-first)
+### Boot Sequence (API-first)
 
 ```mermaid
 sequenceDiagram
     participant Scene as RehoboamScene
-    participant IDB as IndexedDB
     participant Src as Event Source
     participant Boot as Bootstrap
 
-    Scene->>IDB: loadPersistedEvents()
-    IDB-->>Scene: cached events
-    Note over Scene: setEvents(cache) only when cache is non-empty
-
-    Scene->>Boot: refreshEventsFromSource({ existingEvents: cache })
+    Scene->>Boot: refreshEventsFromSource({ existingEvents: [] })
     Boot->>Src: loadEvents()
     Src-->>Boot: raw events
     Boot->>Boot: runEventPipeline on source snapshot
-    Boot->>IDB: savePersistedEvents(refreshed)
     Boot-->>Scene: refreshed events
 ```
 
 Behavior:
 
-- IndexedDB read failures return `[]` (best-effort persistence).
-- Source refresh failures return existing snapshot unchanged.
-- Successful refresh treats source as authoritative and replaces cached snapshot.
+- Source refresh failures return the provided existing snapshot unchanged.
+- Successful refresh treats the source as authoritative and replaces the
+  current snapshot.
 - Current scene source is `createApiEventSource("/api/events")`.
 - In local development, Vite proxies `/api/*` from the web app to
   `http://localhost:3001`.
@@ -406,7 +398,7 @@ FNV-1a seed hashing + Mulberry32 PRNG, used by ring and cluster generation.
 
 Current test modules under `apps/ui/src/tests/rehoboam/**` cover:
 
-- data pipeline (`source`, `normalize`, `dedupe`, `bootstrap`, `persistence`)
+- data pipeline (`source`, `normalize`, `dedupe`, `bootstrap`)
 - layout math (`polar`, `compute-angles`, `seeded-rng`)
 - engine/input (`rehoboam-engine`, `input`)
 - renderer behavior (`renderer-2d`, `divergence-pass`, `divergence-pulse-tracker`)
@@ -450,8 +442,7 @@ Current test modules under `apps/ui/src/tests/rehoboam/**` cover:
 | API events route           | `apps/api/src/routes/events.ts`                                               |
 | Normalization              | `apps/ui/src/features/rehoboam/data/normalize.ts`                             |
 | Deduplication              | `apps/ui/src/features/rehoboam/data/dedupe.ts`                                |
-| Cache-first bootstrap      | `apps/ui/src/features/rehoboam/data/bootstrap.ts`                             |
-| IndexedDB persistence      | `apps/ui/src/features/rehoboam/data/persistence.ts`                           |
+| API-first bootstrap        | `apps/ui/src/features/rehoboam/data/bootstrap.ts`                             |
 | Callout overlay            | `apps/ui/src/features/rehoboam/overlay/callout-overlay.tsx`                   |
 | Intro callout overlay      | `apps/ui/src/features/rehoboam/overlay/intro-callout-overlay.tsx`             |
 | Event list panel           | `apps/ui/src/features/rehoboam/overlay/event-list-panel.tsx`                  |

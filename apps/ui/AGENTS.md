@@ -31,7 +31,7 @@ Use it with the repo-level guide at the root: `AGENTS.md`.
 - Event list panel: `src/features/rehoboam/overlay/event-list-panel.tsx`
 - Data source + pipeline: `src/features/rehoboam/data/source.ts`
 - Data transforms: `src/features/rehoboam/data/normalize.ts`, `src/features/rehoboam/data/dedupe.ts`
-- Persistence + boot refresh: `src/features/rehoboam/data/persistence.ts`, `src/features/rehoboam/data/bootstrap.ts`
+- Boot refresh: `src/features/rehoboam/data/bootstrap.ts`
 - Layout math: `src/features/rehoboam/layout/compute-angles.ts`, `src/features/rehoboam/layout/polar.ts`
 - Shared fixture: `src/features/rehoboam/fixtures/mock-events.json`
 - Unit tests: `src/tests/rehoboam/**`
@@ -42,7 +42,7 @@ Use it with the repo-level guide at the root: `AGENTS.md`.
 - Active implementation is V2 under `src/features/rehoboam/**`; legacy V1 sources were removed.
 - Current Canvas2D frame pipeline: background -> rings -> divergence -> sweep.
 - `src/features/rehoboam/render/canvas2d/passes/event-contour-pass.ts` exists but is not wired into `Renderer2D`.
-- Scene boot is cache-first via IndexedDB persistence, then API refresh via `/api/events` in background.
+- Scene boot loads directly from `/api/events` with no client-side event persistence.
 - Playback sequencing relies on timers/RAF and refs for interaction synchronization.
 - Rendering quality is tiered by viewport/device capability (ring count + divergence samples).
 

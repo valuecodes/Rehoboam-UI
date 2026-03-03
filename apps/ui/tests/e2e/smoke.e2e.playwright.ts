@@ -13,6 +13,22 @@ test.describe("UI smoke tests", () => {
     await expect(page.locator(".rehoboam-scene__instrument")).toBeVisible();
   });
 
+  test("hud route renders the developer hud overlay", async ({ page }) => {
+    await page.goto("/#/hud");
+
+    await expect(page.locator(".rehoboam-scene__instrument")).toBeVisible();
+    await expect(page.getByLabel("Developer HUD")).toBeVisible();
+  });
+
+  test("privacy route renders the privacy policy panel", async ({ page }) => {
+    await page.goto("/#/privacy");
+
+    await expect(
+      page.getByRole("heading", { name: "Privacy Policy" })
+    ).toBeVisible();
+    await expect(page.locator(".rehoboam-scene__canvas")).toHaveCount(0);
+  });
+
   test("canvas element is present", async ({ page }) => {
     await page.goto("/");
 
@@ -29,6 +45,24 @@ test.describe("UI smoke tests", () => {
       "aria-label",
       "Rehoboam V2 scene container"
     );
+  });
+
+  test("existing hud query flag still enables the overlay", async ({ page }) => {
+    await page.goto("/?hud");
+
+    await expect(page.locator(".rehoboam-scene__instrument")).toBeVisible();
+    await expect(page.getByLabel("Developer HUD")).toBeVisible();
+  });
+
+  test("desktop nav switches from home to privacy", async ({ page }) => {
+    await page.goto("/");
+
+    await page.getByRole("link", { name: "Privacy policy" }).click();
+
+    await expect(page).toHaveURL(/#\/privacy$/);
+    await expect(
+      page.getByRole("heading", { name: "Privacy Policy" })
+    ).toBeVisible();
   });
 
   test("no uncaught exceptions", async ({ page }) => {
