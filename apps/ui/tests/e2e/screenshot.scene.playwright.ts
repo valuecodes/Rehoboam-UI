@@ -43,6 +43,7 @@ const resolveOutputPaths = (outputBasePath: string): ScreenshotOutputPaths => {
 const outputBasePath =
   process.env.SCREENSHOT_OUTPUT_BASE ??
   ".tmp/screenshots/current-codex-auto.png";
+const pagePath = process.env.SCREENSHOT_PAGE_PATH ?? "/";
 const settleDelayMs = parseNumber(process.env.SCREENSHOT_SETTLE_MS, 200);
 
 test("captures Rehoboam scene screenshots", async ({ page }) => {
@@ -50,7 +51,7 @@ test("captures Rehoboam scene screenshots", async ({ page }) => {
   await mkdir(dirname(outputPaths.fullPage), { recursive: true });
   await mkdir(dirname(outputPaths.instrument), { recursive: true });
 
-  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.goto(pagePath, { waitUntil: "domcontentloaded" });
   await expect(page.locator(SCENE_SELECTOR)).toBeVisible();
 
   if (settleDelayMs > 0) {

@@ -37,6 +37,7 @@ const INTRO_TEXT_SHIFT_PX = 6;
 const INTRO_ENDPOINT_OUTER_RADIUS_PX = 6;
 const INTRO_ENDPOINT_INNER_RADIUS_PX = 2.25;
 const INTRO_CORNER_STEP_PX = 10;
+const COMPACT_INTRO_CORNER_STEP_PX = 7;
 const INTRO_LINE_LENGTH_RATIO = 0.5;
 const INTRO_FIRST_FRAME_OFFSET_PX = 83;
 const INTRO_THIRD_FRAME_OFFSET_PX = 68;
@@ -46,6 +47,11 @@ const INTRO_ANCHOR_ANGLE_RAD = 0.67;
 const INTRO_ANCHOR_RADIUS_RATIO = 0.84;
 const INTRO_LABEL_OFFSET_X_PX = -34;
 const INTRO_LABEL_OFFSET_Y_PX = -25;
+const COMPACT_INTRO_CENTER_SHIFT_X_PX = 24;
+const COMPACT_INTRO_CENTER_SHIFT_Y_PX = 8;
+const COMPACT_INTRO_RIGHT_INSET_PX = 20;
+const COMPACT_INTRO_LABEL_WIDTH_RATIO = 0.78;
+const COMPACT_INTRO_FRAME_INSET_X_PX = 10;
 
 const formatCurrentDate = (): string => {
   const date = new Date();
@@ -66,34 +72,63 @@ const getIntroCalloutGeometry = (
   const centerX = instrumentSize.width / 2;
   const centerY = instrumentSize.height / 2;
   const isCompactViewport = instrumentSize.width <= 700;
+  const compactScale = isCompactViewport
+    ? clampNumber(instrumentSize.width / 700, 0.68, 0.8)
+    : 1;
   const margin = Math.max(16, instrumentSize.width * 0.03);
-  const maxLabelWidth = Math.max(300, instrumentSize.width - margin * 2);
+  const rightInset = isCompactViewport ? COMPACT_INTRO_RIGHT_INSET_PX : 0;
+  const maxLabelWidth = Math.max(
+    240,
+    instrumentSize.width - margin * 2 - rightInset
+  );
   const labelWidth = clampNumber(
-    isCompactViewport ? 300 : 520,
+    Math.round(
+      520 *
+        compactScale *
+        (isCompactViewport ? COMPACT_INTRO_LABEL_WIDTH_RATIO : 1)
+    ),
     isCompactViewport ? 220 : 280,
     maxLabelWidth
   );
-  const labelOffsetX = isCompactViewport ? -10 : INTRO_LABEL_OFFSET_X_PX;
+  const labelOffsetX =
+    Math.round(INTRO_LABEL_OFFSET_X_PX * compactScale) +
+    (isCompactViewport ? COMPACT_INTRO_CENTER_SHIFT_X_PX : 0);
   const labelX = clampNumber(
     centerX - labelWidth * 0.45 + labelOffsetX,
     margin,
-    instrumentSize.width - labelWidth - margin
+    instrumentSize.width - labelWidth - margin - rightInset
   );
+  const labelOffsetY =
+    Math.round(INTRO_LABEL_OFFSET_Y_PX * compactScale) +
+    (isCompactViewport ? COMPACT_INTRO_CENTER_SHIFT_Y_PX : 0);
   const labelY = clampNumber(
-    centerY - 36 + INTRO_LABEL_OFFSET_Y_PX,
+    centerY - Math.round(36 * compactScale) + labelOffsetY,
     margin,
-    instrumentSize.height - margin - 140
+    instrumentSize.height - margin - Math.round(140 * compactScale)
   );
-  const firstFrameX = labelX;
-  const firstFrameY = labelY + INTRO_FIRST_FRAME_OFFSET_PX;
-  const secondFrameX = firstFrameX - INTRO_CORNER_STEP_PX;
+  const cornerStep = Math.max(
+    5,
+    Math.round(
+      (isCompactViewport
+        ? COMPACT_INTRO_CORNER_STEP_PX
+        : INTRO_CORNER_STEP_PX) * compactScale
+    )
+  );
+  const firstFrameX =
+    labelX + (isCompactViewport ? COMPACT_INTRO_FRAME_INSET_X_PX : 0);
+  const firstFrameY =
+    labelY + Math.round(INTRO_FIRST_FRAME_OFFSET_PX * compactScale);
+  const secondFrameX = firstFrameX - cornerStep;
   const secondFrameY = firstFrameY;
-  const thirdFrameX = firstFrameX - INTRO_CORNER_STEP_PX * 2;
-  const thirdFrameY = labelY + INTRO_THIRD_FRAME_OFFSET_PX;
+  const thirdFrameX = firstFrameX - cornerStep * 2;
+  const thirdFrameY =
+    labelY + Math.round(INTRO_THIRD_FRAME_OFFSET_PX * compactScale);
   const fourthFrameX = thirdFrameX;
-  const fourthFrameY = labelY + INTRO_FOURTH_FRAME_OFFSET_PX;
+  const fourthFrameY =
+    labelY + Math.round(INTRO_FOURTH_FRAME_OFFSET_PX * compactScale);
   const fifthFrameX = firstFrameX;
-  const fifthFrameY = labelY + INTRO_FIFTH_FRAME_OFFSET_PX;
+  const fifthFrameY =
+    labelY + Math.round(INTRO_FIFTH_FRAME_OFFSET_PX * compactScale);
   const lineLength = labelWidth * INTRO_LINE_LENGTH_RATIO;
   const lineEndX = firstFrameX + lineLength;
   const lineEndY = fifthFrameY;

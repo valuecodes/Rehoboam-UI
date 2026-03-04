@@ -8,11 +8,28 @@ type CliOptions = {
   headless: boolean;
   height: string | undefined;
   intervalMs: string | undefined;
+  mobile: boolean;
   output: string | undefined;
+  scenario: string | undefined;
   settleMs: string | undefined;
   showHelp: boolean;
   width: string | undefined;
 };
+
+type ScreenshotScenarioName =
+  | "default"
+  | "intro"
+  | "hud"
+  | "callout-top-left"
+  | "callout-top-right"
+  | "callout-bottom-left"
+  | "callout-bottom-right"
+  | "all-debug";
+
+type ScreenshotScenario = Readonly<{
+  name: Exclude<ScreenshotScenarioName, "all-debug">;
+  pagePath: string;
+}>;
 
 const HELP_TEXT = `
 Capture deterministic Rehoboam screenshots with Playwright.
@@ -22,18 +39,22 @@ Usage:
 
 Options:
   --output <path>       Base output path (default: .tmp/screenshots/current-codex-auto.png)
+  --scenario <name>     Capture preset: default, intro, hud, callout-top-left, callout-top-right,
+                        callout-bottom-left, callout-bottom-right, or all-debug
   --count <number>      Number of captures to take (default: 1)
   --interval-ms <ms>    Delay between captures in ms (default: 1000)
   --width <number>      Viewport width (default: 1365)
   --height <number>     Viewport height (default: 1024)
   --settle-ms <number>  Delay after selector visibility (default: 200)
   --base-url <url>      App URL (default: http://127.0.0.1:3000)
+  --mobile              Use a phone-sized viewport (393x852) unless width/height are set
   --headed              Run browser in headed mode
   --headless            Force headless mode
   --help                Show this help
 
 Environment variable equivalents:
   SCREENSHOT_OUTPUT_BASE
+  SCREENSHOT_SCENARIO
   SCREENSHOT_CAPTURE_COUNT
   SCREENSHOT_CAPTURE_INTERVAL_MS
   SCREENSHOT_VIEWPORT_WIDTH
@@ -41,10 +62,12 @@ Environment variable equivalents:
   SCREENSHOT_SETTLE_MS
   SCREENSHOT_BASE_URL
   SCREENSHOT_HEADLESS
+  SCREENSHOT_PAGE_PATH
 `.trim();
 
 const VALUE_OPTIONS = new Set([
   "--output",
+  "--scenario",
   "--count",
   "--interval-ms",
   "--width",
@@ -52,7 +75,13 @@ const VALUE_OPTIONS = new Set([
   "--settle-ms",
   "--base-url",
 ]);
-const FLAG_OPTIONS = new Set(["--help", "-h", "--headed", "--headless"]);
+const FLAG_OPTIONS = new Set([
+  "--help",
+  "-h",
+  "--headed",
+  "--headless",
+  "--mobile",
+]);
 
 const validateArgv = (argv: readonly string[]): void => {
   for (let index = 0; index < argv.length; index += 1) {
@@ -117,9 +146,10 @@ const parseArgs = (argv: readonly string[]): CliOptions => {
     [...argv],
     {
       alias: { h: "help" },
-      boolean: ["help", "headed", "headless"],
+      boolean: ["help", "headed", "headless", "mobile"],
       string: [
         "output",
+        "scenario",
         "count",
         "interval-ms",
         "width",
@@ -140,7 +170,9 @@ const parseArgs = (argv: readonly string[]): CliOptions => {
     headless: parsed.headless === true,
     height: readOptionalString("--height", parsed.height),
     intervalMs: readOptionalString("--interval-ms", parsed.intervalMs),
+    mobile: parsed.mobile === true,
     output: readOptionalString("--output", parsed.output),
+    scenario: readOptionalString("--scenario", parsed.scenario),
     settleMs: readOptionalString("--settle-ms", parsed.settleMs),
     showHelp: parsed.help === true,
     width: readOptionalString("--width", parsed.width),
@@ -190,6 +222,86 @@ const resolveOutputPath = (
   return `${outputWithoutExtension}.${captureNumber}${extension}`;
 };
 
+const appendOutputSuffix = (outputPath: string, suffix: string): string => {
+  const extension = extname(outputPath);
+  const outputWithoutExtension =
+    extension === "" ? outputPath : outputPath.slice(0, -extension.length);
+
+  return `${outputWithoutExtension}.${suffix}${extension}`;
+};
+
+const resolveScenarioSequence = (
+  value: string | undefined
+): readonly ScreenshotScenario[] => {
+  const scenarioName = (value ?? "default") as ScreenshotScenarioName;
+
+  switch (scenarioName) {
+    case "default":
+      return [{ name: "default", pagePath: "/" }];
+    case "intro":
+      return [{ name: "intro", pagePath: "/?intro-debug=1" }];
+    case "hud":
+      return [{ name: "hud", pagePath: "/?hud=1" }];
+    case "callout-top-left":
+      return [
+        {
+          name: "callout-top-left",
+          pagePath: "/?callout-debug=top&callout-debug-side=left",
+        },
+      ];
+    case "callout-top-right":
+      return [
+        {
+          name: "callout-top-right",
+          pagePath: "/?callout-debug=top&callout-debug-side=right",
+        },
+      ];
+    case "callout-bottom-left":
+      return [
+        {
+          name: "callout-bottom-left",
+          pagePath: "/?callout-debug=bottom&callout-debug-side=left",
+        },
+      ];
+    case "callout-bottom-right":
+      return [
+        {
+          name: "callout-bottom-right",
+          pagePath: "/?callout-debug=bottom&callout-debug-side=right",
+        },
+      ];
+    case "all-debug":
+      return [
+        { name: "intro", pagePath: "/?intro-debug=1" },
+        { name: "hud", pagePath: "/?hud=1" },
+        {
+          name: "callout-top-left",
+          pagePath: "/?callout-debug=top&callout-debug-side=left",
+        },
+        {
+          name: "callout-top-right",
+          pagePath: "/?callout-debug=top&callout-debug-side=right",
+        },
+        {
+          name: "callout-bottom-left",
+          pagePath: "/?callout-debug=bottom&callout-debug-side=left",
+        },
+        {
+          name: "callout-bottom-right",
+          pagePath: "/?callout-debug=bottom&callout-debug-side=right",
+        },
+      ];
+    default:
+      if (value === undefined) {
+        throw new Error("Unknown scenario. See --help for supported scenario names.");
+      }
+
+      throw new Error(
+        `Unknown scenario: ${value}. See --help for supported scenario names.`
+      );
+  }
+};
+
 const options = parseArgs(process.argv.slice(2));
 
 if (options.showHelp) {
@@ -219,6 +331,13 @@ const outputBasePath =
   options.output ??
   process.env.SCREENSHOT_OUTPUT_BASE ??
   ".tmp/screenshots/current-codex-auto.png";
+const scenarioSequence = resolveScenarioSequence(
+  options.scenario ?? process.env.SCREENSHOT_SCENARIO
+);
+const mobileWidth =
+  options.width === undefined && options.mobile ? "393" : options.width;
+const mobileHeight =
+  options.height === undefined && options.mobile ? "852" : options.height;
 
 const sharedCommandEnv: NodeJS.ProcessEnv = {
   ...process.env,
@@ -227,46 +346,54 @@ const sharedCommandEnv: NodeJS.ProcessEnv = {
     : { SCREENSHOT_BASE_URL: options.baseUrl }),
   ...(options.headed ? { SCREENSHOT_HEADLESS: "false" } : {}),
   ...(options.headless ? { SCREENSHOT_HEADLESS: "true" } : {}),
-  ...(options.height === undefined
+  ...(mobileHeight === undefined
     ? {}
-    : { SCREENSHOT_VIEWPORT_HEIGHT: options.height }),
-  ...(options.width === undefined
+    : { SCREENSHOT_VIEWPORT_HEIGHT: mobileHeight }),
+  ...(mobileWidth === undefined
     ? {}
-    : { SCREENSHOT_VIEWPORT_WIDTH: options.width }),
+    : { SCREENSHOT_VIEWPORT_WIDTH: mobileWidth }),
 };
 
-for (let captureIndex = 0; captureIndex < captureCount; captureIndex += 1) {
-  const captureOutputPath = resolveOutputPath(
-    outputBasePath,
-    captureIndex,
-    captureCount
-  );
-  const captureSettleMs = baseSettleMs + captureIndex * captureIntervalMs;
+for (const scenario of scenarioSequence) {
+  const scenarioOutputBasePath =
+    scenarioSequence.length > 1
+      ? appendOutputSuffix(outputBasePath, scenario.name)
+      : outputBasePath;
 
-  console.log(
-    `Capturing screenshot ${captureIndex + 1}/${captureCount}: ${captureOutputPath} (settle ${captureSettleMs}ms)`
-  );
+  for (let captureIndex = 0; captureIndex < captureCount; captureIndex += 1) {
+    const captureOutputPath = resolveOutputPath(
+      scenarioOutputBasePath,
+      captureIndex,
+      captureCount
+    );
+    const captureSettleMs = baseSettleMs + captureIndex * captureIntervalMs;
 
-  const run = $({
-    env: {
-      ...sharedCommandEnv,
-      SCREENSHOT_OUTPUT_BASE: captureOutputPath,
-      SCREENSHOT_SETTLE_MS: String(captureSettleMs),
-    },
-    stdio: "inherit",
-  });
+    console.log(
+      `Capturing ${scenario.name} ${captureIndex + 1}/${captureCount}: ${captureOutputPath} (${scenario.pagePath}, settle ${captureSettleMs}ms)`
+    );
 
-  try {
-    if (options.headed) {
-      await run`pnpm exec playwright test -c playwright.config.ts --project=screenshot --headed`;
-    } else {
-      await run`pnpm exec playwright test -c playwright.config.ts --project=screenshot`;
+    const run = $({
+      env: {
+        ...sharedCommandEnv,
+        SCREENSHOT_OUTPUT_BASE: captureOutputPath,
+        SCREENSHOT_PAGE_PATH: scenario.pagePath,
+        SCREENSHOT_SETTLE_MS: String(captureSettleMs),
+      },
+      stdio: "inherit",
+    });
+
+    try {
+      if (options.headed) {
+        await run`pnpm exec playwright test -c playwright.config.ts --project=screenshot --headed`;
+      } else {
+        await run`pnpm exec playwright test -c playwright.config.ts --project=screenshot`;
+      }
+    } catch (error) {
+      if (error instanceof ProcessOutput) {
+        process.exit(error.exitCode ?? 1);
+      }
+
+      throw error;
     }
-  } catch (error) {
-    if (error instanceof ProcessOutput) {
-      process.exit(error.exitCode ?? 1);
-    }
-
-    throw error;
   }
 }
