@@ -87,7 +87,6 @@
   display: grid;
   grid-template-rows: auto auto auto;
   row-gap: 0;
-  align-content: start;
   overflow: hidden;
   padding-inline: var(--rehoboam-callout-padding-inline);
   color: var(--rehoboam-ink);
@@ -195,6 +194,7 @@
     height: auto;
     min-height: 84px;
     row-gap: 1px;
+    align-content: start;
   }
 
   .rehoboam-scene__callout-time {
