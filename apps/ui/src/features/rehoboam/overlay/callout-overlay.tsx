@@ -4,13 +4,7 @@ import {
   useMotionTemplate,
   useMotionValue,
 } from "motion/react";
-import {
-  memo,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 
 import type { WorldEvent } from "../engine/types";
@@ -81,19 +75,19 @@ const CALLOUT_DEBUG_HALF_QUERY_KEY = "callout-debug-half";
 const CALLOUT_DEBUG_SIDE_QUERY_KEY = "callout-debug-side";
 const CALLOUT_CENTER_KEEP_OUT_PX = 12;
 const COMPACT_LAYOUT_WIDTH_PX = 700;
-const COMPACT_LABEL_HEIGHT_PX = 112;
+const COMPACT_LABEL_HEIGHT_PX = 100;
 const COMPACT_LABEL_LEFT_INSET_PX = 24;
 const COMPACT_FRAME_INSET_X_PX = 10;
-const COMPACT_BOTTOM_LABEL_SHIFT_PX = 10;
+const COMPACT_BOTTOM_LABEL_SHIFT_PX = 70;
 const COMPACT_TOP_LAYOUT_HEADER_LINE_LENGTH_RATIO = 0.56;
 const COMPACT_BOTTOM_LAYOUT_HEADER_LINE_LENGTH_RATIO = 0.56;
-const COMPACT_TOP_LAYOUT_FIRST_FRAME_OFFSET_PX = 28;
-const COMPACT_BOTTOM_LAYOUT_FIRST_FRAME_OFFSET_PX = 52;
-const COMPACT_TOP_LAYOUT_THIRD_FRAME_OFFSET_PX = 38;
-const COMPACT_TOP_LAYOUT_FOURTH_FRAME_OFFSET_PX = 56;
-const COMPACT_TOP_LAYOUT_FIFTH_FRAME_OFFSET_PX = 72;
-const COMPACT_BOTTOM_LAYOUT_THIRD_FRAME_OFFSET_PX = 38;
-const COMPACT_BOTTOM_LAYOUT_FOURTH_FRAME_OFFSET_PX = 18;
+const COMPACT_TOP_LAYOUT_FIRST_FRAME_OFFSET_PX = 24;
+const COMPACT_BOTTOM_LAYOUT_FIRST_FRAME_OFFSET_PX = 37;
+const COMPACT_TOP_LAYOUT_THIRD_FRAME_OFFSET_PX = 32;
+const COMPACT_TOP_LAYOUT_FOURTH_FRAME_OFFSET_PX = 44;
+const COMPACT_TOP_LAYOUT_FIFTH_FRAME_OFFSET_PX = 59;
+const COMPACT_BOTTOM_LAYOUT_THIRD_FRAME_OFFSET_PX = 30;
+const COMPACT_BOTTOM_LAYOUT_FOURTH_FRAME_OFFSET_PX = 16;
 const COMPACT_BOTTOM_LAYOUT_FIFTH_FRAME_OFFSET_PX = 0;
 const COMPACT_ENDPOINT_OUTER_RADIUS_PX = 4.5;
 const COMPACT_ENDPOINT_INNER_RADIUS_PX = 1.8;
@@ -228,7 +222,10 @@ const getCalloutGeometry = (
       maxLabelHeight
     );
     const shouldPlaceBottom = lockedToBottom || (!lockedToTop && !isLowerHalf);
-    const compactBottomMargin = Math.max(8, margin - COMPACT_BOTTOM_LABEL_SHIFT_PX);
+    const compactBottomMargin = Math.max(
+      8,
+      margin - COMPACT_BOTTOM_LABEL_SHIFT_PX
+    );
     const labelY = shouldPlaceBottom
       ? instrumentSize.height - labelHeight - compactBottomMargin
       : margin;
@@ -421,7 +418,10 @@ const getCalloutGeometry = (
   const safeLabelRightEdge = center.x - desiredCenterGap;
   const viewportRightEdge = instrumentSize.width - margin;
   const availableLeftWidth = Math.max(0, safeLabelRightEdge - margin);
-  const availableRightWidth = Math.max(0, viewportRightEdge - safeLabelLeftEdge);
+  const availableRightWidth = Math.max(
+    0,
+    viewportRightEdge - safeLabelLeftEdge
+  );
   const labelWidth = isLeftLayout
     ? Math.min(panelWidth, availableLeftWidth)
     : Math.min(panelWidth, availableRightWidth);
@@ -446,17 +446,17 @@ const getCalloutGeometry = (
     labelX,
     labelY,
     labelWidth,
-      textAlign,
-      connectorPath: `M ${anchor.x} ${anchor.y} L ${lineEndX} ${lineEndY}`,
-      framePoints: toPointList(framePointList),
-      timeMarginTop,
-      endpointOuterRadius: CALLOUT_ENDPOINT_OUTER_RADIUS_PX,
-      endpointInnerRadius: CALLOUT_ENDPOINT_INNER_RADIUS_PX,
-      titleLocationStyle: {
-        display: "inline",
-        marginInlineStart: "0.35ch",
-      },
-    };
+    textAlign,
+    connectorPath: `M ${anchor.x} ${anchor.y} L ${lineEndX} ${lineEndY}`,
+    framePoints: toPointList(framePointList),
+    timeMarginTop,
+    endpointOuterRadius: CALLOUT_ENDPOINT_OUTER_RADIUS_PX,
+    endpointInnerRadius: CALLOUT_ENDPOINT_INNER_RADIUS_PX,
+    titleLocationStyle: {
+      display: "inline",
+      marginInlineStart: "0.35ch",
+    },
+  };
 };
 
 export const CalloutOverlay = memo(
