@@ -41,6 +41,7 @@
 }
 
 .rehoboam-scene__overlay {
+  --rehoboam-callout-stroke-width: 1.2;
   position: absolute;
   inset: 0;
   width: 100%;
@@ -50,7 +51,7 @@
 
 .rehoboam-scene__callout-line {
   stroke: var(--rehoboam-line);
-  stroke-width: 1.2;
+  stroke-width: var(--rehoboam-callout-stroke-width);
   stroke-linecap: butt;
   stroke-linejoin: miter;
   fill: none;
@@ -58,7 +59,7 @@
 
 .rehoboam-scene__callout-frame {
   stroke: var(--hud-line);
-  stroke-width: 1.2;
+  stroke-width: var(--rehoboam-callout-stroke-width);
   stroke-linecap: butt;
   stroke-linejoin: miter;
   fill: none;
@@ -66,7 +67,7 @@
 
 .rehoboam-scene__callout-endpoint-ring {
   stroke: var(--hud-line);
-  stroke-width: 1.2;
+  stroke-width: var(--rehoboam-callout-stroke-width);
   fill: transparent;
   stroke-linejoin: miter;
 }
@@ -77,15 +78,18 @@
 }
 
 .rehoboam-scene__callout {
+  --rehoboam-callout-offset-y: -30px;
+  --rehoboam-callout-padding-inline: clamp(8px, 1.4vw, 14px);
   position: absolute;
-  margin: -30px 0 0;
+  margin: var(--rehoboam-callout-offset-y) 0 0;
   height: 110px;
   box-sizing: border-box;
   display: grid;
   grid-template-rows: auto auto auto;
   row-gap: 0;
+  align-content: start;
   overflow: hidden;
-  padding-inline: clamp(8px, 1.4vw, 14px);
+  padding-inline: var(--rehoboam-callout-padding-inline);
   color: var(--rehoboam-ink);
   font-family: var(--hud-font);
   text-transform: uppercase;
@@ -181,22 +185,29 @@
 }
 
 @media (max-width: 700px) {
+  .rehoboam-scene__overlay {
+    --rehoboam-callout-stroke-width: 1.45;
+  }
+
   .rehoboam-scene__callout {
-    padding-inline: 16px;
+    --rehoboam-callout-offset-y: 0px;
+    --rehoboam-callout-padding-inline: 12px;
     height: auto;
-    min-height: 112px;
+    min-height: 92px;
+    row-gap: 1px;
   }
 
   .rehoboam-scene__callout-time {
     font-size: clamp(16px, 4vw, 21px);
+    line-height: 0.9;
   }
 
   .rehoboam-scene__callout-title {
     font-size: clamp(15px, 4vw, 20px);
-    white-space: nowrap;
-    overflow: hidden;
+    white-space: normal;
+    overflow: visible;
     text-overflow: clip;
-    line-height: 0.96;
+    line-height: 0.92;
   }
 
   .rehoboam-scene__callout-subtitle {
@@ -205,13 +216,45 @@
     white-space: normal;
     overflow: visible;
     text-overflow: clip;
-    line-height: 1;
+    line-height: 0.95;
+    margin-top: 0;
+    margin-bottom: 0;
     overflow-wrap: anywhere;
   }
 
   .rehoboam-scene__callout-title-location {
     display: inline;
-    margin-inline-start: 0.35ch;
+    margin-inline-start: 0.3ch;
+    margin-top: 0;
+  }
+
+  .rehoboam-scene__callout--intro {
+    --rehoboam-callout-padding-inline: 8px;
+    min-height: 0;
+    row-gap: 0;
+  }
+
+  .rehoboam-scene__callout-time--intro {
+    font-size: clamp(22px, 6vw, 28px);
+    line-height: 0.9;
+  }
+
+  .rehoboam-scene__callout-title--intro {
+    font-size: clamp(22px, 6vw, 28px);
+    white-space: nowrap;
+    line-height: 0.9;
+    margin-top: 2px;
+  }
+
+  .rehoboam-scene__callout-subtitle--intro {
+    font-size: clamp(21px, 5.8vw, 27px);
+    white-space: nowrap;
+    line-height: 0.92;
+  }
+
+  .rehoboam-scene__callout-boot--intro {
+    font-size: clamp(16px, 4.3vw, 20px);
+    line-height: 0.95;
   }
 }
 

@@ -4,7 +4,14 @@ import {
   useMotionTemplate,
   useMotionValue,
 } from "motion/react";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import {
+  memo,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import type { CSSProperties } from "react";
 
 import type { WorldEvent } from "../engine/types";
 import { polarToCartesian } from "../layout/polar";
@@ -40,6 +47,9 @@ type CalloutGeometry = Readonly<{
   connectorPath: string;
   framePoints: string;
   timeMarginTop: number;
+  endpointOuterRadius: number;
+  endpointInnerRadius: number;
+  titleLocationStyle: Pick<CSSProperties, "display" | "marginInlineStart">;
 }>;
 
 type CalloutDebugLock = "top" | "bottom";
@@ -70,6 +80,23 @@ const CALLOUT_DEBUG_QUERY_KEY = "callout-debug";
 const CALLOUT_DEBUG_HALF_QUERY_KEY = "callout-debug-half";
 const CALLOUT_DEBUG_SIDE_QUERY_KEY = "callout-debug-side";
 const CALLOUT_CENTER_KEEP_OUT_PX = 12;
+const COMPACT_LAYOUT_WIDTH_PX = 700;
+const COMPACT_LABEL_HEIGHT_PX = 112;
+const COMPACT_LABEL_LEFT_INSET_PX = 24;
+const COMPACT_FRAME_INSET_X_PX = 10;
+const COMPACT_BOTTOM_LABEL_SHIFT_PX = 10;
+const COMPACT_TOP_LAYOUT_HEADER_LINE_LENGTH_RATIO = 0.56;
+const COMPACT_BOTTOM_LAYOUT_HEADER_LINE_LENGTH_RATIO = 0.56;
+const COMPACT_TOP_LAYOUT_FIRST_FRAME_OFFSET_PX = 28;
+const COMPACT_BOTTOM_LAYOUT_FIRST_FRAME_OFFSET_PX = 52;
+const COMPACT_TOP_LAYOUT_THIRD_FRAME_OFFSET_PX = 38;
+const COMPACT_TOP_LAYOUT_FOURTH_FRAME_OFFSET_PX = 56;
+const COMPACT_TOP_LAYOUT_FIFTH_FRAME_OFFSET_PX = 72;
+const COMPACT_BOTTOM_LAYOUT_THIRD_FRAME_OFFSET_PX = 38;
+const COMPACT_BOTTOM_LAYOUT_FOURTH_FRAME_OFFSET_PX = 18;
+const COMPACT_BOTTOM_LAYOUT_FIFTH_FRAME_OFFSET_PX = 0;
+const COMPACT_ENDPOINT_OUTER_RADIUS_PX = 4.5;
+const COMPACT_ENDPOINT_INNER_RADIUS_PX = 1.8;
 
 const formatCalloutDate = (timestampMs: number): string => {
   const date = new Date(timestampMs);
@@ -181,10 +208,114 @@ const getCalloutGeometry = (
     },
     center
   );
-  const isCompactViewport = instrumentSize.width <= 700;
+  const isLowerHalf = anchor.y >= center.y;
+  const isCompactViewport = instrumentSize.width <= COMPACT_LAYOUT_WIDTH_PX;
   const margin = isCompactViewport
     ? Math.max(20, instrumentSize.width * 0.05)
     : Math.max(12, instrumentSize.width * 0.02);
+  const lockedToTop = debugLock === "top";
+  const lockedToBottom = debugLock === "bottom";
+  const lockedToLeft = debugSideLock === "left";
+
+  if (isCompactViewport) {
+    const labelX = margin + COMPACT_LABEL_LEFT_INSET_PX;
+    const maxLabelWidth = Math.max(180, instrumentSize.width - labelX - margin);
+    const labelWidth = clampNumber(maxLabelWidth, 180, maxLabelWidth);
+    const maxLabelHeight = Math.max(108, instrumentSize.height - margin * 2);
+    const labelHeight = clampNumber(
+      COMPACT_LABEL_HEIGHT_PX,
+      Math.min(108, maxLabelHeight),
+      maxLabelHeight
+    );
+    const shouldPlaceBottom = lockedToBottom || (!lockedToTop && !isLowerHalf);
+    const compactBottomMargin = Math.max(8, margin - COMPACT_BOTTOM_LABEL_SHIFT_PX);
+    const labelY = shouldPlaceBottom
+      ? instrumentSize.height - labelHeight - compactBottomMargin
+      : margin;
+    const compactCornerStep = clampNumber(
+      Math.round(instrumentSize.width * 0.024),
+      8,
+      12
+    );
+    const firstFrameX = labelX + COMPACT_FRAME_INSET_X_PX;
+    const firstFrameY =
+      labelY +
+      (shouldPlaceBottom
+        ? COMPACT_BOTTOM_LAYOUT_FIRST_FRAME_OFFSET_PX
+        : COMPACT_TOP_LAYOUT_FIRST_FRAME_OFFSET_PX);
+    const secondFrameX = firstFrameX - compactCornerStep;
+    const secondFrameY = firstFrameY;
+    const thirdFrameX = firstFrameX - compactCornerStep * 2;
+    const thirdFrameY =
+      labelY +
+      (shouldPlaceBottom
+        ? COMPACT_BOTTOM_LAYOUT_THIRD_FRAME_OFFSET_PX
+        : COMPACT_TOP_LAYOUT_THIRD_FRAME_OFFSET_PX);
+    const fourthFrameX = thirdFrameX;
+    const fourthFrameY =
+      labelY +
+      (shouldPlaceBottom
+        ? COMPACT_BOTTOM_LAYOUT_FOURTH_FRAME_OFFSET_PX
+        : COMPACT_TOP_LAYOUT_FOURTH_FRAME_OFFSET_PX);
+    const fifthFrameX = firstFrameX;
+    const fifthFrameY =
+      labelY +
+      (shouldPlaceBottom
+        ? COMPACT_BOTTOM_LAYOUT_FIFTH_FRAME_OFFSET_PX
+        : COMPACT_TOP_LAYOUT_FIFTH_FRAME_OFFSET_PX);
+    const compactLineLengthRatio = shouldPlaceBottom
+      ? COMPACT_BOTTOM_LAYOUT_HEADER_LINE_LENGTH_RATIO
+      : COMPACT_TOP_LAYOUT_HEADER_LINE_LENGTH_RATIO;
+    const compactLineLength = labelWidth * compactLineLengthRatio;
+    const lineEndX = firstFrameX + compactLineLength;
+    const lineEndY = fifthFrameY;
+    const framePointList: readonly Point[] = [
+      {
+        x: firstFrameX,
+        y: firstFrameY,
+      },
+      {
+        x: secondFrameX,
+        y: secondFrameY,
+      },
+      {
+        x: thirdFrameX,
+        y: thirdFrameY,
+      },
+      {
+        x: fourthFrameX,
+        y: fourthFrameY,
+      },
+      {
+        x: fifthFrameX,
+        y: fifthFrameY,
+      },
+      {
+        x: lineEndX,
+        y: lineEndY,
+      },
+    ];
+
+    return {
+      event: target.event,
+      anchorX: anchor.x,
+      anchorY: anchor.y,
+      labelX,
+      labelY,
+      labelWidth,
+      textAlign: "left",
+      connectorPath: `M ${anchor.x} ${anchor.y} L ${lineEndX} ${lineEndY}`,
+      framePoints: toPointList(framePointList),
+      timeMarginTop: 0,
+      endpointOuterRadius: COMPACT_ENDPOINT_OUTER_RADIUS_PX,
+      endpointInnerRadius: COMPACT_ENDPOINT_INNER_RADIUS_PX,
+      titleLocationStyle: {
+        display: "inline",
+        marginInlineStart: "0.3ch",
+      },
+    };
+  }
+
   const maxPanelWidth = Math.max(180, instrumentSize.width - margin * 2);
   const minPanelWidth = Math.min(260, maxPanelWidth);
   const panelWidth = clampNumber(600, minPanelWidth, maxPanelWidth);
@@ -192,13 +323,9 @@ const getCalloutGeometry = (
   const minPanelHeight = Math.min(120, maxPanelHeight);
   const panelHeight = clampNumber(200, minPanelHeight, maxPanelHeight);
   const isRightSide = anchor.x >= center.x;
-  const isLowerHalf = anchor.y >= center.y;
   const rightPanelX = instrumentSize.width * 0.7;
   const leftPanelX = instrumentSize.width * 0.1;
   const prefersSingleSide = instrumentSize.width < 1_050;
-  const lockedToTop = debugLock === "top";
-  const lockedToBottom = debugLock === "bottom";
-  const lockedToLeft = debugSideLock === "left";
   const hasVerticalDebugLock = lockedToTop || lockedToBottom;
   const basePanelX = hasVerticalDebugLock
     ? lockedToLeft
@@ -319,11 +446,17 @@ const getCalloutGeometry = (
     labelX,
     labelY,
     labelWidth,
-    textAlign,
-    connectorPath: `M ${anchor.x} ${anchor.y} L ${lineEndX} ${lineEndY}`,
-    framePoints: toPointList(framePointList),
-    timeMarginTop,
-  };
+      textAlign,
+      connectorPath: `M ${anchor.x} ${anchor.y} L ${lineEndX} ${lineEndY}`,
+      framePoints: toPointList(framePointList),
+      timeMarginTop,
+      endpointOuterRadius: CALLOUT_ENDPOINT_OUTER_RADIUS_PX,
+      endpointInnerRadius: CALLOUT_ENDPOINT_INNER_RADIUS_PX,
+      titleLocationStyle: {
+        display: "inline",
+        marginInlineStart: "0.35ch",
+      },
+    };
 };
 
 export const CalloutOverlay = memo(
@@ -569,7 +702,7 @@ export const CalloutOverlay = memo(
             className="rehoboam-scene__callout-endpoint-ring"
             cx={geometry.anchorX}
             cy={geometry.anchorY}
-            r={CALLOUT_ENDPOINT_OUTER_RADIUS_PX}
+            r={geometry.endpointOuterRadius}
             style={{
               opacity: isCalloutDebugMode ? 1 : lineNodeOpacity,
             }}
@@ -578,7 +711,7 @@ export const CalloutOverlay = memo(
             className="rehoboam-scene__callout-endpoint-dot"
             cx={geometry.anchorX}
             cy={geometry.anchorY}
-            r={CALLOUT_ENDPOINT_INNER_RADIUS_PX}
+            r={geometry.endpointInnerRadius}
             style={{
               opacity: isCalloutDebugMode ? 1 : lineNodeOpacity,
             }}
@@ -609,7 +742,10 @@ export const CalloutOverlay = memo(
             <span className="rehoboam-scene__callout-title-label">
               {divergenceLabelText}
             </span>
-            <span className="rehoboam-scene__callout-title-location">
+            <span
+              className="rehoboam-scene__callout-title-location"
+              style={geometry.titleLocationStyle}
+            >
               {locationText}
             </span>
           </p>
