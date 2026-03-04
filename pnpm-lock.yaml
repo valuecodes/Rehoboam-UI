@@ -25,7 +25,7 @@ importers:
     dependencies:
       '@hono/zod-validator':
         specifier: 0.7.6
-        version: 0.7.6(hono@4.11.10)(zod@4.3.6)
+        version: 0.7.6(hono@4.12.4)(zod@4.3.6)
       '@repo/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -39,8 +39,8 @@ importers:
         specifier: 0.45.1
         version: 0.45.1
       hono:
-        specifier: 4.11.10
-        version: 4.11.10
+        specifier: 4.12.4
+        version: 4.12.4
       zod:
         specifier: 4.3.6
         version: 4.3.6
@@ -2164,8 +2164,8 @@ packages:
   hermes-parser@0.25.1:
     resolution: {integrity: sha512-6pEjquH3rqaI6cYAXYPcz9MS4rY6R4ngRgrgfDshRptUZIc3lw0MCIJIGDj9++mfySOuPTHB4nrSW99BCvOPIA==}
 
-  hono@4.11.10:
-    resolution: {integrity: sha512-kyWP5PAiMooEvGrA9jcD3IXF7ATu8+o7B3KCbPXid5se52NPqnOpM/r9qeW2heMnOekF4kqR1fXJqCYeCLKrZg==}
+  hono@4.12.4:
+    resolution: {integrity: sha512-ooiZW1Xy8rQ4oELQ++otI2T9DsKpV0M6c6cO6JGx4RTfav9poFFLlet9UMXHZnoM1yG0HWGlQLswBGX3RZmHtg==}
     engines: {node: '>=16.9.0'}
 
   html-encoding-sniffer@6.0.0:
@@ -3583,9 +3583,9 @@ snapshots:
 
   '@fontsource/barlow-condensed@5.2.8': {}
 
-  '@hono/zod-validator@0.7.6(hono@4.11.10)(zod@4.3.6)':
+  '@hono/zod-validator@0.7.6(hono@4.12.4)(zod@4.3.6)':
     dependencies:
-      hono: 4.11.10
+      hono: 4.12.4
       zod: 4.3.6
 
   '@humanfs/core@0.19.1': {}
@@ -4781,7 +4781,7 @@ snapshots:
     dependencies:
       hermes-estree: 0.25.1
 
-  hono@4.11.10: {}
+  hono@4.12.4: {}
 
   html-encoding-sniffer@6.0.0:
     dependencies:
