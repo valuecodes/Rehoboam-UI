@@ -13,7 +13,7 @@ const INSTRUCTIONS = `You are a news analysis system. You receive an array of ne
 For each news item:
 1. Decide relevance: filter OUT sports, entertainment, lifestyle, human interest, celebrity news. Set "include": false for these.
 2. For relevant items, produce:
-   - "title": a concise, factual title (max 80 chars, no clickbait)
+   - "title": a concise, factual title (max 50 chars, no clickbait)
    - "location": the primary city/country mentioned, or null if unclear
    - "severity": "low" (routine), "medium" (significant), "high" (major crisis), "critical" (war/disaster escalation)
    - "category": one of "conflict", "politics", "climate", "health", "economy", "diplomacy", "disaster", "science", "general"
