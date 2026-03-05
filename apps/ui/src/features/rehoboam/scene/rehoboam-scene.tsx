@@ -288,6 +288,16 @@ export const RehoboamScene = ({
     };
   }, [activeClusterTarget, activeEventAngle, instrumentSize]);
   const hudQualityTier: SceneQualityTier = qualityProfile.tier;
+  const activeEventAnnouncement = useMemo(() => {
+    if (activeEventAngle === null) {
+      return "";
+    }
+
+    const event = activeEventAngle.event;
+    const location = event.location?.label ?? "Unknown location";
+
+    return `Now showing: ${event.title}, ${location}, ${event.severity} severity`;
+  }, [activeEventAngle]);
 
   useEffect(() => {
     autoCycleEventIdsRef.current = autoCycleEventIds;
@@ -526,7 +536,7 @@ export const RehoboamScene = ({
   }, [events]);
 
   return (
-    <main className="rehoboam-scene">
+    <div className="rehoboam-scene">
       <section
         aria-label="Rehoboam V2 scene container"
         className="rehoboam-scene__instrument"
@@ -567,7 +577,15 @@ export const RehoboamScene = ({
         <p className="rehoboam-scene__debug-label">
           Events are AI-parsed and may contain inaccuracies
         </p>
+        <div
+          aria-atomic="true"
+          aria-live="polite"
+          className="visually-hidden"
+          role="status"
+        >
+          {activeEventAnnouncement}
+        </div>
       </section>
-    </main>
+    </div>
   );
 };
