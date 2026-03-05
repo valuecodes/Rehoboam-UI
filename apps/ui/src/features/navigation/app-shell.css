@@ -239,7 +239,6 @@
 
 .privacy-policy-view__intro {
   margin-top: 16px;
-  max-width: 28ch;
 }
 
 .privacy-policy-view__section {
@@ -259,7 +258,24 @@
   margin-top: 10px;
 }
 
-.privacy-policy-view__section-title + .privacy-policy-view__paragraph {
+.privacy-policy-view__section-title + .privacy-policy-view__paragraph,
+.privacy-policy-view__section-title + .privacy-policy-view__list {
+  margin-top: 10px;
+}
+
+.privacy-policy-view__list {
+  margin: 10px 0 0;
+  padding-left: 1.4em;
+  color: var(--hud-mid);
+  font-size: clamp(1rem, 1.8vw, 1.24rem);
+  line-height: 1.12;
+}
+
+.privacy-policy-view__list li + li {
+  margin-top: 6px;
+}
+
+.privacy-policy-view__list + .privacy-policy-view__paragraph {
   margin-top: 10px;
 }
 
