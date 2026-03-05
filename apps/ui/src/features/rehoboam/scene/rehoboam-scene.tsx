@@ -564,6 +564,9 @@ export const RehoboamScene = ({
             />
           </Suspense>
         ) : null}
+        <p className="rehoboam-scene__debug-label">
+          Events are AI-parsed and may contain inaccuracies
+        </p>
       </section>
     </main>
   );

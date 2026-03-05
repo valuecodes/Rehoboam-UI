@@ -247,6 +247,29 @@ export const PrivacyPolicyView = () => {
 
         <section className="privacy-policy-view__section">
           <h2 className="privacy-policy-view__section-title">
+            AI-Generated Content
+          </h2>
+          <p className="privacy-policy-view__paragraph">
+            The events displayed in Rehoboam UI are sourced from third-party
+            news feeds and processed using artificial intelligence. AI
+            processing may introduce errors, omissions, or misrepresentations
+            of the original source material.
+          </p>
+          <p className="privacy-policy-view__paragraph">
+            Rehoboam UI is not a news service. The content shown is provided
+            for informational and demonstration purposes only and should not be
+            relied upon for decision-making. We do not guarantee the accuracy,
+            completeness, or timeliness of any content displayed.
+          </p>
+          <p className="privacy-policy-view__paragraph">
+            We are not responsible for the accuracy or reliability of
+            third-party source content or for any consequences arising from
+            reliance on AI-processed information presented in the app.
+          </p>
+        </section>
+
+        <section className="privacy-policy-view__section">
+          <h2 className="privacy-policy-view__section-title">
             Links To Other Sites
           </h2>
           <p className="privacy-policy-view__paragraph">
