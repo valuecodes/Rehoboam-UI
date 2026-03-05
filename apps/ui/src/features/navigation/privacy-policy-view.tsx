@@ -5,17 +5,16 @@ export const PrivacyPolicyView = () => {
       className="privacy-policy-view"
     >
       <article className="privacy-policy-view__panel">
-        <p className="privacy-policy-view__eyebrow">Policy reference</p>
         <h1 className="privacy-policy-view__title" id="privacy-policy-title">
           Rehoboam UI Privacy Policy
         </h1>
         <p className="privacy-policy-view__intro">
-          Last updated: March 1, 2026. This privacy policy explains how the
+          Last updated: March 5, 2026. This privacy policy explains how the
           Rehoboam UI app at https://rehoboam.valuecodes.fi/ processes personal
           data when you use the site. Rehoboam UI is a read-only web
-          application. It does not offer user accounts, checkout, newsletters, or
-          contact forms. We do not ask you to submit your name, email address, or
-          other directly identifying information through the app.
+          application. It does not offer user accounts, checkout, newsletters,
+          or contact forms. We do not ask you to submit your name, email
+          address, or other directly identifying information through the app.
         </p>
 
         <section className="privacy-policy-view__section">
@@ -87,12 +86,10 @@ export const PrivacyPolicyView = () => {
           <ol className="privacy-policy-view__list">
             <li>Deliver the website and its content to your device.</li>
             <li>
-              Protect the service against malicious traffic, abuse, and automated
-              attacks.
+              Protect the service against malicious traffic, abuse, and
+              automated attacks.
             </li>
-            <li>
-              Measure site reliability, traffic volume, and performance.
-            </li>
+            <li>Measure site reliability, traffic volume, and performance.</li>
             <li>
               Diagnose errors and improve the speed and stability of the app.
             </li>
@@ -106,23 +103,18 @@ export const PrivacyPolicyView = () => {
         <section className="privacy-policy-view__section">
           <h2 className="privacy-policy-view__section-title">Legal Bases</h2>
           <p className="privacy-policy-view__paragraph">
-            Where the GDPR applies, our legal bases are:
+            Where the GDPR applies, our legal basis for the processing described
+            above is legitimate interests under Article 6(1)(f) GDPR. Our
+            legitimate interests include secure delivery of the site, abuse
+            prevention, service monitoring, performance improvement, and
+            privacy-friendly analytics. We have assessed that this processing
+            does not override your rights and freedoms given the limited and
+            non-identifying nature of the data involved.
           </p>
-          <ol className="privacy-policy-view__list">
-            <li>
-              Legitimate interests under Article 6(1)(f) GDPR for secure
-              delivery of the site, abuse prevention, service monitoring, and
-              performance improvement.
-            </li>
-            <li>
-              Performance of a service requested by you under Article 6(1)(b)
-              GDPR to the extent technical processing is necessary to deliver the
-              app to your browser.
-            </li>
-          </ol>
           <p className="privacy-policy-view__paragraph">
             The app does not rely on consent for newsletters, marketing, or
-            account-based personalization because those features are not offered.
+            account-based personalization because those features are not
+            offered.
           </p>
         </section>
 
@@ -134,15 +126,17 @@ export const PrivacyPolicyView = () => {
             The app does not use advertising cookies.
           </p>
           <p className="privacy-policy-view__paragraph">
-            If Cloudflare presents a security challenge, Cloudflare sets the
-            cf_clearance cookie. This cookie is used to remember that the
-            challenge was completed successfully and to continue serving the site
-            securely. It is a strictly necessary security cookie.
+            Cloudflare may set strictly necessary security cookies (such as
+            cf_clearance) when its security features are triggered or enabled.
+            These cookies are used for security purposes only, such as
+            remembering that a challenge was completed successfully.
           </p>
           <p className="privacy-policy-view__paragraph">
             Cloudflare Web Analytics is used for privacy-focused traffic
-            measurement. The app operator uses it for aggregate reporting and not
-            to identify individual visitors.
+            measurement. It does not use cookies or local storage for analytics,
+            and is designed to provide aggregate insights without tracking
+            individual users over time. The app operator uses it for aggregate
+            reporting and not to identify individual visitors.
           </p>
           <p className="privacy-policy-view__paragraph">
             You can clear any cookies for this site through your browser
@@ -176,13 +170,13 @@ export const PrivacyPolicyView = () => {
           </h2>
           <p className="privacy-policy-view__paragraph">
             Cloudflare operates a global network. As a result, limited technical
-            data related to requests, security, and analytics can be processed in
-            countries outside your home country, including outside the EEA.
+            data related to requests, security, and analytics can be processed
+            in countries outside your home country, including outside the EEA.
           </p>
           <p className="privacy-policy-view__paragraph">
-            Where such transfers occur, they are carried out under the
-            contractual and technical safeguards made available by Cloudflare for
-            its services.
+            Where transfers occur outside the EEA, we rely on safeguards such as
+            the EU Standard Contractual Clauses (SCCs) as reflected in
+            Cloudflare&rsquo;s customer Data Processing Addendum (DPA).
           </p>
         </section>
 
@@ -193,9 +187,10 @@ export const PrivacyPolicyView = () => {
             above:
           </p>
           <p className="privacy-policy-view__paragraph">
-            Cloudflare-hosted request, security, and analytics data are retained
-            according to the Cloudflare service configuration and retention
-            periods in use for this app.
+            Web Analytics reports are available for up to 6 months in the
+            Cloudflare dashboard. Security and event logs are retained according
+            to the Cloudflare service tier and configuration in use for this
+            app.
           </p>
           <p className="privacy-policy-view__paragraph">
             Because the app does not maintain user accounts, it does not keep a
@@ -239,9 +234,9 @@ export const PrivacyPolicyView = () => {
           </p>
           <p className="privacy-policy-view__paragraph">
             Cloudflare security systems can automatically evaluate requests for
-            abuse prevention and can require a browser challenge before access is
-            granted. This is used to protect the service, not to profile visitors
-            for marketing or eligibility decisions.
+            abuse prevention and can require a browser challenge before access
+            is granted. This is used to protect the service, not to profile
+            visitors for marketing or eligibility decisions.
           </p>
         </section>
 
@@ -252,12 +247,12 @@ export const PrivacyPolicyView = () => {
           <p className="privacy-policy-view__paragraph">
             The events displayed in Rehoboam UI are sourced from third-party
             news feeds and processed using artificial intelligence. AI
-            processing may introduce errors, omissions, or misrepresentations
-            of the original source material.
+            processing may introduce errors, omissions, or misrepresentations of
+            the original source material.
           </p>
           <p className="privacy-policy-view__paragraph">
-            Rehoboam UI is not a news service. The content shown is provided
-            for informational and demonstration purposes only and should not be
+            Rehoboam UI is not a news service. The content shown is provided for
+            informational and demonstration purposes only and should not be
             relied upon for decision-making. We do not guarantee the accuracy,
             completeness, or timeliness of any content displayed.
           </p>
@@ -285,8 +280,8 @@ export const PrivacyPolicyView = () => {
           </h2>
           <p className="privacy-policy-view__paragraph">
             We will update this page when this privacy policy changes. Material
-            changes should be reflected by updating the &ldquo;Last
-            updated&rdquo; date at the top of this document.
+            changes will be reflected by updating the &ldquo;Last updated&rdquo;
+            date at the top of this document.
           </p>
         </section>
 
@@ -304,8 +299,8 @@ export const PrivacyPolicyView = () => {
           </h2>
           <p className="privacy-policy-view__paragraph">
             If you believe your data protection concern has not been handled
-            properly, you can contact your local data protection authority in the
-            EU/EEA or the authority in your place of residence.
+            properly, you can contact your local data protection authority in
+            the EU/EEA or the authority in your place of residence.
           </p>
         </section>
       </article>

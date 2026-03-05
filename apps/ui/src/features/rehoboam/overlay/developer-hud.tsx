@@ -1,8 +1,8 @@
 import type { CSSProperties } from "react";
 
 import type { RehoboamRenderDiagnostics } from "../engine/types";
-import type { InstrumentSize } from "./callout-overlay";
 import type { SceneQualityTier } from "../scene/quality";
+import type { InstrumentSize } from "./callout-overlay";
 
 type DeveloperHudNetworkStatus = "idle" | "loading" | "success" | "fallback";
 
