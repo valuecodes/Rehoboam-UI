@@ -1,3 +1,15 @@
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .app-shell {
   --app-shell-gutter: clamp(16px, 2vw, 24px);
   --app-shell-bottom-nav-height: 68px;
@@ -173,6 +185,10 @@
 
 .app-shell__content {
   min-height: 100dvh;
+}
+
+.app-shell__content:focus:not(:focus-visible) {
+  outline: none;
 }
 
 .app-shell__view {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { RehoboamScene } from "./features/rehoboam";
 
@@ -34,6 +34,12 @@ const appNavItems: readonly NavItem[] = [
     route: "privacy",
   },
 ];
+
+const appRouteTitles: Record<AppRoute, string> = {
+  home: "Rehoboam \u2014 Divergence",
+  hud: "Developer HUD \u2014 Rehoboam",
+  privacy: "Privacy Policy \u2014 Rehoboam",
+};
 
 const buildRouteUrl = (hash: string): string => {
   return `${window.location.pathname}${window.location.search}${hash}`;
@@ -74,6 +80,23 @@ export const App = () => {
     };
   }, []);
 
+  const mainRef = useRef<HTMLElement>(null);
+  const isInitialRenderRef = useRef(true);
+
+  useEffect(() => {
+    document.title = appRouteTitles[appRoute];
+  }, [appRoute]);
+
+  useEffect(() => {
+    if (isInitialRenderRef.current) {
+      isInitialRenderRef.current = false;
+
+      return;
+    }
+
+    mainRef.current?.focus();
+  }, [appRoute]);
+
   const isSceneRoute = appRoute !== "privacy";
 
   return (
@@ -98,7 +121,7 @@ export const App = () => {
           })}
         </nav>
       </aside>
-      <main className="app-shell__content">
+      <main className="app-shell__content" ref={mainRef} tabIndex={-1}>
         <div
           className={
             isSceneRoute

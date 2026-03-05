@@ -165,6 +165,16 @@ export const EventListPanel = ({
       return;
     }
 
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+
+      if (activePanelIndex >= 0) {
+        onSelectEvent(panelItems[activePanelIndex].eventAngle.event.id);
+      }
+
+      return;
+    }
+
     if (event.key === "Escape") {
       event.preventDefault();
       onClearSelection();
