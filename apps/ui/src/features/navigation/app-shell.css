@@ -54,17 +54,17 @@
   border-radius: 0;
   background:
     linear-gradient(
-      45deg,
-      transparent calc(50% - 0.75px),
-      var(--app-shell-nav-line) calc(50% - 0.75px),
-      var(--app-shell-nav-line) calc(50% + 0.75px),
-      transparent calc(50% + 0.75px)
-    )
-    left bottom / 12px 12px no-repeat,
-    linear-gradient(var(--app-shell-nav-line), var(--app-shell-nav-line))
-    left top / 1px calc(100% - 12px) no-repeat,
-    linear-gradient(var(--app-shell-nav-line), var(--app-shell-nav-line))
-    12px bottom / calc(100% - 12px) 1px no-repeat,
+        45deg,
+        transparent calc(50% - 0.75px),
+        var(--app-shell-nav-line) calc(50% - 0.75px),
+        var(--app-shell-nav-line) calc(50% + 0.75px),
+        transparent calc(50% + 0.75px)
+      )
+      left bottom / 12px 12px no-repeat,
+    linear-gradient(var(--app-shell-nav-line), var(--app-shell-nav-line)) left
+      top / 1px calc(100% - 12px) no-repeat,
+    linear-gradient(var(--app-shell-nav-line), var(--app-shell-nav-line)) 12px
+      bottom / calc(100% - 12px) 1px no-repeat,
     var(--app-shell-nav-fill);
   clip-path: polygon(0 0, 100% 0, 100% 100%, 12px 100%, 0 calc(100% - 12px));
   backdrop-filter: blur(1px);
@@ -112,15 +112,14 @@
   inset: 22px auto auto 12px;
   width: 54px;
   height: 1px;
-  background:
-    linear-gradient(
-      90deg,
-      rgba(18, 18, 18, 0) 0%,
-      rgba(18, 18, 18, 0.02) 38%,
-      rgba(18, 18, 18, 0.22) 50%,
-      rgba(18, 18, 18, 0.02) 62%,
-      rgba(18, 18, 18, 0) 100%
-    );
+  background: linear-gradient(
+    90deg,
+    rgba(18, 18, 18, 0) 0%,
+    rgba(18, 18, 18, 0.02) 38%,
+    rgba(18, 18, 18, 0.22) 50%,
+    rgba(18, 18, 18, 0.02) 62%,
+    rgba(18, 18, 18, 0) 100%
+  );
   background-repeat: no-repeat;
   background-size: 220% 100%;
   background-position-x: 132%;
@@ -352,9 +351,7 @@
 
   .app-shell__view--privacy {
     align-items: flex-start;
-    padding:
-      clamp(18px, 5vw, 24px)
-      var(--app-shell-gutter)
+    padding: clamp(18px, 5vw, 24px) var(--app-shell-gutter)
       calc(
         var(--app-shell-bottom-nav-height) + env(safe-area-inset-bottom) +
           var(--app-shell-gutter) * 2

@@ -47,7 +47,9 @@ test.describe("UI smoke tests", () => {
     );
   });
 
-  test("existing hud query flag still enables the overlay", async ({ page }) => {
+  test("existing hud query flag still enables the overlay", async ({
+    page,
+  }) => {
     await page.goto("/?hud");
 
     await expect(page.locator(".rehoboam-scene__instrument")).toBeVisible();
