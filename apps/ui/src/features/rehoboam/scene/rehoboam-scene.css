@@ -260,10 +260,10 @@
 
 .rehoboam-scene__debug-label {
   position: absolute;
-  inset: auto 0 clamp(12px, 2.2vw, 20px) 0;
+  inset: auto clamp(12px, 2.2vw, 20px) clamp(12px, 2.2vw, 20px) auto;
   margin: 0;
-  color: rgba(16, 16, 16, 0.45);
-  text-align: center;
+  color: var(--hud-soft);
+  text-align: right;
   font-family: var(--hud-font);
   font-size: clamp(0.62rem, 0.78vw, 0.8rem);
   pointer-events: none;
