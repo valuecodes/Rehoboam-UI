@@ -46,9 +46,9 @@ export const PrivacyPolicyView = () => {
             </li>
             <li>
               Aggregate or sampled usage and performance telemetry processed
-              through Cloudflare Web Analytics and Cloudflare Browser Insights /
-              RUM, such as page views, page load timing, performance metrics, and
-              general browser or network characteristics.
+              through Cloudflare Web Analytics, such as page views, page load
+              timing, performance metrics, and general browser or network
+              characteristics.
             </li>
             <li>
               Security challenge data if Cloudflare applies bot or abuse
