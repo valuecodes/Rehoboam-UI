@@ -1,14 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { MouseEvent as ReactMouseEvent } from "react";
 
 import { RehoboamScene } from "./features/rehoboam";
 
 import "./features/navigation/app-shell.css";
 
 import {
-  getAppRouteFromHash,
-  getHashForAppRoute,
-} from "./features/navigation/hash-route";
-import type { AppRoute } from "./features/navigation/hash-route";
+  getAppRouteFromPathname,
+  getPathForAppRoute,
+} from "./features/navigation/app-route";
+import type { AppRoute } from "./features/navigation/app-route";
 import { PrivacyPolicyView } from "./features/navigation/privacy-policy-view";
 
 type NavItem = Readonly<{
@@ -41,44 +42,54 @@ const appRouteTitles: Record<AppRoute, string> = {
   privacy: "Privacy Policy \u2014 Rehoboam",
 };
 
-const buildRouteUrl = (hash: string): string => {
-  return `${window.location.pathname}${window.location.search}${hash}`;
-};
-
 export const App = () => {
   const [appRoute, setAppRoute] = useState<AppRoute>(() => {
     if (typeof window === "undefined") {
       return "home";
     }
 
-    return getAppRouteFromHash(window.location.hash);
+    return getAppRouteFromPathname(window.location.pathname);
   });
 
-  useEffect(() => {
-    const syncRoute = () => {
-      const nextRoute = getAppRouteFromHash(window.location.hash);
-      const nextHash = getHashForAppRoute(nextRoute);
+  const navigateTo = useCallback((route: AppRoute) => {
+    const path = getPathForAppRoute(route);
 
-      if (window.location.hash !== nextHash) {
-        window.history.replaceState(
-          window.history.state,
-          "",
-          buildRouteUrl(nextHash)
-        );
-      }
+    if (window.location.pathname !== path) {
+      window.history.pushState(null, "", `${path}${window.location.search}`);
+    }
+
+    setAppRoute((currentRoute) => {
+      return currentRoute === route ? currentRoute : route;
+    });
+  }, []);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const nextRoute = getAppRouteFromPathname(window.location.pathname);
 
       setAppRoute((currentRoute) => {
         return currentRoute === nextRoute ? currentRoute : nextRoute;
       });
     };
 
-    syncRoute();
-    window.addEventListener("hashchange", syncRoute);
+    window.addEventListener("popstate", handlePopState);
 
     return () => {
-      window.removeEventListener("hashchange", syncRoute);
+      window.removeEventListener("popstate", handlePopState);
     };
   }, []);
+
+  const handleNavClick = useCallback(
+    (event: ReactMouseEvent<HTMLAnchorElement>, route: AppRoute) => {
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+      }
+
+      event.preventDefault();
+      navigateTo(route);
+    },
+    [navigateTo]
+  );
 
   const mainRef = useRef<HTMLElement>(null);
   const isInitialRenderRef = useRef(true);
@@ -104,7 +115,7 @@ export const App = () => {
       <aside className="app-shell__rail" aria-label="Application chrome">
         <nav aria-label="Primary" className="app-shell__nav">
           {appNavItems.map((item) => {
-            const href = getHashForAppRoute(item.route);
+            const href = getPathForAppRoute(item.route);
             const isCurrent = appRoute === item.route;
 
             return (
@@ -113,6 +124,9 @@ export const App = () => {
                 className={`app-shell__nav-link app-shell__nav-link--${item.route}`}
                 href={href}
                 key={item.route}
+                onClick={(event) => {
+                  handleNavClick(event, item.route);
+                }}
               >
                 <span className="app-shell__nav-meta">{item.code}</span>
                 <span className="app-shell__nav-title">{item.label}</span>

@@ -14,14 +14,14 @@ test.describe("UI smoke tests", () => {
   });
 
   test("hud route renders the developer hud overlay", async ({ page }) => {
-    await page.goto("/#/hud");
+    await page.goto("/hud");
 
     await expect(page.locator(".rehoboam-scene__instrument")).toBeVisible();
     await expect(page.getByLabel("Developer HUD")).toBeVisible();
   });
 
   test("privacy route renders the privacy policy panel", async ({ page }) => {
-    await page.goto("/#/privacy");
+    await page.goto("/privacy");
 
     await expect(
       page.getByRole("heading", { name: "Privacy Policy" })
@@ -61,7 +61,7 @@ test.describe("UI smoke tests", () => {
 
     await page.getByRole("link", { name: "Privacy policy" }).click();
 
-    await expect(page).toHaveURL(/#\/privacy$/);
+    await expect(page).toHaveURL("/privacy");
     await expect(
       page.getByRole("heading", { name: "Privacy Policy" })
     ).toBeVisible();
