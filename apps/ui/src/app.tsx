@@ -55,7 +55,7 @@ export const App = () => {
     const path = getPathForAppRoute(route);
 
     if (window.location.pathname !== path) {
-      window.history.pushState(null, "", `${path}${window.location.search}`);
+      window.history.pushState(null, "", path);
     }
 
     setAppRoute((currentRoute) => {

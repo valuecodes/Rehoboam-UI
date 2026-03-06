@@ -20,5 +20,4 @@ describe("app route helpers", () => {
     expect(getPathForAppRoute("hud")).toBe("/hud");
     expect(getPathForAppRoute("privacy")).toBe("/privacy");
   });
-
 });

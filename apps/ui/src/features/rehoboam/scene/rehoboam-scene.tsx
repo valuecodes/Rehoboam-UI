@@ -39,6 +39,8 @@ import { resolveSceneQualityProfile } from "./quality";
 
 import "./rehoboam-scene.css";
 
+let cachedEvents: readonly WorldEvent[] = [];
+
 const INTRO_DEBUG_QUERY_KEY = "intro-debug";
 const HUD_DEBUG_QUERY_KEY = "hud";
 const HUD_PUBLISH_INTERVAL_MS = 240;
@@ -422,7 +424,7 @@ export const RehoboamScene = ({
     const bootEvents = async () => {
       setNetworkStatus("loading");
       const refreshedResult = await refreshEventsFromSourceWithStatus({
-        existingEvents: [],
+        existingEvents: cachedEvents,
         source: eventSource,
       });
 
@@ -430,6 +432,7 @@ export const RehoboamScene = ({
         return;
       }
 
+      cachedEvents = refreshedResult.events;
       setNetworkStatus(refreshedResult.status);
       setEvents(refreshedResult.events);
     };
