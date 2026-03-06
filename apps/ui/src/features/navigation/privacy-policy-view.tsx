@@ -18,11 +18,11 @@ export const PrivacyPolicyView = () => {
           >
             rehoboam.valuecodes.fi
           </a>{" "}
-          processes personal
-          data when you use the site. Rehoboam UI is a read-only web
-          application. It does not offer user accounts, checkout, newsletters,
-          or contact forms. We do not ask you to submit your name, email
-          address, or other directly identifying information through the app.
+          processes personal data when you use the site. Rehoboam UI is a
+          read-only web application. It does not offer user accounts, checkout,
+          newsletters, or contact forms. We do not ask you to submit your name,
+          email address, or other directly identifying information through the
+          app.
         </p>
 
         <section className="privacy-policy-view__section">
