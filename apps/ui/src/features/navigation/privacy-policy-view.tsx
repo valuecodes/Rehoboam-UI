@@ -10,7 +10,15 @@ export const PrivacyPolicyView = () => {
         </h1>
         <p className="privacy-policy-view__intro">
           Last updated: March 5, 2026. This privacy policy explains how the
-          Rehoboam UI app at https://rehoboam.valuecodes.fi/ processes personal
+          Rehoboam UI app at{" "}
+          <a
+            href="https://rehoboam.valuecodes.fi/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            rehoboam.valuecodes.fi
+          </a>{" "}
+          processes personal
           data when you use the site. Rehoboam UI is a read-only web
           application. It does not offer user accounts, checkout, newsletters,
           or contact forms. We do not ask you to submit your name, email
@@ -24,7 +32,8 @@ export const PrivacyPolicyView = () => {
           <p className="privacy-policy-view__paragraph">
             Controller: Rehoboam UI operator
             <br />
-            Contact email: privacy@valuecodes.fi
+            Contact email:{" "}
+            <a href="mailto:privacy@valuecodes.fi">privacy@valuecodes.fi</a>
           </p>
         </section>
 
