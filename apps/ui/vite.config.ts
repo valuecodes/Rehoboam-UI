@@ -14,7 +14,7 @@ const cloudflareAnalytics = (): Plugin => ({
                 defer: true,
                 src: "https://static.cloudflareinsights.com/beacon.min.js",
                 "data-cf-beacon":
-                  '{"token": "bbaf80d9d8b444be9802b588ab2bddef"}',
+                  '{"token": "caa6f78379254d678e20950e5b7d9bbc"}',
               },
               injectTo: "body",
             },
