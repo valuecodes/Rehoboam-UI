@@ -7,6 +7,7 @@ import type { InstrumentSize } from "./callout-overlay";
 type DeveloperHudNetworkStatus = "idle" | "loading" | "success" | "fallback";
 
 export type DeveloperHudProps = Readonly<{
+  activeSeverityIntensity: number;
   diagnostics: RehoboamRenderDiagnostics | null;
   divergenceIntensity: number;
   eventCount: number;
@@ -100,6 +101,7 @@ const getDiagnosticsMetrics = (
 };
 
 export const DeveloperHud = ({
+  activeSeverityIntensity,
   diagnostics,
   divergenceIntensity,
   eventCount,
@@ -112,6 +114,7 @@ export const DeveloperHud = ({
     { label: "Quality", value: qualityTier },
     { label: "Events", value: `${eventCount}` },
     { label: "Network", value: networkStatus },
+    { label: "Sev mul", value: `${formatFixed(activeSeverityIntensity, 1)}x` },
     ...getDiagnosticsMetrics(diagnostics),
   ];
   const angleStep = 360 / metrics.length;

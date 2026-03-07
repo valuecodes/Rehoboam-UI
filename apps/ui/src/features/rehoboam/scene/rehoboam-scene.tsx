@@ -13,6 +13,7 @@ import { createApiEventSource } from "../data/source";
 import { DEFAULT_DPR_CAP, DEFAULT_THEME } from "../engine/defaults";
 import { createInitialInteractionState } from "../engine/input";
 import { createRehoboamEngine } from "../engine/rehoboam-engine";
+import { SEVERITY_INTENSITY } from "../engine/severity";
 import type {
   DivergenceCalloutTarget,
   InteractionState,
@@ -447,6 +448,12 @@ export const RehoboamScene = ({
     };
   }, [eventSource]);
 
+  const targetSeverityIntensity =
+    activeEventAngle !== null
+      ? SEVERITY_INTENSITY[activeEventAngle.event.severity]
+      : 1;
+  const severityIntensityRef = useRef(targetSeverityIntensity);
+
   useEffect(() => {
     const engine = engineRef.current;
 
@@ -454,13 +461,41 @@ export const RehoboamScene = ({
       return;
     }
 
-    engine.setTheme({
-      ...DEFAULT_THEME,
-      ringCount: qualityProfile.ringCount,
-      divergenceSampleCount: qualityProfile.divergenceSampleCount,
-      divergenceIntensity: divergenceIntensity / 50,
-    });
+    const TRANSITION_MS = 1500;
+    const smoothstep = (t: number) => t * t * (3 - 2 * t);
+    const startValue = severityIntensityRef.current;
+    const startTime = performance.now();
+    let rafId: number;
+
+    const animate = () => {
+      rafId = requestAnimationFrame((now) => {
+        const progress = Math.min((now - startTime) / TRANSITION_MS, 1);
+        const eased = smoothstep(progress);
+        const next =
+          startValue + (targetSeverityIntensity - startValue) * eased;
+
+        severityIntensityRef.current = next;
+
+        engine.setTheme({
+          ...DEFAULT_THEME,
+          ringCount: qualityProfile.ringCount,
+          divergenceSampleCount: qualityProfile.divergenceSampleCount,
+          divergenceIntensity: (divergenceIntensity / 50) * next,
+        });
+
+        if (progress < 1) {
+          animate();
+        }
+      });
+    };
+
+    animate();
+
+    return () => {
+      cancelAnimationFrame(rafId);
+    };
   }, [
+    targetSeverityIntensity,
     divergenceIntensity,
     qualityProfile.divergenceSampleCount,
     qualityProfile.ringCount,
@@ -577,6 +612,7 @@ export const RehoboamScene = ({
         {isHudEnabled ? (
           <Suspense fallback={null}>
             <LazyDeveloperHud
+              activeSeverityIntensity={targetSeverityIntensity}
               diagnostics={publishedHudDiagnostics}
               divergenceIntensity={divergenceIntensity}
               eventCount={events.length}
