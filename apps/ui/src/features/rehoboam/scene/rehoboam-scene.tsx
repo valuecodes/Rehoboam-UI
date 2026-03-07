@@ -231,6 +231,7 @@ export const RehoboamScene = ({
     useState<DivergenceCalloutTarget | null>(null);
   const [calloutCycleToken, setCalloutCycleToken] = useState(0);
   const [networkStatus, setNetworkStatus] = useState<HudNetworkStatus>("idle");
+  const [divergenceIntensity, setDivergenceIntensity] = useState(50);
   const [publishedHudDiagnostics, setPublishedHudDiagnostics] =
     useState<RehoboamRenderDiagnostics | null>(null);
   const activeClusterTargetRef = useRef<DivergenceCalloutTarget | null>(null);
@@ -457,8 +458,13 @@ export const RehoboamScene = ({
       ...DEFAULT_THEME,
       ringCount: qualityProfile.ringCount,
       divergenceSampleCount: qualityProfile.divergenceSampleCount,
+      divergenceIntensity: divergenceIntensity / 50,
     });
-  }, [qualityProfile.divergenceSampleCount, qualityProfile.ringCount]);
+  }, [
+    divergenceIntensity,
+    qualityProfile.divergenceSampleCount,
+    qualityProfile.ringCount,
+  ]);
 
   useEffect(() => {
     const instrument = instrumentRef.current;
@@ -572,9 +578,11 @@ export const RehoboamScene = ({
           <Suspense fallback={null}>
             <LazyDeveloperHud
               diagnostics={publishedHudDiagnostics}
+              divergenceIntensity={divergenceIntensity}
               eventCount={events.length}
               instrumentSize={instrumentSize}
               networkStatus={networkStatus}
+              onDivergenceIntensityChange={setDivergenceIntensity}
               qualityTier={hudQualityTier}
             />
           </Suspense>

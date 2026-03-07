@@ -429,6 +429,57 @@
   white-space: normal;
 }
 
+.rehoboam-scene__developer-hud-controls {
+  position: absolute;
+  top: 62%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  width: 60%;
+  max-width: 12rem;
+  pointer-events: auto;
+  z-index: 4;
+}
+
+.rehoboam-scene__developer-hud-slider-label {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: clamp(0.55rem, 0.9vmin, 0.72rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hud-mid);
+}
+
+.rehoboam-scene__developer-hud-slider {
+  width: 100%;
+  height: 2px;
+  appearance: none;
+  background: rgba(18, 18, 18, 0.18);
+  border-radius: 1px;
+  outline: none;
+  cursor: pointer;
+}
+
+.rehoboam-scene__developer-hud-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--hud-strong, rgba(18, 18, 18, 0.7));
+}
+
+.rehoboam-scene__developer-hud-slider::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border: none;
+  border-radius: 50%;
+  background: var(--hud-strong, rgba(18, 18, 18, 0.7));
+}
+
 @media (max-width: 700px) {
   .rehoboam-scene__developer-hud {
     --rehoboam-hud-size: min(84vw, 420px);

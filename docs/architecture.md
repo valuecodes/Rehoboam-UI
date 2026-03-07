@@ -334,6 +334,7 @@ Setter behavior:
   ringCount: 22;
   divergenceSampleCount: 360;
   sweepSpeedDegPerSecond: 8;
+  divergenceIntensity: 1;
 }
 ```
 

@@ -11,6 +11,7 @@ export const DEFAULT_THEME: RehoboamTheme = {
   ringCount: 22,
   divergenceSampleCount: 360,
   sweepSpeedDegPerSecond: 8,
+  divergenceIntensity: 1,
 };
 
 export type CreateViewportStateInput = Readonly<{

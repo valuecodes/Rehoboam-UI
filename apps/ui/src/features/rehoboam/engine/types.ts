@@ -67,6 +67,7 @@ export type RehoboamTheme = Readonly<{
   ringCount: number;
   divergenceSampleCount: number;
   sweepSpeedDegPerSecond: number;
+  divergenceIntensity: number;
 }>;
 
 export type EngineResizeInput = Readonly<{
