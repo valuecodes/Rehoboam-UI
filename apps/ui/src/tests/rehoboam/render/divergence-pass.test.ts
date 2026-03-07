@@ -66,4 +66,90 @@ describe("drawDivergencePass", () => {
       })
     ).toBe(false);
   });
+
+  it("scales displacement across 0, base, and boosted intensity levels", () => {
+    const viewport = createViewportState({
+      width: 420,
+      height: 420,
+      dpr: 1,
+      dprCap: 2,
+    });
+    const center = { x: 210, y: 210 };
+
+    const extractMaxRadius = (commands: readonly string[]): number => {
+      let maxRadius = 0;
+
+      for (const command of commands) {
+        const match = /^(?:moveTo|lineTo)\((-?\d+\.\d+),(-?\d+\.\d+)\)$/.exec(
+          command
+        );
+
+        if (match === null) {
+          continue;
+        }
+
+        const x = Number(match[1]);
+        const y = Number(match[2]);
+        const radius = Math.sqrt((x - center.x) ** 2 + (y - center.y) ** 2);
+        maxRadius = Math.max(maxRadius, radius);
+      }
+
+      return maxRadius;
+    };
+
+    const calmMock = createMockCanvasContext();
+    drawDivergencePass({
+      context: calmMock.context,
+      viewport,
+      theme: { ...DEFAULT_THEME, divergenceIntensity: 0 },
+      interaction: createInitialInteractionState(),
+      events: [],
+      eventAnglesByEventId: new Map(),
+      pulses: [],
+      clusters: [],
+      elapsedMs: 5_000,
+      timeMs: 5_000,
+      entranceScale: 1,
+    });
+
+    const baseMock = createMockCanvasContext();
+    drawDivergencePass({
+      context: baseMock.context,
+      viewport,
+      theme: { ...DEFAULT_THEME, divergenceIntensity: 1 },
+      interaction: createInitialInteractionState(),
+      events: [],
+      eventAnglesByEventId: new Map(),
+      pulses: [],
+      clusters: [],
+      elapsedMs: 5_000,
+      timeMs: 5_000,
+      entranceScale: 1,
+    });
+
+    const boostedMock = createMockCanvasContext();
+    drawDivergencePass({
+      context: boostedMock.context,
+      viewport,
+      theme: { ...DEFAULT_THEME, divergenceIntensity: 2 },
+      interaction: createInitialInteractionState(),
+      events: [],
+      eventAnglesByEventId: new Map(),
+      pulses: [],
+      clusters: [],
+      elapsedMs: 5_000,
+      timeMs: 5_000,
+      entranceScale: 1,
+    });
+
+    const calmMaxRadius = extractMaxRadius(calmMock.commands);
+    const baseMaxRadius = extractMaxRadius(baseMock.commands);
+    const boostedMaxRadius = extractMaxRadius(boostedMock.commands);
+
+    expect(calmMaxRadius).toBeGreaterThan(0);
+    expect(baseMaxRadius).toBeGreaterThan(0);
+    expect(boostedMaxRadius).toBeGreaterThan(0);
+    expect(calmMaxRadius).toBeLessThan(baseMaxRadius);
+    expect(baseMaxRadius).toBeLessThan(boostedMaxRadius);
+  });
 });

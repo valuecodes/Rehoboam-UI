@@ -553,7 +553,8 @@ const createContourSamples = (
   pulseAngles: ReadonlyMap<string, number>,
   extensions: readonly ActivePulseDescriptor[],
   sampleCount: number,
-  entranceScale: number
+  entranceScale: number,
+  intensityScale: number
 ): readonly ContourSample[] => {
   const samples = sanitizeSampleCount(sampleCount);
   const elapsedSeconds = elapsedMs / 1000;
@@ -566,17 +567,20 @@ const createContourSamples = (
         angleRad * BASELINE_WAVE_FREQUENCIES[0] - elapsedSeconds * 0.42
       ) *
         viewport.outerRadius *
-        0.0039 +
+        0.0039 *
+        intensityScale +
       Math.sin(
         angleRad * BASELINE_WAVE_FREQUENCIES[1] + elapsedSeconds * 0.74
       ) *
         viewport.outerRadius *
-        0.0028 +
+        0.0028 *
+        intensityScale +
       Math.sin(
         angleRad * BASELINE_WAVE_FREQUENCIES[2] - elapsedSeconds * 1.05
       ) *
         viewport.outerRadius *
-        0.0017;
+        0.0017 *
+        intensityScale;
 
     let pulseInfluence = 0;
     const pulseOffset = pulses.reduce((sum, pulse) => {
@@ -899,7 +903,9 @@ const drawFlowCircleLanes = (
   viewport: ViewportState,
   samples: readonly ContourSample[],
   extensions: readonly ActivePulseDescriptor[],
-  elapsedMs: number
+  elapsedMs: number,
+  intensity: number,
+  intensityScale: number
 ): void => {
   const sampleCount = samples.length - 1;
 
@@ -950,15 +956,16 @@ const drawFlowCircleLanes = (
         viewport.outerRadius * SEAM_UNDERPAINT_EXTENSION_CAP_FACTOR,
         mountainSample.extensionInfluence *
           viewport.outerRadius *
-          SEAM_UNDERPAINT_EXTENSION_GAIN_FACTOR
+          SEAM_UNDERPAINT_EXTENSION_GAIN_FACTOR *
+          intensity
       );
       const crestLift = Math.min(
         viewport.outerRadius * SEAM_UNDERPAINT_CREST_CAP_FACTOR,
-        mountainSample.crestHeight * SEAM_UNDERPAINT_CREST_GAIN
+        mountainSample.crestHeight * SEAM_UNDERPAINT_CREST_GAIN * intensity
       );
       const targetOuterRadius =
         mountainSample.baseRadius +
-        viewport.outerRadius * SEAM_UNDERPAINT_BASE_OUTER_FACTOR +
+        viewport.outerRadius * SEAM_UNDERPAINT_BASE_OUTER_FACTOR * intensity +
         extensionLift +
         crestLift;
       const minimumOuterRadius =
@@ -1056,8 +1063,13 @@ const drawFlowCircleLanes = (
       { length: sampleCount + 1 },
       (_, index) => {
         const sample = samples[index];
-        const baseRadius =
+        const coreRadius =
+          coreContourRadii[index] ??
+          viewport.outerRadius * CORE_RING_RADIUS_FACTOR;
+        const layerBaseRadius =
           sample.radius + viewport.outerRadius * layer.baseOffsetFactor;
+        const baseRadius =
+          coreRadius + (layerBaseRadius - coreRadius) * intensity;
         const carrierEnvelope =
           0.4 +
           ((Math.sin(
@@ -1108,17 +1120,18 @@ const drawFlowCircleLanes = (
           (0.05 + normalizedExtension * 1.8);
         const jaggedness = ridgeShape + needleShape;
         const pulseBoost =
-          0.58 +
+          0.58 * intensityScale +
           Math.pow(sample.pulseInfluence, 0.82) * 2.9 +
           normalizedExtension * 3.1;
         const crestHeight =
           viewport.outerRadius *
           layer.amplitudeFactor *
+          intensityScale *
           carrierEnvelope *
           jaggedness *
           pulseBoost;
         const cappedCrestHeight = Math.min(
-          viewport.outerRadius * 0.16,
+          viewport.outerRadius * 0.16 * intensityScale,
           crestHeight
         );
 
@@ -1376,6 +1389,8 @@ export const drawDivergencePass = (input: DivergencePassInput): void => {
     ...clusterDescriptors,
   ].slice(0, MAX_MOUNTAIN_EXTENSION_SOURCES);
   const resolvedEntranceScale = Math.max(0, Math.min(1, entranceScale));
+  const intensity = Math.max(0, Math.min(2, theme.divergenceIntensity));
+  const intensityScale = 0.1 + 0.9 * intensity;
   const samples = createContourSamples(
     viewport,
     elapsedMs,
@@ -1384,7 +1399,8 @@ export const drawDivergencePass = (input: DivergencePassInput): void => {
     eventAnglesByEventId,
     mountainExtensions,
     theme.divergenceSampleCount,
-    resolvedEntranceScale
+    resolvedEntranceScale,
+    intensityScale
   );
 
   drawFlowCircleLanes(
@@ -1392,6 +1408,8 @@ export const drawDivergencePass = (input: DivergencePassInput): void => {
     viewport,
     samples,
     mountainExtensions,
-    elapsedMs
+    elapsedMs,
+    intensity,
+    intensityScale
   );
 };

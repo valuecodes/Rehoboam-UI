@@ -8,9 +8,11 @@ type DeveloperHudNetworkStatus = "idle" | "loading" | "success" | "fallback";
 
 export type DeveloperHudProps = Readonly<{
   diagnostics: RehoboamRenderDiagnostics | null;
+  divergenceIntensity: number;
   eventCount: number;
   instrumentSize: InstrumentSize;
   networkStatus: DeveloperHudNetworkStatus;
+  onDivergenceIntensityChange: (value: number) => void;
   qualityTier: SceneQualityTier;
 }>;
 
@@ -99,9 +101,11 @@ const getDiagnosticsMetrics = (
 
 export const DeveloperHud = ({
   diagnostics,
+  divergenceIntensity,
   eventCount,
   instrumentSize,
   networkStatus,
+  onDivergenceIntensityChange,
   qualityTier,
 }: DeveloperHudProps) => {
   const metrics: readonly HudMetric[] = [
@@ -158,6 +162,22 @@ export const DeveloperHud = ({
             </div>
           );
         })}
+      </div>
+      <div className="rehoboam-scene__developer-hud-controls">
+        <label className="rehoboam-scene__developer-hud-slider-label">
+          <span>Intensity</span>
+          <span>{divergenceIntensity}</span>
+        </label>
+        <input
+          className="rehoboam-scene__developer-hud-slider"
+          max={100}
+          min={0}
+          onChange={(event) => {
+            onDivergenceIntensityChange(Number(event.target.value));
+          }}
+          type="range"
+          value={divergenceIntensity}
+        />
       </div>
     </aside>
   );
