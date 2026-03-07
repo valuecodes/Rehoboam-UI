@@ -292,14 +292,8 @@ const resolveScenarioSequence = (
         },
       ];
     default:
-      if (value === undefined) {
-        throw new Error(
-          "Unknown scenario. See --help for supported scenario names."
-        );
-      }
-
       throw new Error(
-        `Unknown scenario: ${value}. See --help for supported scenario names.`
+        `Unknown scenario: ${value ?? ""}. See --help for supported scenario names.`
       );
   }
 };

@@ -75,7 +75,7 @@ const CALLOUT_DEBUG_HALF_QUERY_KEY = "callout-debug-half";
 const CALLOUT_DEBUG_SIDE_QUERY_KEY = "callout-debug-side";
 const CALLOUT_CENTER_KEEP_OUT_PX = 12;
 const COMPACT_LAYOUT_WIDTH_PX = 700;
-const COMPACT_LABEL_HEIGHT_PX = 100;
+const COMPACT_LABEL_HEIGHT_PX = 108;
 const COMPACT_LABEL_LEFT_INSET_PX = 24;
 const COMPACT_FRAME_INSET_X_PX = 10;
 const COMPACT_BOTTOM_LABEL_SHIFT_PX = 70;
@@ -214,13 +214,8 @@ const getCalloutGeometry = (
   if (isCompactViewport) {
     const labelX = margin + COMPACT_LABEL_LEFT_INSET_PX;
     const maxLabelWidth = Math.max(180, instrumentSize.width - labelX - margin);
-    const labelWidth = clampNumber(maxLabelWidth, 180, maxLabelWidth);
-    const maxLabelHeight = Math.max(108, instrumentSize.height - margin * 2);
-    const labelHeight = clampNumber(
-      COMPACT_LABEL_HEIGHT_PX,
-      Math.min(108, maxLabelHeight),
-      maxLabelHeight
-    );
+    const labelWidth = maxLabelWidth;
+    const labelHeight = COMPACT_LABEL_HEIGHT_PX;
     const shouldPlaceBottom = lockedToBottom || (!lockedToTop && !isLowerHalf);
     const compactBottomMargin = Math.max(
       8,
