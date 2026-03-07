@@ -34,6 +34,8 @@ const EXTENSION_OFFSET_SCALE = 1.05;
 const EXTENSION_OUTWARD_OFFSET_CAP = 0.043;
 const EXTENSION_INWARD_OFFSET_CAP = 0.04;
 const BASELINE_WAVE_FREQUENCIES = [5, 9, 14] as const;
+const BASE_WAVE_INTENSITY_SCALE = 0.7;
+const BODY_THICKNESS_INTENSITY_SCALE = 0.7;
 const MOUNTAIN_CARRIER_FREQUENCY = 7;
 const CORE_CONTOUR_OUTWARD_DELTA_GAIN = 0.18;
 const CORE_CONTOUR_OUTWARD_PULSE_DELTA_GAIN = 0.1;
@@ -176,6 +178,17 @@ const sanitizeSampleCount = (value: number): number => {
   }
 
   return Math.max(96, Math.min(720, Math.trunc(value)));
+};
+
+const resolveTrimmedIntensity = (
+  intensity: number,
+  scaleAboveBaseline: number
+): number => {
+  if (intensity <= 1) {
+    return intensity;
+  }
+
+  return 1 + (intensity - 1) * scaleAboveBaseline;
 };
 
 const getPulseEnvelope = (elapsedMs: number): number => {
@@ -568,19 +581,22 @@ const createContourSamples = (
       ) *
         viewport.outerRadius *
         0.0039 *
-        intensityScale +
+        intensityScale *
+        BASE_WAVE_INTENSITY_SCALE +
       Math.sin(
         angleRad * BASELINE_WAVE_FREQUENCIES[1] + elapsedSeconds * 0.74
       ) *
         viewport.outerRadius *
         0.0028 *
-        intensityScale +
+        intensityScale *
+        BASE_WAVE_INTENSITY_SCALE +
       Math.sin(
         angleRad * BASELINE_WAVE_FREQUENCIES[2] - elapsedSeconds * 1.05
       ) *
         viewport.outerRadius *
         0.0017 *
-        intensityScale;
+        intensityScale *
+        BASE_WAVE_INTENSITY_SCALE;
 
     let pulseInfluence = 0;
     const pulseOffset = pulses.reduce((sum, pulse) => {
@@ -914,6 +930,11 @@ const drawFlowCircleLanes = (
   }
 
   const elapsedSeconds = elapsedMs / 1000;
+  const bodyThicknessIntensity = resolveTrimmedIntensity(
+    intensity,
+    BODY_THICKNESS_INTENSITY_SCALE
+  );
+  const bodyThicknessScale = 0.1 + 0.9 * bodyThicknessIntensity;
 
   context.save();
   context.globalCompositeOperation = "multiply";
@@ -1069,7 +1090,7 @@ const drawFlowCircleLanes = (
         const layerBaseRadius =
           sample.radius + viewport.outerRadius * layer.baseOffsetFactor;
         const baseRadius =
-          coreRadius + (layerBaseRadius - coreRadius) * intensity;
+          coreRadius + (layerBaseRadius - coreRadius) * bodyThicknessIntensity;
         const carrierEnvelope =
           0.4 +
           ((Math.sin(
@@ -1119,17 +1140,17 @@ const drawFlowCircleLanes = (
           Math.pow(Math.max(waveA, waveB), 14) *
           (0.05 + normalizedExtension * 1.8);
         const jaggedness = ridgeShape + needleShape;
-        const pulseBoost =
-          0.58 * intensityScale +
+        const basePulseBoost =
+          0.58 * bodyThicknessScale * BASE_WAVE_INTENSITY_SCALE;
+        const spikePulseBoost =
           Math.pow(sample.pulseInfluence, 0.82) * 2.9 +
           normalizedExtension * 3.1;
         const crestHeight =
           viewport.outerRadius *
           layer.amplitudeFactor *
-          intensityScale *
           carrierEnvelope *
           jaggedness *
-          pulseBoost;
+          (basePulseBoost + intensityScale * spikePulseBoost);
         const cappedCrestHeight = Math.min(
           viewport.outerRadius * 0.16 * intensityScale,
           crestHeight

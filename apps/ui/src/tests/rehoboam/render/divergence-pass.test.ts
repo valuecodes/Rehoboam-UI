@@ -96,6 +96,32 @@ describe("drawDivergencePass", () => {
 
       return maxRadius;
     };
+    const extractRadiusSpread = (commands: readonly string[]): number => {
+      let maxRadius = 0;
+      let minRadius = Number.POSITIVE_INFINITY;
+
+      for (const command of commands) {
+        const match = /^(?:moveTo|lineTo)\((-?\d+\.\d+),(-?\d+\.\d+)\)$/.exec(
+          command
+        );
+
+        if (match === null) {
+          continue;
+        }
+
+        const x = Number(match[1]);
+        const y = Number(match[2]);
+        const radius = Math.sqrt((x - center.x) ** 2 + (y - center.y) ** 2);
+        maxRadius = Math.max(maxRadius, radius);
+        minRadius = Math.min(minRadius, radius);
+      }
+
+      if (!Number.isFinite(minRadius)) {
+        return 0;
+      }
+
+      return maxRadius - minRadius;
+    };
 
     const calmMock = createMockCanvasContext();
     drawDivergencePass({
@@ -145,11 +171,29 @@ describe("drawDivergencePass", () => {
     const calmMaxRadius = extractMaxRadius(calmMock.commands);
     const baseMaxRadius = extractMaxRadius(baseMock.commands);
     const boostedMaxRadius = extractMaxRadius(boostedMock.commands);
+    const calmRadiusSpread = extractRadiusSpread(calmMock.commands);
+    const baseRadiusSpread = extractRadiusSpread(baseMock.commands);
+    const boostedRadiusSpread = extractRadiusSpread(boostedMock.commands);
 
     expect(calmMaxRadius).toBeGreaterThan(0);
     expect(baseMaxRadius).toBeGreaterThan(0);
     expect(boostedMaxRadius).toBeGreaterThan(0);
+    expect(calmRadiusSpread).toBeGreaterThan(0);
+    expect(baseRadiusSpread).toBeGreaterThan(0);
+    expect(boostedRadiusSpread).toBeGreaterThan(0);
     expect(calmMaxRadius).toBeLessThan(baseMaxRadius);
     expect(baseMaxRadius).toBeLessThan(boostedMaxRadius);
+    expect(baseMaxRadius - calmMaxRadius).toBeLessThan(
+      viewport.outerRadius * 0.1
+    );
+    expect(boostedMaxRadius - baseMaxRadius).toBeLessThan(
+      viewport.outerRadius * 0.15
+    );
+    expect(boostedMaxRadius).toBeLessThan(viewport.outerRadius * 1.05);
+    expect(calmRadiusSpread).toBeLessThan(baseRadiusSpread);
+    expect(baseRadiusSpread).toBeLessThan(boostedRadiusSpread);
+    expect(boostedRadiusSpread - baseRadiusSpread).toBeLessThan(
+      viewport.outerRadius * 0.12
+    );
   });
 });
