@@ -39,6 +39,6 @@
    * https://developers.cloudflare.com/workers/configuration/cron-triggers/
    */
   "triggers": {
-    "crons": ["0 9 * * *"], // Run daily at 09:00 UTC
+    "crons": ["0 */6 * * *"], // Run every 6 hours
   },
 }
