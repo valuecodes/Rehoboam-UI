@@ -39,6 +39,8 @@ import { resolveSceneQualityProfile } from "./quality";
 
 import "./rehoboam-scene.css";
 
+// Preserve the latest snapshot across remounts so bootstrap fallback stays warm
+// without reintroducing client-side persistence.
 let cachedEvents: readonly WorldEvent[] = [];
 
 const INTRO_DEBUG_QUERY_KEY = "intro-debug";
