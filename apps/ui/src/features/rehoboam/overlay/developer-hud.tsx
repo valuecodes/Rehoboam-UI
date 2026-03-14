@@ -7,7 +7,6 @@ import type { InstrumentSize } from "./callout-overlay";
 type DeveloperHudNetworkStatus = "idle" | "loading" | "success" | "fallback";
 
 export type DeveloperHudProps = Readonly<{
-  activeSeverityIntensity: number;
   diagnostics: RehoboamRenderDiagnostics | null;
   divergenceIntensity: number;
   eventCount: number;
@@ -15,6 +14,7 @@ export type DeveloperHudProps = Readonly<{
   networkStatus: DeveloperHudNetworkStatus;
   onDivergenceIntensityChange: (value: number) => void;
   qualityTier: SceneQualityTier;
+  renderedSeverityIntensity: number;
 }>;
 
 type HudMetric = Readonly<{
@@ -101,7 +101,6 @@ const getDiagnosticsMetrics = (
 };
 
 export const DeveloperHud = ({
-  activeSeverityIntensity,
   diagnostics,
   divergenceIntensity,
   eventCount,
@@ -109,12 +108,16 @@ export const DeveloperHud = ({
   networkStatus,
   onDivergenceIntensityChange,
   qualityTier,
+  renderedSeverityIntensity,
 }: DeveloperHudProps) => {
   const metrics: readonly HudMetric[] = [
     { label: "Quality", value: qualityTier },
     { label: "Events", value: `${eventCount}` },
     { label: "Network", value: networkStatus },
-    { label: "Sev mul", value: `${formatFixed(activeSeverityIntensity, 1)}x` },
+    {
+      label: "Sev mul",
+      value: `${formatFixed(renderedSeverityIntensity, 1)}x`,
+    },
     ...getDiagnosticsMetrics(diagnostics),
   ];
   const angleStep = 360 / metrics.length;
@@ -167,12 +170,16 @@ export const DeveloperHud = ({
         })}
       </div>
       <div className="rehoboam-scene__developer-hud-controls">
-        <label className="rehoboam-scene__developer-hud-slider-label">
+        <label
+          className="rehoboam-scene__developer-hud-slider-label"
+          htmlFor="rehoboam-divergence-intensity-slider"
+        >
           <span>Intensity</span>
           <span>{divergenceIntensity}</span>
         </label>
         <input
           className="rehoboam-scene__developer-hud-slider"
+          id="rehoboam-divergence-intensity-slider"
           max={100}
           min={0}
           onChange={(event) => {
