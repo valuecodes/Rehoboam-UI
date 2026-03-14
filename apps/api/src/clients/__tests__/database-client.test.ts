@@ -18,8 +18,16 @@ vi.mock("drizzle-orm/d1", () => ({
 }));
 
 vi.mock("drizzle-orm", () => ({
+  count: () => ({ count: true }),
   desc: (col: unknown) => ({ desc: col }),
   eq: (col: unknown, val: unknown) => ({ eq: { col, val } }),
+  sql: Object.assign(
+    (strings: TemplateStringsArray, ...values: unknown[]) => ({
+      sql: strings.join("?"),
+      values,
+    }),
+    { join: () => ({ sql: "joined" }) }
+  ),
 }));
 
 const loggerMock = {
@@ -218,5 +226,191 @@ describe("DatabaseClient", () => {
       "processed events exist but none are displayable",
       { count: 1 }
     );
+  });
+});
+
+describe("DatabaseClient.getStats", () => {
+  // Helpers to build per-query mock chains for the four sequential select() calls.
+  // Query 1 (total):      select -> from -> where  -> resolves [{ total }]
+  // Query 2 (category):   select -> from -> where -> groupBy -> resolves [{ category, total }]
+  // Query 3 (severity):   select -> from -> where -> groupBy -> resolves [{ severity, total }]
+  // Query 4 (activity):   select -> from -> where -> groupBy -> orderBy -> resolves [{ date, total }]
+
+  // Build a thenable object that also exposes the next builder methods.
+  // This allows both `await chain.where(...)` and `chain.where(...).groupBy(...)`.
+  const makeThenable = (
+    resolved: unknown,
+    methods: Record<string, unknown> = {}
+  ) => {
+    const obj: Record<string, unknown> = {
+      then: (resolve: (v: unknown) => unknown) =>
+        Promise.resolve(resolved).then(resolve),
+      catch: (reject: (e: unknown) => unknown) =>
+        Promise.resolve(resolved).catch(reject),
+      ...methods,
+    };
+    return obj;
+  };
+
+  const makeChain = (resolved: unknown) => {
+    const orderBy = vi.fn().mockReturnValue(makeThenable(resolved));
+    const groupBy = vi
+      .fn()
+      .mockReturnValue(makeThenable(resolved, { orderBy }));
+    const where = vi.fn().mockReturnValue(makeThenable(resolved, { groupBy }));
+    const from = vi.fn().mockReturnValue({ where });
+    return { from };
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns zeroed totals and full keys when DB is empty", async () => {
+    const chain1 = makeChain([{ total: 0 }]);
+    const chain2 = makeChain([]);
+    const chain3 = makeChain([]);
+    const chain4 = makeChain([]);
+
+    selectMock
+      .mockReturnValueOnce({ from: chain1.from })
+      .mockReturnValueOnce({ from: chain2.from })
+      .mockReturnValueOnce({ from: chain3.from })
+      .mockReturnValueOnce({ from: chain4.from });
+
+    const client = new DatabaseClient({} as D1Database, loggerMock as never);
+    const result = await client.getStats();
+
+    expect(result.totals.events).toBe(0);
+    expect(Object.keys(result.byCategory)).toHaveLength(9);
+    expect(Object.values(result.byCategory).every((v) => v === 0)).toBe(true);
+    expect(Object.keys(result.bySeverity)).toHaveLength(4);
+    expect(Object.values(result.bySeverity).every((v) => v === 0)).toBe(true);
+    expect(result.recentActivity).toHaveLength(7);
+    expect(result.recentActivity.every((a) => a.count === 0)).toBe(true);
+  });
+
+  it("aggregates category counts correctly and zero-fills missing categories", async () => {
+    const chain1 = makeChain([{ total: 3 }]);
+    const chain2 = makeChain([
+      { category: "conflict", total: 2 },
+      { category: "politics", total: 1 },
+    ]);
+    const chain3 = makeChain([]);
+    const chain4 = makeChain([]);
+
+    selectMock
+      .mockReturnValueOnce({ from: chain1.from })
+      .mockReturnValueOnce({ from: chain2.from })
+      .mockReturnValueOnce({ from: chain3.from })
+      .mockReturnValueOnce({ from: chain4.from });
+
+    const client = new DatabaseClient({} as D1Database, loggerMock as never);
+    const result = await client.getStats();
+
+    expect(result.byCategory.conflict).toBe(2);
+    expect(result.byCategory.politics).toBe(1);
+    expect(result.byCategory.climate).toBe(0);
+  });
+
+  it("aggregates severity counts correctly and zero-fills missing severities", async () => {
+    const chain1 = makeChain([{ total: 5 }]);
+    const chain2 = makeChain([]);
+    const chain3 = makeChain([{ severity: "high", total: 5 }]);
+    const chain4 = makeChain([]);
+
+    selectMock
+      .mockReturnValueOnce({ from: chain1.from })
+      .mockReturnValueOnce({ from: chain2.from })
+      .mockReturnValueOnce({ from: chain3.from })
+      .mockReturnValueOnce({ from: chain4.from });
+
+    const client = new DatabaseClient({} as D1Database, loggerMock as never);
+    const result = await client.getStats();
+
+    expect(result.bySeverity.high).toBe(5);
+    expect(result.bySeverity.low).toBe(0);
+  });
+
+  it("returns exactly 7 recentActivity entries sorted oldest-to-newest", async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const chain1 = makeChain([{ total: 10 }]);
+    const chain2 = makeChain([]);
+    const chain3 = makeChain([]);
+    const chain4 = makeChain([{ date: today, total: 3 }]);
+
+    selectMock
+      .mockReturnValueOnce({ from: chain1.from })
+      .mockReturnValueOnce({ from: chain2.from })
+      .mockReturnValueOnce({ from: chain3.from })
+      .mockReturnValueOnce({ from: chain4.from });
+
+    const client = new DatabaseClient({} as D1Database, loggerMock as never);
+    const result = await client.getStats();
+
+    expect(result.recentActivity).toHaveLength(7);
+    // entries should be sorted oldest first
+    const dates = result.recentActivity.map((a) => a.date);
+    expect(dates).toEqual([...dates].sort());
+  });
+
+  it("zero-fills activity days with no events", async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const chain1 = makeChain([{ total: 3 }]);
+    const chain2 = makeChain([]);
+    const chain3 = makeChain([]);
+    const chain4 = makeChain([{ date: today, total: 3 }]);
+
+    selectMock
+      .mockReturnValueOnce({ from: chain1.from })
+      .mockReturnValueOnce({ from: chain2.from })
+      .mockReturnValueOnce({ from: chain3.from })
+      .mockReturnValueOnce({ from: chain4.from });
+
+    const client = new DatabaseClient({} as D1Database, loggerMock as never);
+    const result = await client.getStats();
+
+    const todayEntry = result.recentActivity.find((a) => a.date === today);
+    expect(todayEntry?.count).toBe(3);
+    const otherEntries = result.recentActivity.filter((a) => a.date !== today);
+    expect(otherEntries.every((a) => a.count === 0)).toBe(true);
+  });
+
+  it("ignores unknown category values from the database", async () => {
+    const chain1 = makeChain([{ total: 1 }]);
+    const chain2 = makeChain([{ category: "sports", total: 10 }]);
+    const chain3 = makeChain([]);
+    const chain4 = makeChain([]);
+
+    selectMock
+      .mockReturnValueOnce({ from: chain1.from })
+      .mockReturnValueOnce({ from: chain2.from })
+      .mockReturnValueOnce({ from: chain3.from })
+      .mockReturnValueOnce({ from: chain4.from });
+
+    const client = new DatabaseClient({} as D1Database, loggerMock as never);
+    const result = await client.getStats();
+
+    expect(Object.values(result.byCategory).every((v) => v === 0)).toBe(true);
+  });
+
+  it("logs debug with fetched stats from D1", async () => {
+    const chain1 = makeChain([{ total: 7 }]);
+    const chain2 = makeChain([]);
+    const chain3 = makeChain([]);
+    const chain4 = makeChain([]);
+
+    selectMock
+      .mockReturnValueOnce({ from: chain1.from })
+      .mockReturnValueOnce({ from: chain2.from })
+      .mockReturnValueOnce({ from: chain3.from })
+      .mockReturnValueOnce({ from: chain4.from });
+
+    const client = new DatabaseClient({} as D1Database, loggerMock as never);
+    await client.getStats();
+
+    expect(loggerMock.debug).toHaveBeenCalledWith("fetched stats from D1", {
+      total: 7,
+    });
   });
 });
