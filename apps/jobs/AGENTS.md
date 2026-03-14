@@ -56,7 +56,7 @@ Run from repo root:
 - Clear local D1 data: `pnpm --filter rehoboam-jobs db:clear:local`
 - Apply migrations (local): `pnpm --filter rehoboam-jobs db:migrate:local`
 - Apply migrations (remote): `pnpm --filter rehoboam-jobs db:migrate:remote`
-- Trigger cron locally: `curl http://localhost:3002/__scheduled?cron=0+9+*+*+*`
+- Trigger cron locally: `curl 'http://localhost:3002/__scheduled?cron=0+*/6+*+*+*'`
 
 ## Jobs Code Standards
 
@@ -67,7 +67,7 @@ Run from repo root:
 ## Safe Workflow For Jobs Changes
 
 1. Read `src/index.ts`, `src/scheduled.ts`, and relevant job files before edits.
-2. If adding a new cron schedule, update both `wrangler.jsonc` and the job's `cron` field.
+2. If adding or changing a cron schedule, update the relevant `wrangler*.jsonc` files, the job's `cron` field, and any scheduled-job tests.
 3. If changing Cloudflare bindings/config, update `wrangler.jsonc` and run `pnpm --filter rehoboam-jobs cf-typegen`.
 4. If changing schema, update `packages/db/src/schema.ts` (shared via `@repo/db`), generate migrations in `drizzle/`, and validate locally with `pnpm --filter rehoboam-jobs db:migrate:local`.
 5. For production schema rollout, merge to `main` so `.github/workflows/main.yml` runs `migrate-jobs-d1` before worker deploys; use `.github/workflows/migrations.yml` only for manual retries/backfills.

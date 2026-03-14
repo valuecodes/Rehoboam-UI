@@ -30,6 +30,8 @@ const createController = (cron: string): ScheduledController =>
   ({ cron }) as unknown as ScheduledController;
 
 describe("handleScheduled", () => {
+  const cron = "0 */6 * * *";
+
   beforeEach(() => {
     getJobsForCronMock.mockReset();
     warnMock.mockReset();
@@ -39,18 +41,14 @@ describe("handleScheduled", () => {
     const runNews = vi.fn().mockResolvedValue(undefined);
     const runDigest = vi.fn().mockResolvedValue(undefined);
     const jobs: TestJob[] = [
-      { name: "news", cron: "0 9 * * *", run: runNews },
-      { name: "digest", cron: "0 9 * * *", run: runDigest },
+      { name: "news", cron, run: runNews },
+      { name: "digest", cron, run: runDigest },
     ];
 
     getJobsForCronMock.mockReturnValue(jobs);
 
     await expect(
-      handleScheduled(
-        createController("0 9 * * *"),
-        {} as Env,
-        {} as ExecutionContext
-      )
+      handleScheduled(createController(cron), {} as Env, {} as ExecutionContext)
     ).resolves.toBeUndefined();
     expect(runNews).toHaveBeenCalledOnce();
     expect(runDigest).toHaveBeenCalledOnce();
@@ -60,18 +58,14 @@ describe("handleScheduled", () => {
     const runSuccess = vi.fn().mockResolvedValue(undefined);
     const runFailure = vi.fn().mockRejectedValue(new Error("job failed"));
     const jobs: TestJob[] = [
-      { name: "news", cron: "0 9 * * *", run: runSuccess },
-      { name: "failing-job", cron: "0 9 * * *", run: runFailure },
+      { name: "news", cron, run: runSuccess },
+      { name: "failing-job", cron, run: runFailure },
     ];
 
     getJobsForCronMock.mockReturnValue(jobs);
 
     await expect(
-      handleScheduled(
-        createController("0 9 * * *"),
-        {} as Env,
-        {} as ExecutionContext
-      )
+      handleScheduled(createController(cron), {} as Env, {} as ExecutionContext)
     ).rejects.toThrow("Scheduled jobs failed: failing-job");
     expect(runSuccess).toHaveBeenCalledOnce();
     expect(runFailure).toHaveBeenCalledOnce();
@@ -81,15 +75,13 @@ describe("handleScheduled", () => {
     getJobsForCronMock.mockReturnValue([]);
 
     await expect(
-      handleScheduled(
-        createController("0 9 * * *"),
-        {} as Env,
-        {} as ExecutionContext
-      )
+      handleScheduled(createController(cron), {} as Env, {} as ExecutionContext)
     ).resolves.toBeUndefined();
     expect(warnMock).toHaveBeenCalledWith(
       "no jobs registered for cron pattern",
-      { cron: "0 9 * * *" }
+      {
+        cron,
+      }
     );
   });
 });
