@@ -180,6 +180,8 @@ Behavior:
 - Successful refresh treats the source as authoritative and replaces the
   current snapshot.
 - Current scene source is `createApiEventSource("/api/events")`.
+- The API also exposes a public `GET /api/stats` endpoint for aggregate counts;
+  the current UI boot path does not consume it yet.
 - In local development, Vite proxies `/api/*` from the web app to
   `http://localhost:3001`.
 
@@ -195,6 +197,19 @@ Behavior:
 - `category` (`conflict | politics | climate | health | economy | diplomacy | disaster | science | general`) — AI-assigned category
 
 `runEventPipeline` normalizes this API payload into `WorldEvent[]`.
+
+### API Stats Payload Contract
+
+`apps/api` also exposes `GET /api/stats` for aggregate metrics over non-skipped
+events:
+
+- `totals.events` (`number`) — total non-skipped events
+- `byCategory` (`Record<Category, number>`) — zero-filled counts for every
+  event category
+- `bySeverity` (`Record<Severity, number>`) — zero-filled counts for every
+  severity
+- `recentActivity` (`{ date: YYYY-MM-DD, count: number }[]`) — seven-day
+  oldest-to-newest activity series
 
 ### Normalization and Dedupe Pipeline
 
