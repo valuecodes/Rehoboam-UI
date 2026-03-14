@@ -335,6 +335,160 @@ describe("AiClient", () => {
     expect(result.failed).toBe(0);
   });
 
+  describe("prompt injection defense", () => {
+    it("sanitizes title with null bytes before sending to AI", async () => {
+      const aiMock = {
+        run: vi.fn().mockResolvedValue({ output_text: makeAiResponse([]) }),
+      };
+
+      const client = new AiClient(aiMock as never, loggerMock as never);
+      await client.processNewsItems([
+        makeItem("item-1", "Hello\x00World\x01Injected"),
+      ]);
+
+      const [, request] = aiMock.run.mock.calls[0] as [
+        string,
+        { messages: { role: string; content: string }[] },
+      ];
+      const userContent = request.messages[1]?.content ?? "";
+      expect(userContent).toContain("HelloWorldInjected");
+      expect(userContent).not.toContain("\x00");
+      expect(userContent).not.toContain("\x01");
+    });
+
+    it("truncates title over 200 chars before sending to AI", async () => {
+      const aiMock = {
+        run: vi.fn().mockResolvedValue({ output_text: makeAiResponse([]) }),
+      };
+
+      const longTitle = "a".repeat(250);
+      const client = new AiClient(aiMock as never, loggerMock as never);
+      await client.processNewsItems([makeItem("item-1", longTitle)]);
+
+      const [, request] = aiMock.run.mock.calls[0] as [
+        string,
+        { messages: { role: string; content: string }[] },
+      ];
+      const userContent = request.messages[1]?.content ?? "";
+      const parsed = JSON.parse(userContent) as { title: string }[];
+      expect(parsed[0]?.title).toHaveLength(200);
+    });
+
+    it("falls back when AI returns title longer than 100 chars", async () => {
+      const aiMock = {
+        run: vi.fn().mockResolvedValue({
+          output_text: makeAiResponse([
+            {
+              id: "item-1",
+              include: true,
+              title: "a".repeat(101),
+              location: null,
+              severity: "low",
+              category: "general",
+            },
+          ]),
+        }),
+      };
+
+      const client = new AiClient(aiMock as never, loggerMock as never);
+      const result = await client.processNewsItems([
+        makeItem("item-1", "Original Title"),
+      ]);
+
+      expect(result.failed).toBe(1);
+      expect(result.events[0]).toEqual(
+        expect.objectContaining({
+          newsItemId: "item-1",
+          title: "Original Title",
+          skipped: false,
+        })
+      );
+    });
+
+    it("falls back when AI returns location with disallowed characters", async () => {
+      const aiMock = {
+        run: vi.fn().mockResolvedValue({
+          output_text: makeAiResponse([
+            {
+              id: "item-1",
+              include: true,
+              title: "Safe Title",
+              location: "<script>alert('xss')</script>",
+              severity: "low",
+              category: "general",
+            },
+          ]),
+        }),
+      };
+
+      const client = new AiClient(aiMock as never, loggerMock as never);
+      const result = await client.processNewsItems([
+        makeItem("item-1", "Original Title"),
+      ]);
+
+      expect(result.failed).toBe(1);
+    });
+
+    it("accepts Unicode location names from AI output", async () => {
+      const aiMock = {
+        run: vi.fn().mockResolvedValue({
+          output_text: makeAiResponse([
+            {
+              id: "item-1",
+              include: true,
+              title: "Safe Title",
+              location: "São Paulo, Brasil",
+              severity: "low",
+              category: "general",
+            },
+          ]),
+        }),
+      };
+
+      const client = new AiClient(aiMock as never, loggerMock as never);
+      const result = await client.processNewsItems([
+        makeItem("item-1", "Original Title"),
+      ]);
+
+      expect(result.failed).toBe(0);
+      expect(result.events[0]).toEqual(
+        expect.objectContaining({
+          newsItemId: "item-1",
+          locationLabel: "São Paulo, Brasil",
+          skipped: false,
+        })
+      );
+    });
+
+    it("sanitizes title in omit-fallback path", async () => {
+      const aiMock = {
+        run: vi.fn().mockResolvedValue({
+          output_text: makeAiResponse([]),
+        }),
+      };
+
+      const client = new AiClient(aiMock as never, loggerMock as never);
+      const result = await client.processNewsItems([
+        makeItem("item-1", "<b>Malicious\x00Title</b>"),
+      ]);
+
+      expect(result.events[0]?.title).toBe("MaliciousTitle");
+    });
+
+    it("sanitizes title in full AI failure fallback path", async () => {
+      const aiMock = {
+        run: vi.fn().mockRejectedValue(new Error("AI service unavailable")),
+      };
+
+      const client = new AiClient(aiMock as never, loggerMock as never);
+      const result = await client.processNewsItems([
+        makeItem("item-1", "<b>Injected\x00Title</b>"),
+      ]);
+
+      expect(result.events[0]?.title).toBe("InjectedTitle");
+    });
+  });
+
   it("passes correct request shape to AI", async () => {
     const aiMock = {
       run: vi.fn().mockResolvedValue({

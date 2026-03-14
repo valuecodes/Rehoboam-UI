@@ -47,3 +47,21 @@ export const NewsItemSchema = z.object({
 });
 
 export type NewsItem = z.infer<typeof NewsItemSchema>;
+
+export const StatsDailyActivitySchema = z.object({
+  date: z.iso.date(),
+  count: z.number().int().nonnegative(),
+});
+
+export type StatsDailyActivity = z.infer<typeof StatsDailyActivitySchema>;
+
+export const StatsResponseSchema = z.object({
+  totals: z.object({
+    events: z.number().int().nonnegative(),
+  }),
+  byCategory: z.record(CategorySchema, z.number().int().nonnegative()),
+  bySeverity: z.record(SeveritySchema, z.number().int().nonnegative()),
+  recentActivity: z.array(StatsDailyActivitySchema),
+});
+
+export type StatsResponse = z.infer<typeof StatsResponseSchema>;
