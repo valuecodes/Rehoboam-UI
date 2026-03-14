@@ -266,6 +266,10 @@ describe("DatabaseClient.getStats", () => {
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("returns zeroed totals and full keys when DB is empty", async () => {
     const chain1 = makeChain([{ total: 0 }]);
     const chain2 = makeChain([]);
@@ -374,6 +378,48 @@ describe("DatabaseClient.getStats", () => {
     expect(todayEntry?.count).toBe(3);
     const otherEntries = result.recentActivity.filter((a) => a.date !== today);
     expect(otherEntries.every((a) => a.count === 0)).toBe(true);
+  });
+
+  it("uses one captured UTC base date for cutoff and labels", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-14T23:59:59.900Z"));
+
+    const chain1 = makeChain([{ total: 2 }]);
+    const chain2 = makeChain([]);
+    const chain3 = makeChain([]);
+    const activityRows = [{ date: "2026-03-08", total: 2 }];
+    const orderBy = vi.fn().mockImplementation(() => {
+      vi.setSystemTime(new Date("2026-03-15T00:00:00.100Z"));
+      return makeThenable(activityRows);
+    });
+    const groupBy = vi
+      .fn()
+      .mockReturnValue(makeThenable(activityRows, { orderBy }));
+    const where = vi
+      .fn()
+      .mockReturnValue(makeThenable(activityRows, { groupBy }));
+    const chain4 = {
+      from: vi.fn().mockReturnValue({ where }),
+    };
+
+    selectMock
+      .mockReturnValueOnce({ from: chain1.from })
+      .mockReturnValueOnce({ from: chain2.from })
+      .mockReturnValueOnce({ from: chain3.from })
+      .mockReturnValueOnce({ from: chain4.from });
+
+    const client = new DatabaseClient({} as D1Database, loggerMock as never);
+    const result = await client.getStats();
+
+    expect(result.recentActivity).toEqual([
+      { date: "2026-03-08", count: 2 },
+      { date: "2026-03-09", count: 0 },
+      { date: "2026-03-10", count: 0 },
+      { date: "2026-03-11", count: 0 },
+      { date: "2026-03-12", count: 0 },
+      { date: "2026-03-13", count: 0 },
+      { date: "2026-03-14", count: 0 },
+    ]);
   });
 
   it("ignores unknown category values from the database", async () => {

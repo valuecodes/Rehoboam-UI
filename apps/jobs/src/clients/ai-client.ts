@@ -14,7 +14,7 @@ const BATCH_SIZE = 5;
 const MAX_OUTPUT_TOKENS = 2048;
 const TEMPERATURE = 0.1;
 const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
-const LOCATION_TEXT_RE = /^[\p{L}\p{N} ,.\-'()]+$/u;
+const LOCATION_TEXT_RE = /^[\p{L}\p{N} ,.&/'’()-]+$/u;
 
 const INSTRUCTIONS = `You are a news analysis system. You receive an array of news items and return a JSON object with an "items" array.
 
@@ -275,7 +275,7 @@ export class AiClient implements AiProcessor {
 
       return {
         newsItemId: newsItem.id,
-        title: newsItem.title,
+        title: sanitizeText(newsItem.title, 100),
         category: "general",
         severity: "low" as const,
         locationLabel: null,

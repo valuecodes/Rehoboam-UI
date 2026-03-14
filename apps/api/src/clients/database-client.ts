@@ -106,7 +106,8 @@ export class DatabaseClient {
       .where(eq(events.skipped, false))
       .groupBy(events.severity);
 
-    const cutoff = new Date();
+    const now = new Date();
+    const cutoff = new Date(now);
     cutoff.setUTCDate(cutoff.getUTCDate() - 6);
     const cutoffStr = cutoff.toISOString().slice(0, 10);
 
@@ -142,8 +143,8 @@ export class DatabaseClient {
 
     const activityMap = new Map(activityRows.map((r) => [r.date, r.total]));
     const recentActivity = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date();
-      d.setUTCDate(d.getUTCDate() - (6 - i));
+      const d = new Date(cutoff);
+      d.setUTCDate(cutoff.getUTCDate() + i);
       const date = d.toISOString().slice(0, 10);
       return { date, count: activityMap.get(date) ?? 0 };
     });

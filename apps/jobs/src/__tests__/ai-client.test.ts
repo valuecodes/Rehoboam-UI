@@ -113,6 +113,27 @@ describe("AiClient", () => {
     );
   });
 
+  it("sanitizes skipped item titles before returning them", async () => {
+    const aiMock = {
+      run: vi.fn().mockResolvedValue({
+        output_text: makeAiResponse([{ id: "item-1", include: false }]),
+      }),
+    };
+
+    const client = new AiClient(aiMock as never, loggerMock as never);
+    const result = await client.processNewsItems([
+      makeItem("item-1", "<b>Sports\x00Game</b>"),
+    ]);
+
+    expect(result.events[0]).toEqual(
+      expect.objectContaining({
+        newsItemId: "item-1",
+        title: "SportsGame",
+        skipped: true,
+      })
+    );
+  });
+
   it("batches items into groups of 5", async () => {
     const aiMock = {
       run: vi.fn().mockResolvedValue({
@@ -458,6 +479,65 @@ describe("AiClient", () => {
           skipped: false,
         })
       );
+    });
+
+    it("accepts common place punctuation in AI location output", async () => {
+      const aiMock = {
+        run: vi.fn().mockResolvedValue({
+          output_text: makeAiResponse([
+            {
+              id: "item-1",
+              include: true,
+              title: "Safe Title 1",
+              location: "Trinidad & Tobago",
+              severity: "low",
+              category: "general",
+            },
+            {
+              id: "item-2",
+              include: true,
+              title: "Safe Title 2",
+              location: "Côte d’Ivoire",
+              severity: "medium",
+              category: "general",
+            },
+            {
+              id: "item-3",
+              include: true,
+              title: "Safe Title 3",
+              location: "Tel Aviv/Jerusalem",
+              severity: "high",
+              category: "politics",
+            },
+          ]),
+        }),
+      };
+
+      const client = new AiClient(aiMock as never, loggerMock as never);
+      const result = await client.processNewsItems([
+        makeItem("item-1", "Original Title 1"),
+        makeItem("item-2", "Original Title 2"),
+        makeItem("item-3", "Original Title 3"),
+      ]);
+
+      expect(result.failed).toBe(0);
+      expect(result.events).toEqual([
+        expect.objectContaining({
+          newsItemId: "item-1",
+          locationLabel: "Trinidad & Tobago",
+          skipped: false,
+        }),
+        expect.objectContaining({
+          newsItemId: "item-2",
+          locationLabel: "Côte d’Ivoire",
+          skipped: false,
+        }),
+        expect.objectContaining({
+          newsItemId: "item-3",
+          locationLabel: "Tel Aviv/Jerusalem",
+          skipped: false,
+        }),
+      ]);
     });
 
     it("sanitizes title in omit-fallback path", async () => {
