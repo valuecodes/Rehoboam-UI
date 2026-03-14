@@ -3,10 +3,18 @@ import { CategorySchema } from "@repo/types";
 import type { Category, NewsItem } from "@repo/types";
 import { z } from "zod";
 
+import {
+  sanitizeNewsInput,
+  sanitizeText,
+  stripDangerousHtml,
+  stripHtml,
+} from "../lib/sanitize";
+
 const BATCH_SIZE = 5;
 const MAX_OUTPUT_TOKENS = 2048;
 const TEMPERATURE = 0.1;
 const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
+const LOCATION_TEXT_RE = /^[\p{L}\p{N} ,.\-'()]+$/u;
 
 const INSTRUCTIONS = `You are a news analysis system. You receive an array of news items and return a JSON object with an "items" array.
 
@@ -87,8 +95,20 @@ const AI_RESPONSE_JSON_SCHEMA = {
 const AiIncludedItemSchema = z.object({
   id: z.string(),
   include: z.literal(true),
-  title: z.string(),
-  location: z.string().nullable(),
+  title: z
+    .string()
+    .max(100)
+    .transform(stripHtml)
+    .transform((s) => s.trim()),
+  location: z
+    .string()
+    .max(100)
+    .transform(stripDangerousHtml)
+    .transform((s) => s.trim())
+    .refine((s) => LOCATION_TEXT_RE.test(s), {
+      message: "Location contains unsupported characters",
+    })
+    .nullable(),
   severity: z.enum(["low", "medium", "high", "critical"]),
   category: CategorySchema,
 });
@@ -164,11 +184,14 @@ export class AiClient implements AiProcessor {
   }
 
   private async processBatch(batch: NewsItem[]): Promise<ProcessedEvent[]> {
-    const batchInput = batch.map((item) => ({
-      id: item.id,
-      title: item.title,
-      description: item.description ?? "",
-    }));
+    const batchInput = batch.map((item) => {
+      const sanitized = sanitizeNewsInput(item.title, item.description ?? "");
+      return {
+        id: item.id,
+        title: sanitized.title,
+        description: sanitized.description,
+      };
+    });
 
     const input = JSON.stringify(batchInput);
 
@@ -229,7 +252,7 @@ export class AiClient implements AiProcessor {
         });
         return {
           newsItemId: newsItem.id,
-          title: newsItem.title,
+          title: sanitizeText(newsItem.title, 100),
           category: "general",
           severity: "medium" as const,
           locationLabel: null,
@@ -265,7 +288,7 @@ export class AiClient implements AiProcessor {
   private fallbackProcess(batch: NewsItem[]): ProcessedEvent[] {
     return batch.map((item) => ({
       newsItemId: item.id,
-      title: item.title,
+      title: sanitizeText(item.title, 100),
       category: "general",
       severity: "medium" as const,
       locationLabel: null,
