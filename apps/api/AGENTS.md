@@ -9,9 +9,9 @@ Use it with the repo-level guide at root: `AGENTS.md`.
 
 - Workspace: `apps/api`
 - Runtime: Cloudflare Workers + Hono + TypeScript
-- App type: Worker API that serves timeline events for `apps/ui`
-- Primary endpoint: `GET /api/events`
-- Contract source: `@repo/types` (`EventsResponseSchema`)
+- App type: Public Worker API that serves timeline events and aggregate stats
+- Public endpoints: `GET /api/events`, `GET /api/stats`
+- Contract source: `@repo/types` (`EventsResponseSchema`, `StatsResponseSchema`)
 - Data source: D1 database (`rehoboam-jobs-db`, shared with `apps/jobs`)
 - Database schema: `@repo/db` (shared package)
 - Tests: Vitest (middleware + database client)
@@ -20,6 +20,7 @@ Use it with the repo-level guide at root: `AGENTS.md`.
 
 - Worker entry + route wiring: `src/index.ts`
 - Events route: `src/routes/events.ts`
+- Stats route: `src/routes/stats.ts`
 - Request logger middleware: `src/middleware/logger.ts`
 - Security middleware (CORS, secure headers): `src/middleware/security.ts`
 - Cache middleware (ETag, Cloudflare Cache API, Cache-Control): `src/middleware/cache.ts`
@@ -33,13 +34,15 @@ Use it with the repo-level guide at root: `AGENTS.md`.
 
 ## Implementation Notes
 
-- `src/index.ts` wires security middleware (`secureHeadersMiddleware`, `corsMiddleware`), then `loggerMiddleware`, `etagMiddleware`, a default no-store fallback for responses that don't set `Cache-Control`, and cache middleware for `/api/events`. Logger sets `X-Request-Id` after downstream middleware so cached responses can still receive a fresh per-request ID without persisting stale IDs in cache. Installs `onErrorHandler`, mounts `/api/events`, and defines `notFoundHandler`.
+- `src/index.ts` wires security middleware (`secureHeadersMiddleware`, `corsMiddleware`), then `loggerMiddleware`, `etagMiddleware`, a default no-store fallback for responses that don't set `Cache-Control`, and cache middleware for `/api/events` and `/api/stats`. Logger sets `X-Request-Id` after downstream middleware so cached responses can still receive a fresh per-request ID without persisting stale IDs in cache. Installs `onErrorHandler`, mounts the public API routes, and defines `notFoundHandler`.
 - The Worker must default-export the Hono app for Cloudflare runtime compatibility.
 - `loggerMiddleware` sets `logger` and `requestId` in context variables and exposes `X-Request-Id` on the response; downstream handlers depend on these values.
 - `security.ts` configures CORS (allowed origins: production domain and localhost:3000) and secure response headers via Hono built-ins.
 - `cache.ts` provides two caching layers: `etagMiddleware` (global, weak ETags for conditional requests) and `createCacheMiddleware` (per-route, Cloudflare Cache API with `vary: "Origin"` so cached responses are keyed per origin, preventing CORS cache poisoning). The `cacheControl` utility allows setting custom `Cache-Control` directives per route.
 - `src/routes/events.ts` returns the already-validated payload from `DatabaseClient`; `src/clients/database-client.ts` validates and normalizes rows with `EventPublishedAtSchema` and `EventsResponseSchema` before the route responds.
+- `src/routes/stats.ts` returns aggregate counts from `DatabaseClient`; `src/clients/database-client.ts` validates the response with `StatsResponseSchema` and zero-fills missing category/severity keys for a stable public contract.
 - Events are sourced from the `events` table in D1 (`rehoboam-jobs-db`) via `DatabaseClient`. The `apps/jobs` worker fetches news, processes them with Workers AI (filtering, title shortening, location extraction, severity/category assignment), and stores the results in the `events` table. The API prefers non-skipped events, mapping `locationLabel` to `location` (with `"Unknown"` fallback) and passing through AI-assigned `severity` and `category`. If the `events` table has no rows yet, it falls back to the latest `news_items` rows and serves them as `"general"` / `"medium"` timeline entries with `"Unknown"` location. If processed rows exist but all are skipped, the API returns an empty array rather than resurfacing filtered items. Results are capped at 50 items ordered by `publishedAt` descending.
+- `/api/stats` reports totals for non-skipped events, grouped category/severity counts, and a seven-day `recentActivity` series. The endpoint is public and cached for 10 minutes.
 - Database schema is shared via `@repo/db` package (used by both `apps/api` and `apps/jobs`).
 - If `wrangler.jsonc` bindings change, regenerate `worker-configuration.d.ts`.
 

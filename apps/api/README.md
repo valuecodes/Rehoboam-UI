@@ -1,11 +1,12 @@
 # Rehoboam API
 
-Cloudflare Worker API workspace for timeline events consumed by `apps/ui`.
+Cloudflare Worker API workspace for public timeline and stats endpoints consumed by `apps/ui` and other clients.
 
-## Endpoint Contract
+## Endpoint Contracts
 
 - `GET /api/events`
-- Response body is validated with `EventsResponseSchema` from `@repo/types`
+- `GET /api/stats`
+- Response bodies are validated with `EventsResponseSchema` and `StatsResponseSchema` from `@repo/types`
 - The API prefers processed `events`; if the `events` table is still empty, it falls back to recent `news_items` mapped into the same response shape
 
 ```json
@@ -24,6 +25,37 @@ Cloudflare Worker API workspace for timeline events consumed by `apps/ui`.
 `severity` is one of `low | medium | high | critical`.
 `category` is one of `conflict | politics | climate | health | economy | diplomacy | disaster | science | general`.
 
+`GET /api/stats` returns aggregate metrics for non-skipped events:
+
+```json
+{
+  "totals": {
+    "events": 42
+  },
+  "byCategory": {
+    "conflict": 8,
+    "politics": 10,
+    "climate": 2,
+    "health": 1,
+    "economy": 7,
+    "diplomacy": 3,
+    "disaster": 5,
+    "science": 1,
+    "general": 5
+  },
+  "bySeverity": {
+    "low": 8,
+    "medium": 20,
+    "high": 11,
+    "critical": 3
+  },
+  "recentActivity": [
+    { "date": "2025-01-01", "count": 5 },
+    { "date": "2025-01-02", "count": 7 }
+  ]
+}
+```
+
 ## Request Lifecycle
 
 ```mermaid
@@ -34,15 +66,23 @@ flowchart LR
     CORS --> LOG["loggerMiddleware (X-Request-Id set after response)"]
     LOG --> ETAG["etagMiddleware (weak ETags)"]
     ETAG --> NOSTORE["defaultNoStoreCacheControlMiddleware"]
-    NOSTORE --> CACHE["createCacheMiddleware (300s, Vary: Origin)"]
-    CACHE --> ROUTE["Route: /api/events"]
-    ROUTE --> HANDLER["events.ts handler"]
-    HANDLER --> DB["DatabaseClient.getEvents() (D1, max 50)"]
-    DB --> SCHEMA["EventsResponseSchema.parse(events)"]
-    SCHEMA --> RESP["JSON 200 response"]
+    NOSTORE --> EVENTS_CACHE["events cache (300s, Vary: Origin)"]
+    NOSTORE --> STATS_CACHE["stats cache (600s, Vary: Origin)"]
+    EVENTS_CACHE --> EVENTS_ROUTE["Route: /api/events"]
+    STATS_CACHE --> STATS_ROUTE["Route: /api/stats"]
+    EVENTS_ROUTE --> EVENTS_HANDLER["events.ts handler"]
+    STATS_ROUTE --> STATS_HANDLER["stats.ts handler"]
+    EVENTS_HANDLER --> EVENTS_DB["DatabaseClient.getEvents() (D1, max 50)"]
+    STATS_HANDLER --> STATS_DB["DatabaseClient.getStats()"]
+    EVENTS_DB --> EVENTS_SCHEMA["EventsResponseSchema.parse(events)"]
+    STATS_DB --> STATS_SCHEMA["StatsResponseSchema.parse(stats)"]
+    EVENTS_SCHEMA --> RESP["JSON 200 response"]
+    STATS_SCHEMA --> RESP
 
-    ROUTE -. unmatched .-> NF["notFoundHandler (404)"]
-    HANDLER -. throws .-> ERR["onErrorHandler (500)"]
+    EVENTS_ROUTE -. unmatched .-> NF["notFoundHandler (404)"]
+    STATS_ROUTE -. unmatched .-> NF
+    EVENTS_HANDLER -. throws .-> ERR["onErrorHandler (500)"]
+    STATS_HANDLER -. throws .-> ERR
 ```
 
 ## Workspace Architecture
@@ -54,10 +94,13 @@ flowchart TD
     IDX --> LOG["src/middleware/logger.ts"]
     IDX --> ERR["src/middleware/error-handlers.ts"]
     IDX --> EVT["src/routes/events.ts"]
+    IDX --> STATS["src/routes/stats.ts"]
     EVT --> DBC["src/clients/database-client.ts"]
+    STATS --> DBC
     DBC --> DB["@repo/db (Drizzle schema)"]
     DBC --> D1["D1 (rehoboam-jobs-db)"]
     EVT --> TYPES["@repo/types (EventsResponseSchema)"]
+    STATS --> TYPES2["@repo/types (StatsResponseSchema)"]
     IDX --> CFG["wrangler.jsonc (Worker runtime + routes + D1)"]
 ```
 
@@ -93,6 +136,7 @@ pnpm dev
 
 - Worker entry + middleware composition: `src/index.ts`
 - Events route: `src/routes/events.ts`
+- Stats route: `src/routes/stats.ts`
 - Database client (Drizzle ORM, D1): `src/clients/database-client.ts`
 - Security middleware: `src/middleware/security.ts`
 - Cache middleware (ETag, Cloudflare Cache API, default no-store): `src/middleware/cache.ts`
