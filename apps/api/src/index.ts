@@ -9,6 +9,7 @@ import { notFoundHandler, onErrorHandler } from "./middleware/error-handlers";
 import { loggerMiddleware } from "./middleware/logger";
 import { corsMiddleware, secureHeadersMiddleware } from "./middleware/security";
 import { events } from "./routes/events";
+import { stats } from "./routes/stats";
 import type { AppEnv } from "./types";
 
 const app = new Hono<AppEnv>();
@@ -19,9 +20,11 @@ app.use("*", loggerMiddleware);
 app.use("*", etagMiddleware);
 app.use("*", defaultNoStoreCacheControlMiddleware);
 app.use("/api/events", createCacheMiddleware({ ttl: 300 }));
+app.use("/api/stats", createCacheMiddleware({ ttl: 600 }));
 app.onError(onErrorHandler);
 
 app.route("/api/events", events);
+app.route("/api/stats", stats);
 
 app.notFound(notFoundHandler);
 
