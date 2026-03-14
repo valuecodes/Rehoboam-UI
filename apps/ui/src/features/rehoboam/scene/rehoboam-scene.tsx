@@ -235,6 +235,8 @@ export const RehoboamScene = ({
   const [divergenceIntensity, setDivergenceIntensity] = useState(50);
   const [publishedHudDiagnostics, setPublishedHudDiagnostics] =
     useState<RehoboamRenderDiagnostics | null>(null);
+  const [publishedSeverityIntensity, setPublishedSeverityIntensity] =
+    useState(1);
   const activeClusterTargetRef = useRef<DivergenceCalloutTarget | null>(null);
   const clusterTargetsRef = useRef<readonly DivergenceCalloutTarget[]>([]);
   const autoCycleEventIdsRef = useRef<readonly string[]>([]);
@@ -379,6 +381,7 @@ export const RehoboamScene = ({
 
     const publishDiagnostics = () => {
       setPublishedHudDiagnostics(latestRenderDiagnosticsRef.current);
+      setPublishedSeverityIntensity(severityIntensityRef.current);
     };
 
     publishDiagnostics();
@@ -612,7 +615,6 @@ export const RehoboamScene = ({
         {isHudEnabled ? (
           <Suspense fallback={null}>
             <LazyDeveloperHud
-              activeSeverityIntensity={targetSeverityIntensity}
               diagnostics={publishedHudDiagnostics}
               divergenceIntensity={divergenceIntensity}
               eventCount={events.length}
@@ -620,6 +622,7 @@ export const RehoboamScene = ({
               networkStatus={networkStatus}
               onDivergenceIntensityChange={setDivergenceIntensity}
               qualityTier={hudQualityTier}
+              renderedSeverityIntensity={publishedSeverityIntensity}
             />
           </Suspense>
         ) : null}
