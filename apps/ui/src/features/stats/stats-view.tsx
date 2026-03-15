@@ -1,4 +1,5 @@
 import type { StatsResponse } from "@repo/types";
+import type { CSSProperties } from "react";
 
 import { useStats } from "./use-stats";
 
@@ -80,7 +81,7 @@ const StatsActivity = ({ recentActivity }: ActivityProps) => {
               style={
                 {
                   "--bar-pct": (item.count / maxCount) * 100,
-                } as React.CSSProperties
+                } as CSSProperties
               }
             />
           </div>
@@ -133,7 +134,7 @@ const StatsCategories = ({ byCategory }: CategoriesProps) => {
                 <div className="stats-view__category-bar-track">
                   <div
                     className="stats-view__category-bar-fill stats-view__skeleton"
-                    style={{ "--bar-pct": 0 } as React.CSSProperties}
+                    style={{ "--bar-pct": 0 } as CSSProperties}
                   />
                 </div>
                 <span className="stats-view__category-count stats-view__skeleton">
@@ -152,7 +153,7 @@ const StatsCategories = ({ byCategory }: CategoriesProps) => {
                     style={
                       {
                         "--bar-pct": (entry.count / maxCount) * 100,
-                      } as React.CSSProperties
+                      } as CSSProperties
                     }
                   />
                 </div>
@@ -184,7 +185,7 @@ const StatsSeverity = ({ bySeverity }: SeverityProps) => {
             style={
               {
                 "--severity-color": SEVERITY_COLORS[severity],
-              } as React.CSSProperties
+              } as CSSProperties
             }
           >
             <div className="stats-view__severity-label">{severity}</div>
