@@ -8,6 +8,7 @@ describe("app route helpers", () => {
     expect(getAppRouteFromPathname("/")).toBe("home");
     expect(getAppRouteFromPathname("/hud")).toBe("hud");
     expect(getAppRouteFromPathname("/privacy")).toBe("privacy");
+    expect(getAppRouteFromPathname("/stats")).toBe("stats");
   });
 
   it("treats unknown pathnames as home", () => {
@@ -19,5 +20,6 @@ describe("app route helpers", () => {
     expect(getPathForAppRoute("home")).toBe("/");
     expect(getPathForAppRoute("hud")).toBe("/hud");
     expect(getPathForAppRoute("privacy")).toBe("/privacy");
+    expect(getPathForAppRoute("stats")).toBe("/stats");
   });
 });

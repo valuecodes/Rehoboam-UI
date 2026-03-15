@@ -11,6 +11,7 @@ import {
 } from "./features/navigation/app-route";
 import type { AppRoute } from "./features/navigation/app-route";
 import { PrivacyPolicyView } from "./features/navigation/privacy-policy-view";
+import { StatsView } from "./features/stats/stats-view";
 
 type NavItem = Readonly<{
   code: string;
@@ -34,12 +35,18 @@ const appNavItems: readonly NavItem[] = [
     label: "Privacy policy",
     route: "privacy",
   },
+  {
+    code: "04",
+    label: "Stats",
+    route: "stats",
+  },
 ];
 
 const appRouteTitles: Record<AppRoute, string> = {
   home: "Rehoboam \u2014 Divergence",
   hud: "Developer HUD \u2014 Rehoboam",
   privacy: "Privacy Policy \u2014 Rehoboam",
+  stats: "Stats \u2014 Rehoboam",
 };
 
 export const App = () => {
@@ -108,7 +115,22 @@ export const App = () => {
     mainRef.current?.focus();
   }, [appRoute]);
 
-  const isSceneRoute = appRoute !== "privacy";
+  const viewClassName =
+    appRoute === "home" || appRoute === "hud"
+      ? "app-shell__view app-shell__view--scene"
+      : `app-shell__view app-shell__view--${appRoute}`;
+
+  const renderView = () => {
+    switch (appRoute) {
+      case "home":
+      case "hud":
+        return <RehoboamScene forceHudEnabled={appRoute === "hud"} />;
+      case "stats":
+        return <StatsView />;
+      case "privacy":
+        return <PrivacyPolicyView />;
+    }
+  };
 
   return (
     <div className="app-shell">
@@ -136,19 +158,7 @@ export const App = () => {
         </nav>
       </aside>
       <main className="app-shell__content" ref={mainRef} tabIndex={-1}>
-        <div
-          className={
-            isSceneRoute
-              ? "app-shell__view app-shell__view--scene"
-              : "app-shell__view app-shell__view--privacy"
-          }
-        >
-          {isSceneRoute ? (
-            <RehoboamScene forceHudEnabled={appRoute === "hud"} />
-          ) : (
-            <PrivacyPolicyView />
-          )}
-        </div>
+        <div className={viewClassName}>{renderView()}</div>
       </main>
     </div>
   );
