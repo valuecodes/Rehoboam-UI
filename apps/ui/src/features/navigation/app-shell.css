@@ -159,6 +159,10 @@
   min-width: 202px;
 }
 
+.app-shell__nav-link--stats {
+  min-width: 134px;
+}
+
 .app-shell__nav-meta {
   position: relative;
   z-index: 1;
@@ -199,7 +203,8 @@
   height: 100dvh;
 }
 
-.app-shell__view--privacy {
+.app-shell__view--privacy,
+.app-shell__view--stats {
   min-height: 100dvh;
   box-sizing: border-box;
   display: flex;
@@ -315,7 +320,7 @@
   }
 
   .app-shell__nav {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .app-shell__nav-link {
@@ -365,7 +370,8 @@
     );
   }
 
-  .app-shell__view--privacy {
+  .app-shell__view--privacy,
+  .app-shell__view--stats {
     align-items: flex-start;
     padding: clamp(18px, 5vw, 24px) var(--app-shell-gutter)
       calc(
