@@ -20,6 +20,24 @@ export const reactConfig = defineConfig(
   {
     files: ["**/*.ts", "**/*.tsx"],
     rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "MemberExpression[object.name='React']",
+          message:
+            "Avoid `React.` namespace usage. Import the specific symbol instead.",
+        },
+        {
+          selector: "TSQualifiedName[left.name='React']",
+          message:
+            "Avoid `React.` type namespace usage. Import the type directly instead.",
+        },
+        {
+          selector: "JSXMemberExpression[object.name='React']",
+          message:
+            "Avoid `React.` namespace usage in JSX. Import the component instead.",
+        },
+      ],
       // React compiler rules are too strict for the current codebase
       "react-hooks/set-state-in-effect": "off",
       "react-hooks/preserve-manual-memoization": "off",
