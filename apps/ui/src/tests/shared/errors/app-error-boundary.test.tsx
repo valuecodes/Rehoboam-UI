@@ -1,4 +1,4 @@
-import React, { act } from "react";
+import { act, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import { AppErrorBoundary } from "../../../shared/errors/app-error-boundary";
@@ -41,11 +41,11 @@ describe("AppErrorBoundary", () => {
 
     act(() => {
       root?.render(
-        <React.StrictMode>
+        <StrictMode>
           <AppErrorBoundary>
             <div>Nominal UI</div>
           </AppErrorBoundary>
-        </React.StrictMode>
+        </StrictMode>
       );
     });
 
@@ -61,11 +61,11 @@ describe("AppErrorBoundary", () => {
 
     act(() => {
       root?.render(
-        <React.StrictMode>
+        <StrictMode>
           <AppErrorBoundary>
             <ThrowOnRender />
           </AppErrorBoundary>
-        </React.StrictMode>
+        </StrictMode>
       );
     });
 

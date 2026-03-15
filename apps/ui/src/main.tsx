@@ -1,4 +1,4 @@
-import React from "react";
+import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import "@fontsource/barlow-condensed/latin-400.css";
@@ -15,9 +15,9 @@ if (!rootElement) {
 }
 
 createRoot(rootElement).render(
-  <React.StrictMode>
+  <StrictMode>
     <AppErrorBoundary>
       <App />
     </AppErrorBoundary>
-  </React.StrictMode>
+  </StrictMode>
 );
