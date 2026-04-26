@@ -18,7 +18,7 @@
     "@repo/typescript": "workspace:*",
     "eslint": "9.39.1",
     "prettier": "3.8.2",
-    "typescript": "5.9.3",
+    "typescript": "6.0.2",
     "vitest": "4.1.4"
   },
   "prettier": "@repo/prettier"
