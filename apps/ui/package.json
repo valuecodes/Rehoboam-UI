@@ -22,26 +22,26 @@
   "dependencies": {
     "@fontsource/barlow-condensed": "5.2.8",
     "@repo/types": "workspace:*",
-    "motion": "12.34.2",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "motion": "12.38.0",
+    "react": "19.2.5",
+    "react-dom": "19.2.5"
   },
   "devDependencies": {
-    "@playwright/test": "1.58.2",
+    "@playwright/test": "1.59.1",
     "@repo/eslint": "workspace:*",
     "@repo/prettier": "workspace:*",
     "@repo/typescript": "workspace:*",
-    "@types/node": "25.2.3",
+    "@types/node": "25.6.0",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "5.1.3",
     "eslint": "9.39.1",
-    "jsdom": "28.1.0",
-    "playwright": "1.58.2",
+    "jsdom": "29.0.2",
+    "playwright": "1.59.1",
     "typescript": "5.9.3",
     "vite": "7.3.1",
-    "vite-bundle-analyzer": "1.3.6",
-    "vitest": "4.0.18",
+    "vite-bundle-analyzer": "1.3.7",
+    "vitest": "4.1.4",
     "zx": "8.8.5"
   },
   "prettier": "@repo/prettier"
