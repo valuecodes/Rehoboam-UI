@@ -19,5 +19,11 @@
     "prettier": "3.8.2",
     "prettier-plugin-tailwindcss": "0.7.2"
   },
-  "prettier": "@repo/prettier"
+  "prettier": "@repo/prettier",
+  "pnpm": {
+    "overrides": {
+      "yaml": ">=2.8.3 <3",
+      "esbuild@0.18": "0.25.12"
+    }
+  }
 }
