@@ -20,7 +20,7 @@
     "@repo/logger": "workspace:*",
     "@repo/types": "workspace:*",
     "drizzle-orm": "0.45.2",
-    "hono": "4.12.12",
+    "hono": "4.12.27",
     "zod": "4.3.6"
   },
   "devDependencies": {
@@ -33,7 +33,7 @@
     "prettier": "3.8.2",
     "typescript": "6.0.2",
     "vitest": "4.1.4",
-    "wrangler": "4.81.1"
+    "wrangler": "4.107.0"
   },
   "prettier": "@repo/prettier"
 }

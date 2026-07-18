@@ -588,7 +588,7 @@ describe("AiClient", () => {
       string,
       {
         messages: { role: string; content: string }[];
-        max_output_tokens: number;
+        max_tokens: number;
         temperature: number;
         response_format: {
           type: string;
@@ -603,7 +603,7 @@ describe("AiClient", () => {
         expect.objectContaining({ role: "user" }),
       ])
     );
-    expect(request.max_output_tokens).toBe(2048);
+    expect(request.max_tokens).toBe(2048);
     expect(request.temperature).toBe(0.1);
     expect(request.response_format.type).toBe("json_schema");
   });

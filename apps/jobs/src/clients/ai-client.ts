@@ -209,7 +209,7 @@ export class AiClient implements AiProcessor {
             content: input,
           },
         ],
-        max_output_tokens: MAX_OUTPUT_TOKENS,
+        max_tokens: MAX_OUTPUT_TOKENS,
         temperature: TEMPERATURE,
         response_format: {
           type: "json_schema",
