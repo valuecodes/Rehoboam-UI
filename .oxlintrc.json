@@ -283,10 +283,15 @@
         "react/use-memo": "error",
         "react/void-use-memo": "error",
 
-        // Stand-in for the old `no-restricted-syntax` ban on `React.`
-        // namespace usage, which oxlint does not implement. Without a default
-        // or namespace import there is no `React` binding to reach through,
-        // so banning those imports blocks the same pattern at its source.
+        // Partial stand-in for the old `no-restricted-syntax` ban on
+        // `React.` namespace usage, which oxlint does not implement.
+        // - Values: banning the default and namespace imports leaves no
+        //   `React` binding, and tsc rejects the UMD global in a module
+        //   (TS2686), so `React.useState` cannot come back.
+        // - Types: `@types/react` declares a global `React` namespace that
+        //   type positions can reach without an import, and oxlint has no
+        //   wildcard for it, so the commonly used names are listed below.
+        //   A type missing from the list slips through.
         "no-restricted-imports": [
           "error",
           {
@@ -297,6 +302,85 @@
                 "message": "Avoid the `React` namespace. Import the specific symbol instead."
               }
             ]
+          }
+        ],
+        "typescript/no-restricted-types": [
+          "error",
+          {
+            "types": {
+              "React.CSSProperties": {
+                "message": "Import `CSSProperties` from \"react\" instead of using the `React` namespace."
+              },
+              "React.ChangeEvent": {
+                "message": "Import `ChangeEvent` from \"react\" instead of using the `React` namespace."
+              },
+              "React.ComponentProps": {
+                "message": "Import `ComponentProps` from \"react\" instead of using the `React` namespace."
+              },
+              "React.ComponentPropsWithRef": {
+                "message": "Import `ComponentPropsWithRef` from \"react\" instead of using the `React` namespace."
+              },
+              "React.ComponentPropsWithoutRef": {
+                "message": "Import `ComponentPropsWithoutRef` from \"react\" instead of using the `React` namespace."
+              },
+              "React.ComponentType": {
+                "message": "Import `ComponentType` from \"react\" instead of using the `React` namespace."
+              },
+              "React.Dispatch": {
+                "message": "Import `Dispatch` from \"react\" instead of using the `React` namespace."
+              },
+              "React.FC": {
+                "message": "Import `FC` from \"react\" instead of using the `React` namespace."
+              },
+              "React.FocusEvent": {
+                "message": "Import `FocusEvent` from \"react\" instead of using the `React` namespace."
+              },
+              "React.FormEvent": {
+                "message": "Import `FormEvent` from \"react\" instead of using the `React` namespace."
+              },
+              "React.FunctionComponent": {
+                "message": "Import `FunctionComponent` from \"react\" instead of using the `React` namespace."
+              },
+              "React.HTMLAttributes": {
+                "message": "Import `HTMLAttributes` from \"react\" instead of using the `React` namespace."
+              },
+              "React.JSX.Element": {
+                "message": "Import `JSX` from \"react\" instead of using the `React` namespace."
+              },
+              "React.KeyboardEvent": {
+                "message": "Import `KeyboardEvent` from \"react\" instead of using the `React` namespace."
+              },
+              "React.MouseEvent": {
+                "message": "Import `MouseEvent` from \"react\" instead of using the `React` namespace."
+              },
+              "React.MutableRefObject": {
+                "message": "Import `MutableRefObject` from \"react\" instead of using the `React` namespace."
+              },
+              "React.PointerEvent": {
+                "message": "Import `PointerEvent` from \"react\" instead of using the `React` namespace."
+              },
+              "React.PropsWithChildren": {
+                "message": "Import `PropsWithChildren` from \"react\" instead of using the `React` namespace."
+              },
+              "React.ReactElement": {
+                "message": "Import `ReactElement` from \"react\" instead of using the `React` namespace."
+              },
+              "React.ReactNode": {
+                "message": "Import `ReactNode` from \"react\" instead of using the `React` namespace."
+              },
+              "React.Ref": {
+                "message": "Import `Ref` from \"react\" instead of using the `React` namespace."
+              },
+              "React.RefObject": {
+                "message": "Import `RefObject` from \"react\" instead of using the `React` namespace."
+              },
+              "React.SetStateAction": {
+                "message": "Import `SetStateAction` from \"react\" instead of using the `React` namespace."
+              },
+              "React.SyntheticEvent": {
+                "message": "Import `SyntheticEvent` from \"react\" instead of using the `React` namespace."
+              }
+            }
           }
         ]
       }

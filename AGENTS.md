@@ -45,7 +45,7 @@ Run from repo root unless noted.
 - Test (all workspaces): `pnpm test`
 - Format all files: `pnpm format`
 - Format check: `pnpm format:check`
-- Clean caches and build output: `pnpm clean`
+- Clean per-workspace caches, build output and `node_modules`: `pnpm clean`
 - Run one workspace command: `pnpm --filter <workspace> <script>`
 
 ## Quality Gates
@@ -64,7 +64,7 @@ Workflows: `.github/workflows/feature.yml` and `.github/workflows/main.yml`.
 - TypeScript 7 strict mode via `@repo/typescript` (`noUncheckedIndexedAccess` on, except `apps/ui` for now)
 - oxlint rules via root `.oxlintrc.json` (type-aware; suppress with `oxlint-disable-next-line <rule> -- <reason>`)
 - Prettier rules via `@repo/prettier`
-- Dependencies: exact versions only. A version used by more than one workspace goes in the `catalog:` of `pnpm-workspace.yaml` and is referenced as `"catalog:"`; single-consumer deps stay pinned inline. `@repo/*` deps stay `workspace:*`.
+- Dependencies: exact versions only. A version used by more than one workspace goes in the `catalog:` of `pnpm-workspace.yaml` and is referenced as `"catalog:"`; single-consumer deps stay pinned inline (`pnpm add` in strict catalog mode writes every new dep to the catalog, so move a single-consumer one back inline by hand). `@repo/*` deps stay `workspace:*`.
 - Prefer minimal, targeted edits and preserve existing architecture patterns
 - Keep docs in `docs/` aligned with behavior and architecture changes
 
