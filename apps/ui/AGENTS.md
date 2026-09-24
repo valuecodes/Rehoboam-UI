@@ -8,7 +8,7 @@ Use it with the repo-level guide at the root: `AGENTS.md`.
 ## Web App Snapshot
 
 - Workspace: `apps/ui`
-- Runtime: React 19 + Vite 7 + TypeScript 7
+- Runtime: React 19 + Vite 8 + TypeScript 7
 - App type: Rehoboam-style animated timeline UI
 - Tests: Vitest unit tests + Playwright screenshot flow
 

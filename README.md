@@ -10,7 +10,7 @@ A pnpm monorepo with a Rehoboam-style React UI, a Cloudflare Worker API, and a s
 ## Tech Stack
 
 - React 19
-- Vite 7
+- Vite 8
 - TypeScript 7 (native `tsc`)
 - oxlint (type-aware)
 - Prettier 3
