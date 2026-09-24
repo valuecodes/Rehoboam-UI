@@ -5,7 +5,8 @@ Events are rendered as distortions in a polar coordinate system, with overlays
 for focused event detail.
 
 This document reflects the implementation currently in this repository and was
-verified against source on February 18, 2026.
+verified against source on February 18, 2026. The Tech Stack versions were
+updated on September 24, 2026.
 
 ## Current Status Snapshot
 

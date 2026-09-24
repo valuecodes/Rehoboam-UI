@@ -37,8 +37,10 @@ catalog:
   # writes it, so all three must agree on one query builder.
   drizzle-orm: 0.45.2
 
-  # Cloudflare Workers toolchain for apps/api and apps/jobs. Kept in step so
-  # both workers generate `worker-configuration.d.ts` from the same runtime.
+  # Cloudflare toolchain. apps/api and apps/jobs are kept in step so both
+  # workers generate `worker-configuration.d.ts` from the same runtime; apps/ui
+  # deploys to Pages with it, so that deploy also uses the locked tree and the
+  # overrides below.
   wrangler: 4.130.0
   "@types/service-worker-mock": 2.0.4
 
