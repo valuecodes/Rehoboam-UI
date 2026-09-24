@@ -20,25 +20,25 @@
     "clean": "rm -rf .turbo node_modules .cache dist"
   },
   "dependencies": {
-    "@fontsource/barlow-condensed": "5.2.8",
+    "@fontsource/barlow-condensed": "5.3.0",
     "@repo/types": "workspace:*",
     "motion": "12.38.0",
-    "react": "19.2.5",
-    "react-dom": "19.2.5"
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
   },
   "devDependencies": {
-    "@playwright/test": "1.59.1",
+    "@playwright/test": "1.63.0",
     "@repo/prettier": "workspace:*",
     "@repo/typescript": "workspace:*",
     "@types/node": "catalog:",
-    "@types/react": "19.2.14",
-    "@types/react-dom": "19.2.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "5.1.3",
     "jsdom": "29.0.2",
-    "playwright": "1.59.1",
+    "playwright": "1.63.0",
     "typescript": "catalog:",
     "vite": "7.3.6",
-    "vite-bundle-analyzer": "1.3.7",
+    "vite-bundle-analyzer": "1.3.9",
     "vitest": "catalog:",
     "zx": "8.8.5"
   },

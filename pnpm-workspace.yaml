@@ -20,7 +20,7 @@ packages:
 catalog:
   # Toolchain — every package runs the same one. `typescript` is the native (Go)
   # compiler; its binary is still called `tsc`.
-  "@types/node": 26.4.0
+  "@types/node": 26.5.1
   prettier: 3.9.6
   typescript: 7.0.2
   vitest: 4.1.11
@@ -31,7 +31,7 @@ catalog:
 
   # Schemas shared across the API boundary. Declared in packages/types and
   # used directly by apps/api (request validation) and apps/jobs (feed parsing).
-  zod: 4.3.6
+  zod: 4.6.1
 
   # D1 access. packages/db owns the schema; apps/api reads it and apps/jobs
   # writes it, so all three must agree on one query builder.
@@ -39,7 +39,7 @@ catalog:
 
   # Cloudflare Workers toolchain for apps/api and apps/jobs. Kept in step so
   # both workers generate `worker-configuration.d.ts` from the same runtime.
-  wrangler: 4.107.0
+  wrangler: 4.130.0
   "@types/service-worker-mock": 2.0.4
 
 # Routes `pnpm add` / `pnpm update <pkg>` into the catalog and fails a version
