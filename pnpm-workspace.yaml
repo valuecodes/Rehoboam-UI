@@ -23,7 +23,7 @@ catalog:
   "@types/node": 26.5.1
   prettier: 3.9.6
   typescript: 7.0.2
-  vitest: 4.1.11
+  vitest: 5.0.0
 
   # Prettier plugins, loaded by the root manifest and tooling/prettier.
   "@ianvs/prettier-plugin-sort-imports": 4.7.1

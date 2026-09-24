@@ -14,7 +14,7 @@ A pnpm monorepo with a Rehoboam-style React UI, a Cloudflare Worker API, and a s
 - TypeScript 7 (native `tsc`)
 - oxlint (type-aware)
 - Prettier 3
-- Vitest 4
+- Vitest 5
 - pnpm 11 + Turborepo
 
 ## Requirements

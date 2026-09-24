@@ -28,7 +28,7 @@ verified against source on February 18, 2026.
 | Language        | TypeScript 7 (strict mode, native `tsc`)                |
 | Package manager | pnpm 11 + Turborepo                                     |
 | Linting         | oxlint (type-aware via `oxlint-tsgolint`)               |
-| Tests           | Vitest 4 (unit) + Playwright 1.63 (e2e screenshot flow) |
+| Tests           | Vitest 5 (unit) + Playwright 1.63 (e2e screenshot flow) |
 | Styling         | CSS custom properties + fluid `clamp()` typography      |
 
 ---
