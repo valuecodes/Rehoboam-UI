@@ -1,6 +1,9 @@
 {
   "name": "@repo/prettier",
   "private": true,
+  "scripts": {
+    "clean": "rm -rf .turbo node_modules .cache"
+  },
   "type": "module",
   "exports": {
     ".": "./prettier.config.ts"
