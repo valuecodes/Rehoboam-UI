@@ -219,6 +219,9 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 5.0.0(@types/node@26.5.1)(jsdom@30.0.1)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.1)(jiti@2.6.1)(terser@5.46.0)(tsx@4.23.0))
+      wrangler:
+        specifier: 'catalog:'
+        version: 4.130.0(@types/node@26.5.1)
       zx:
         specifier: 8.8.5
         version: 8.8.5
