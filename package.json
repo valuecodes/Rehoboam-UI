@@ -9,19 +9,21 @@
   },
   "packageManager": "pnpm@11.24.0+sha512.bd27e345e976dcb0be0b7a1228217b049a817e21b1f355c90dbe7dc46671895a8bc1e6d06c24554505ea93ea0b45f489a27ec1bfbc8de6a9659fca0f16fa0000",
   "scripts": {
-    "dev": "pnpm -r --parallel dev",
-    "build": "pnpm -r build",
-    "typecheck": "pnpm -r typecheck",
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
     "lint": "pnpm -r lint",
-    "test": "pnpm -r test",
+    "test": "turbo run test",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "clean": "turbo run clean"
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "catalog:",
     "@repo/prettier": "workspace:*",
     "prettier": "catalog:",
-    "prettier-plugin-tailwindcss": "catalog:"
+    "prettier-plugin-tailwindcss": "catalog:",
+    "turbo": "2.10.12"
   },
   "prettier": "@repo/prettier"
 }

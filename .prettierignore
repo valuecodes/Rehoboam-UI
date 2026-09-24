@@ -1,2 +1,7 @@
 pnpm-lock.yaml
 **/worker-configuration.d.ts
+# Build output and caches. Only the root .gitignore is consulted by Prettier,
+# so per-workspace ignores have to be repeated here.
+**/dist/
+**/.turbo/
+**/.cache/

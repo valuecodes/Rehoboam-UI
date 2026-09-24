@@ -17,7 +17,8 @@
     "e2e:all": "playwright test --project=smoke --project=api-contract",
     "e2e:install": "playwright install --with-deps chromium",
     "screenshot:scene": "node --experimental-strip-types scripts/screenshot-scene.ts",
-    "screenshot:scene:headed": "node --experimental-strip-types scripts/screenshot-scene.ts --headed"
+    "screenshot:scene:headed": "node --experimental-strip-types scripts/screenshot-scene.ts --headed",
+    "clean": "rm -rf .turbo node_modules .cache dist"
   },
   "dependencies": {
     "@fontsource/barlow-condensed": "5.2.8",

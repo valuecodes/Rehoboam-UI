@@ -20,3 +20,6 @@ plans
 # Cloudflare Workers
 worker-configuration.d.ts
 .wrangler/
+
+# Turborepo
+.turbo

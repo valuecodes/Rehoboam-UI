@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "postinstall": "wrangler types",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "clean": "rm -rf .turbo node_modules .cache"
   },
   "dependencies": {
     "@hono/zod-validator": "0.7.6",
