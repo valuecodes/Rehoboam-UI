@@ -13,16 +13,16 @@
     "format": "prettier --check . --ignore-path ../../.gitignore"
   },
   "dependencies": {
-    "drizzle-orm": "0.45.2"
+    "drizzle-orm": "catalog:"
   },
   "devDependencies": {
     "@repo/eslint": "workspace:*",
     "@repo/prettier": "workspace:*",
     "@repo/typescript": "workspace:*",
     "eslint": "9.39.1",
-    "prettier": "3.8.2",
-    "typescript": "6.0.2",
-    "vitest": "4.1.4"
+    "prettier": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "prettier": "@repo/prettier"
 }
