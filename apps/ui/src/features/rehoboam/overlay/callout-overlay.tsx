@@ -750,3 +750,5 @@ export const CalloutOverlay = memo(
     );
   }
 );
+
+CalloutOverlay.displayName = "CalloutOverlay";

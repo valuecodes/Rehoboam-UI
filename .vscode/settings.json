@@ -2,11 +2,7 @@
   "files.associations": {
     "wrangler.json": "jsonc"
   },
-  "eslint.workingDirectories": [
-    {
-      "mode": "auto"
-    }
-  ],
+  "oxc.enable": true,
   "github.copilot.chat.commitMessageGeneration.instructions": [
     {
       "file": ".github/commit-message-instructions.md"

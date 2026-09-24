@@ -1,4 +1,3 @@
-/* eslint-disable import/no-default-export */
 import { defineConfig } from "@playwright/test";
 
 const isCI = Boolean(process.env.CI);

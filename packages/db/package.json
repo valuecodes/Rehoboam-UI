@@ -8,7 +8,6 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "lint": "eslint .",
     "test": "vitest run --passWithNoTests",
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "clean": "rm -rf .turbo node_modules .cache"
@@ -17,10 +16,8 @@
     "drizzle-orm": "catalog:"
   },
   "devDependencies": {
-    "@repo/eslint": "workspace:*",
     "@repo/prettier": "workspace:*",
     "@repo/typescript": "workspace:*",
-    "eslint": "9.39.1",
     "prettier": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

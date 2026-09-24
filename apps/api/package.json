@@ -10,7 +10,6 @@
     "start": "wrangler dev",
     "cf-typegen": "wrangler types",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint .",
     "postinstall": "wrangler types",
     "test": "vitest run --passWithNoTests",
     "clean": "rm -rf .turbo node_modules .cache"
@@ -25,12 +24,10 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@repo/eslint": "workspace:*",
     "@repo/prettier": "workspace:*",
     "@repo/typescript": "workspace:*",
     "@types/node": "catalog:",
     "@types/service-worker-mock": "catalog:",
-    "eslint": "9.39.1",
     "prettier": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",

@@ -71,11 +71,7 @@ describe("NewsJob", () => {
   it("fetches and aggregates items from all services", async () => {
     fetchMock.mockImplementation(() => new Response("<rss/>", { status: 200 }));
 
-    const job = new NewsJob(
-      loggerMock as never,
-      dbMock as never,
-      aiMock as never
-    );
+    const job = new NewsJob(loggerMock as never, dbMock as never, aiMock);
     await job.run();
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -120,11 +116,7 @@ describe("NewsJob", () => {
       failed: 0,
     });
 
-    const job = new NewsJob(
-      loggerMock as never,
-      dbMock as never,
-      aiMock as never
-    );
+    const job = new NewsJob(loggerMock as never, dbMock as never, aiMock);
     await job.run();
 
     expect(dbMock.getUnprocessedNewsItems).toHaveBeenCalledOnce();
@@ -180,11 +172,7 @@ describe("NewsJob", () => {
       failed: 0,
     });
 
-    const job = new NewsJob(
-      loggerMock as never,
-      dbMock as never,
-      aiMock as never
-    );
+    const job = new NewsJob(loggerMock as never, dbMock as never, aiMock);
     await job.run();
 
     expect(aiMock.processNewsItems).toHaveBeenCalledWith([unprocessedItems[1]]);
@@ -203,11 +191,7 @@ describe("NewsJob", () => {
   it("handles a feed failure gracefully", async () => {
     fetchMock.mockResolvedValueOnce(new Response("Not Found", { status: 404 }));
 
-    const job = new NewsJob(
-      loggerMock as never,
-      dbMock as never,
-      aiMock as never
-    );
+    const job = new NewsJob(loggerMock as never, dbMock as never, aiMock);
     await job.run();
 
     expect(dbMock.upsertNewsItems).toHaveBeenCalledWith([]);
@@ -220,11 +204,7 @@ describe("NewsJob", () => {
   it("handles all services failing gracefully", async () => {
     fetchMock.mockRejectedValue(new Error("network timeout"));
 
-    const job = new NewsJob(
-      loggerMock as never,
-      dbMock as never,
-      aiMock as never
-    );
+    const job = new NewsJob(loggerMock as never, dbMock as never, aiMock);
     await job.run();
 
     expect(dbMock.upsertNewsItems).toHaveBeenCalledWith([]);

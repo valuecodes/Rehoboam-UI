@@ -368,3 +368,5 @@ export const IntroCalloutOverlay = memo(
     );
   }
 );
+
+IntroCalloutOverlay.displayName = "IntroCalloutOverlay";
