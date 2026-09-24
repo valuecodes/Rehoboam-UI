@@ -55,12 +55,12 @@ Run from repo root:
 - Deploy Worker: `pnpm --filter rehoboam-api run deploy`
 - Regenerate Worker env types: `pnpm --filter rehoboam-api cf-typegen`
 - Typecheck: `pnpm --filter rehoboam-api typecheck`
-- Lint: `pnpm --filter rehoboam-api lint`
+- Lint: `pnpm lint` (root-only, type-aware oxlint)
 - Test: `pnpm --filter rehoboam-api test`
 
 ## API Code Standards
 
-- Follow repo TypeScript strictness and `@repo/eslint` rules.
+- Follow repo TypeScript strictness and the root `.oxlintrc.json` rules.
 - Named exports are preferred; keep default export only where Cloudflare runtime requires it (`src/index.ts`).
 - Keep request/response contracts aligned with `@repo/types`.
 - Preserve `AppEnv` context typing when adding middleware or handlers.
@@ -71,7 +71,7 @@ Run from repo root:
 2. If changing API payload shape, update `@repo/types` and verify `apps/ui` consumers.
 3. If changing Cloudflare bindings/config, update `wrangler.jsonc` and run `pnpm --filter rehoboam-api cf-typegen`.
 4. Make minimal edits and preserve existing route + middleware composition.
-5. Run at minimum: `pnpm --filter rehoboam-api typecheck`, `pnpm --filter rehoboam-api lint`, and `pnpm --filter rehoboam-api test`.
+5. Run at minimum: `pnpm --filter rehoboam-api typecheck`, `pnpm --filter rehoboam-api test`, and `pnpm lint`.
 6. Update `apps/api/README.md` and relevant docs in `docs/` when behavior or contracts change.
 
 ## Cloudflare Docs Requirement

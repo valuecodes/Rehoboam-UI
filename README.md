@@ -11,16 +11,16 @@ A pnpm monorepo with a Rehoboam-style React UI, a Cloudflare Worker API, and a s
 
 - React 19
 - Vite 7
-- TypeScript 5
-- ESLint 9
+- TypeScript 7 (native `tsc`)
+- oxlint (type-aware)
 - Prettier 3
 - Vitest 4
-- pnpm 10
+- pnpm 11 + Turborepo
 
 ## Requirements
 
 - Node.js `24.12.0` (see `.nvmrc`)
-- pnpm `10+`
+- pnpm `11+` (pinned via `packageManager`; `corepack enable` picks it up)
 
 ## Local Development
 
@@ -105,15 +105,22 @@ be visible, and then applies a short settle delay before capturing.
 1. `pnpm outdated -r`
 2. `pnpm up --latest -r package another-package`
 
+Versions shared by more than one workspace live in the `catalog:` section of
+`pnpm-workspace.yaml`; manifests reference them as `"catalog:"`. `pnpm up`
+rewrites the catalog entry, so `git diff pnpm-workspace.yaml` shows every
+shared bump. New releases are only resolvable after 14 days
+(`minimumReleaseAge`).
+
 ## Scripts
 
-- `pnpm dev` - run `dev` in all workspaces (`web` + `api` + `jobs`) in parallel
-- `pnpm build` - build all workspaces
-- `pnpm typecheck` - run TypeScript checks in all workspaces
-- `pnpm lint` - run ESLint in all workspaces
+- `pnpm dev` - run `dev` in all workspaces (`web` + `api` + `jobs`) through Turborepo
+- `pnpm build` - build all workspaces (cached by Turborepo)
+- `pnpm typecheck` - run TypeScript checks in all workspaces (cached by Turborepo)
+- `pnpm lint` - run type-aware oxlint across the repo (`.oxlintrc.json`)
 - `pnpm format` - auto-format files with Prettier
 - `pnpm format:check` - verify formatting
-- `pnpm test` - run tests in all workspaces
+- `pnpm test` - run tests in all workspaces (cached by Turborepo)
+- `pnpm clean` - remove `.turbo`, caches, build output and `node_modules`
 - `pnpm --filter rehoboam-ui dev` - run only the web dev server (`http://localhost:3000`)
 - `pnpm --filter rehoboam-api dev` - run only the API worker (`http://localhost:3001`)
 - `pnpm --filter rehoboam-jobs dev` - run only the jobs worker with scheduled testing (`http://localhost:3002`)

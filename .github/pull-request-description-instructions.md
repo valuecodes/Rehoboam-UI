@@ -21,7 +21,7 @@ Examples:
 
 - `feat: add argument parsing to cli`
 - `test: cover main output`
-- `chore: align eslint config`
+- `chore: align oxlint config`
 
 ## PR Description (Required Sections)
 

@@ -50,7 +50,7 @@ Run from repo root:
 - Deploy Worker: `pnpm --filter rehoboam-jobs run deploy`
 - Regenerate Worker env types: `pnpm --filter rehoboam-jobs cf-typegen`
 - Typecheck: `pnpm --filter rehoboam-jobs typecheck`
-- Lint: `pnpm --filter rehoboam-jobs lint`
+- Lint: `pnpm lint` (root-only, type-aware oxlint)
 - Test: `pnpm --filter rehoboam-jobs test`
 - Generate migration: `pnpm --filter rehoboam-jobs db:generate`
 - Clear local D1 data: `pnpm --filter rehoboam-jobs db:clear:local`
@@ -60,7 +60,7 @@ Run from repo root:
 
 ## Jobs Code Standards
 
-- Follow repo TypeScript strictness and `@repo/eslint` rules.
+- Follow repo TypeScript strictness and the root `.oxlintrc.json` rules.
 - Named exports are preferred; keep default export only in `src/index.ts` for Cloudflare runtime.
 - Each job must declare its `cron` pattern matching a pattern in `wrangler.jsonc` triggers.
 
@@ -72,4 +72,4 @@ Run from repo root:
 4. If changing schema, update `packages/db/src/schema.ts` (shared via `@repo/db`), generate migrations in `drizzle/`, and validate locally with `pnpm --filter rehoboam-jobs db:migrate:local`.
 5. For production schema rollout, merge to `main` so `.github/workflows/main.yml` runs `migrate-jobs-d1` before worker deploys; use `.github/workflows/migrations.yml` only for manual retries/backfills.
 6. Make minimal edits and preserve existing job registry + dispatcher composition.
-7. Run at minimum: `pnpm --filter rehoboam-jobs typecheck`, `pnpm --filter rehoboam-jobs lint`, and `pnpm --filter rehoboam-jobs test`.
+7. Run at minimum: `pnpm --filter rehoboam-jobs typecheck`, `pnpm --filter rehoboam-jobs test`, and `pnpm lint`.
