@@ -1,7 +1,6 @@
 {
   "extends": "@repo/typescript/base.json",
   "compilerOptions": {
-    "noUncheckedIndexedAccess": true,
     "types": ["node", "@types/service-worker-mock", "vitest/globals"]
   },
   "include": ["src", "worker-configuration.d.ts", "*.ts"],

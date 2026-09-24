@@ -7,7 +7,7 @@
     ".": "./src/rehoboam.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc",
     "test": "vitest run --passWithNoTests",
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "clean": "rm -rf .turbo node_modules .cache"

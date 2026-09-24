@@ -18,10 +18,11 @@ packages:
 # Scoped keys must be double-quoted: unquoted `@` is a YAML syntax error, and
 # Prettier checks this file, so single quotes fail `format:check`.
 catalog:
-  # Toolchain — every package runs the same one.
+  # Toolchain — every package runs the same one. `typescript` is the native (Go)
+  # compiler; its binary is still called `tsc`.
   "@types/node": 26.4.0
   prettier: 3.9.6
-  typescript: 6.0.2
+  typescript: 7.0.2
   vitest: 4.1.11
 
   # Prettier plugins, loaded by the root manifest and tooling/prettier.
