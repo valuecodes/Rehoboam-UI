@@ -15,14 +15,15 @@ Use it for monorepo orientation, shared quality gates, and safe editing workflow
 
 - Monorepo: pnpm workspaces (`apps/`, `packages/`, `tooling/`)
 - App workspaces: Rehoboam UI in `apps/ui`, Cloudflare Worker API in `apps/api`, and Cloudflare Worker Jobs in `apps/jobs`
-- Package manager: `pnpm` (lockfile: `pnpm-lock.yaml`)
+- Package manager: `pnpm` 11 (lockfile: `pnpm-lock.yaml`), tasks run through Turborepo (`turbo.json`)
+- Shared dependency versions: `catalog:` in `pnpm-workspace.yaml` (`catalogMode: strict`)
 - Required Node version: `24.12.0` (from `.nvmrc`)
 
 ## Workspace Map
 
 - App workspaces: `apps/ui`, `apps/api`, `apps/jobs`
 - Shared packages: `packages/*`
-- Shared tooling configs: `tooling/eslint`, `tooling/prettier`, `tooling/typescript`
+- Shared tooling configs: `tooling/prettier`, `tooling/typescript`; lint rules in root `.oxlintrc.json`
 - Architecture and project docs: `docs/`
 
 ## Workspace Guides
@@ -40,10 +41,11 @@ Run from repo root unless noted.
 - Dev (all workspaces): `pnpm dev`
 - Build (all workspaces): `pnpm build`
 - Typecheck (all workspaces): `pnpm typecheck`
-- Lint (all workspaces): `pnpm lint`
+- Lint (whole repo, root-only): `pnpm lint`
 - Test (all workspaces): `pnpm test`
 - Format all files: `pnpm format`
 - Format check: `pnpm format:check`
+- Clean caches and build output: `pnpm clean`
 - Run one workspace command: `pnpm --filter <workspace> <script>`
 
 ## Quality Gates
@@ -59,9 +61,10 @@ Workflows: `.github/workflows/feature.yml` and `.github/workflows/main.yml`.
 
 ## Repo Standards
 
-- TypeScript strict mode via `@repo/typescript`
-- ESLint rules via `@repo/eslint` (type-aware)
+- TypeScript 7 strict mode via `@repo/typescript` (`noUncheckedIndexedAccess` on, except `apps/ui` for now)
+- oxlint rules via root `.oxlintrc.json` (type-aware; suppress with `oxlint-disable-next-line <rule> -- <reason>`)
 - Prettier rules via `@repo/prettier`
+- Dependencies: exact versions only. A version used by more than one workspace goes in the `catalog:` of `pnpm-workspace.yaml` and is referenced as `"catalog:"`; single-consumer deps stay pinned inline. `@repo/*` deps stay `workspace:*`.
 - Prefer minimal, targeted edits and preserve existing architecture patterns
 - Keep docs in `docs/` aligned with behavior and architecture changes
 
@@ -69,6 +72,6 @@ Workflows: `.github/workflows/feature.yml` and `.github/workflows/main.yml`.
 
 1. Identify target workspace(s) and read local `AGENTS.md` guidance.
 2. Make minimal edits in the correct workspace.
-3. Run checks for touched scope (`pnpm --filter <workspace> typecheck lint test` when possible).
+3. Run checks for touched scope (`pnpm --filter <workspace> typecheck test` when possible, plus root `pnpm lint`).
 4. Run root checks when changes span multiple workspaces.
 5. Update docs if architecture or behavior changed.

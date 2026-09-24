@@ -56,7 +56,7 @@ Run from repo root:
 - Bundle analysis: `pnpm --filter rehoboam-ui bundle:analyze`
 - Preview build: `pnpm --filter rehoboam-ui preview`
 - Typecheck: `pnpm --filter rehoboam-ui typecheck`
-- Lint: `pnpm --filter rehoboam-ui lint`
+- Lint: `pnpm lint` (root-only, type-aware oxlint)
 - Unit tests: `pnpm --filter rehoboam-ui test`
 - Screenshot tool: `pnpm --filter rehoboam-ui screenshot:scene`
 - Screenshot tool (headed): `pnpm --filter rehoboam-ui screenshot:scene:headed`
@@ -66,7 +66,7 @@ Run from repo root:
 - TypeScript strict mode is enabled.
 - `import/no-default-export` is enabled: use named exports.
 - Prefer `type` imports where applicable.
-- `@typescript-eslint/no-non-null-assertion` is enabled.
+- `typescript/no-non-null-assertion` is enabled.
 - Function declarations are disallowed via `func-style`; use function expressions/arrow functions.
 
 ## Safe Workflow For Web Changes
@@ -74,7 +74,7 @@ Run from repo root:
 1. Read relevant files in `src/features/rehoboam/**` before changing timeline behavior.
 2. Read `docs/architecture.md` before changing core engine/render/data behavior.
 3. Make minimal edits and preserve existing named-export patterns.
-4. Run at minimum: `pnpm --filter rehoboam-ui typecheck` and `pnpm --filter rehoboam-ui lint`.
+4. Run at minimum: `pnpm --filter rehoboam-ui typecheck` and `pnpm lint`.
 5. Run `pnpm format` from root if formatting drifts, then re-run checks.
 6. If animation/timeline behavior changes, run `pnpm --filter rehoboam-ui test` and do a quick manual run (`pnpm --filter rehoboam-ui dev`).
 7. If architecture or behavior changes, update `docs/architecture.md` and related docs in `docs/`.

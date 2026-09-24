@@ -79,7 +79,7 @@ curl "http://localhost:3002/__scheduled?cron=0+9+*+*+*"
 - `pnpm --filter rehoboam-jobs deploy` - deploy Worker code only (no remote migrations)
 - `pnpm --filter rehoboam-jobs cf-typegen` - generate `worker-configuration.d.ts`
 - `pnpm --filter rehoboam-jobs typecheck` - run TypeScript checks
-- `pnpm --filter rehoboam-jobs lint` - run ESLint
+- `pnpm lint` (from the repo root) - run type-aware oxlint
 - `pnpm --filter rehoboam-jobs test` - run Vitest
 - `pnpm --filter rehoboam-jobs db:generate` - generate migration from schema
 - `pnpm --filter rehoboam-jobs db:clear:local` - delete all local `news_items` rows (and cascaded `events`)

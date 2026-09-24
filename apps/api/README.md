@@ -129,7 +129,7 @@ pnpm dev
 - `pnpm --filter rehoboam-api deploy` - deploy Worker
 - `pnpm --filter rehoboam-api cf-typegen` - generate `worker-configuration.d.ts`
 - `pnpm --filter rehoboam-api typecheck` - run TypeScript checks
-- `pnpm --filter rehoboam-api lint` - run ESLint
+- `pnpm lint` (from the repo root) - run type-aware oxlint
 - `pnpm --filter rehoboam-api test` - run Vitest
 
 ## Project Structure
