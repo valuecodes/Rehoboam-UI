@@ -19,7 +19,7 @@ A pnpm monorepo with a Rehoboam-style React UI, a Cloudflare Worker API, and a s
 
 ## Requirements
 
-- Node.js `24.12.0` (see `.nvmrc`)
+- Node.js `24.21.0` (see `.nvmrc`)
 - pnpm `11+` (pinned via `packageManager`; `corepack enable` picks it up)
 
 ## Local Development
