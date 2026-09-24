@@ -49,6 +49,11 @@ catalog:
 # invariant. A hand-written version in a package.json will still install.
 catalogMode: strict
 
+# Exact versions only, no `^`/`~`. pnpm 11 reads these from here — it ignores
+# them in `.npmrc`, which now only carries auth and registry settings.
+saveExact: true
+savePrefix: ""
+
 # Security overrides for transitive dependencies (Dependabot alerts).
 overrides:
   yaml: ">=2.8.3 <3"

@@ -120,7 +120,7 @@ shared bump. New releases are only resolvable after 14 days
 - `pnpm format` - auto-format files with Prettier
 - `pnpm format:check` - verify formatting
 - `pnpm test` - run tests in all workspaces (cached by Turborepo)
-- `pnpm clean` - remove `.turbo`, caches, build output and `node_modules`
+- `pnpm clean` - remove each workspace's `.turbo`, caches, build output and `node_modules` (the root `node_modules` is kept)
 - `pnpm --filter rehoboam-ui dev` - run only the web dev server (`http://localhost:3000`)
 - `pnpm --filter rehoboam-api dev` - run only the API worker (`http://localhost:3001`)
 - `pnpm --filter rehoboam-jobs dev` - run only the jobs worker with scheduled testing (`http://localhost:3002`)
