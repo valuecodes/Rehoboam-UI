@@ -56,9 +56,10 @@ savePrefix: ""
 
 # Security overrides for transitive dependencies (Dependabot alerts).
 overrides:
-  yaml: ">=2.8.3 <3"
   # drizzle-kit still pulls esbuild 0.18 through @esbuild-kit.
   "esbuild@0.18": 0.25.12
+  # miniflare (via wrangler) pins sharp 0.35.2 exactly.
+  "sharp@0.35.2": 0.35.4
 
 allowBuilds:
   # Vite, Vitest, drizzle-kit and wrangler all bundle through esbuild, whose
