@@ -17,7 +17,8 @@
     "db:generate": "drizzle-kit generate",
     "db:clear:local": "wrangler d1 execute rehoboam-jobs-db --local --persist-to ../../packages/db/.wrangler/state --command \"DELETE FROM news_items;\"",
     "db:migrate:local": "wrangler d1 migrations apply rehoboam-jobs-db --local --persist-to ../../packages/db/.wrangler/state",
-    "db:migrate:remote": "wrangler d1 migrations apply rehoboam-jobs-db --remote"
+    "db:migrate:remote": "wrangler d1 migrations apply rehoboam-jobs-db --remote",
+    "clean": "rm -rf .turbo node_modules .cache"
   },
   "dependencies": {
     "@repo/db": "workspace:*",

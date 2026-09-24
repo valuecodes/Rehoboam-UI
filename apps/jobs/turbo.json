@@ -1,0 +1,11 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    // `build` is a typecheck here — wrangler bundles on `deploy`, so there is
+    // no output directory to cache.
+    "build": {
+      "outputs": []
+    }
+  }
+}
