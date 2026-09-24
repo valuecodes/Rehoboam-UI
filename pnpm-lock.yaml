@@ -69,9 +69,6 @@ importers:
 
   apps/api:
     dependencies:
-      '@hono/zod-validator':
-        specifier: 0.7.6
-        version: 0.7.6(hono@4.13.7)(zod@4.6.1)
       '@repo/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -782,12 +779,6 @@ packages:
 
   '@fontsource/barlow-condensed@5.3.0':
     resolution: {integrity: sha512-RA7MmIx0v3eQ6Gcf74qLVLOwLB0GpPOzx+eU9iG/AmCnSJGcIWYeU8y6CEMGZ210MGwGg5CZhzLkkvyZdTTk1g==}
-
-  '@hono/zod-validator@0.7.6':
-    resolution: {integrity: sha512-Io1B6d011Gj1KknV4rXYz4le5+5EubcWEU/speUjuw9XMMIaP3n78yXLhjd2A3PXaXaUwEAluOiAyLqhBEJgsw==}
-    peerDependencies:
-      hono: '>=3.9.0'
-      zod: ^3.25.0 || ^4.0.0
 
   '@ianvs/prettier-plugin-sort-imports@4.7.1':
     resolution: {integrity: sha512-jmTNYGlg95tlsoG3JLCcuC4BrFELJtLirLAkQW/71lXSyOhVt/Xj7xWbbGcuVbNq1gwWgSyMrPjJc9Z30hynVw==}
@@ -2582,11 +2573,6 @@ snapshots:
   '@exodus/bytes@1.15.1': {}
 
   '@fontsource/barlow-condensed@5.3.0': {}
-
-  '@hono/zod-validator@0.7.6(hono@4.13.7)(zod@4.6.1)':
-    dependencies:
-      hono: 4.13.7
-      zod: 4.6.1
 
   '@ianvs/prettier-plugin-sort-imports@4.7.1(prettier@3.9.6)(supports-color@10.2.2)':
     dependencies:
