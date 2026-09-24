@@ -17,7 +17,7 @@ Use it for monorepo orientation, shared quality gates, and safe editing workflow
 - App workspaces: Rehoboam UI in `apps/ui`, Cloudflare Worker API in `apps/api`, and Cloudflare Worker Jobs in `apps/jobs`
 - Package manager: `pnpm` 11 (lockfile: `pnpm-lock.yaml`), tasks run through Turborepo (`turbo.json`)
 - Shared dependency versions: `catalog:` in `pnpm-workspace.yaml` (`catalogMode: strict`)
-- Required Node version: `24.12.0` (from `.nvmrc`)
+- Required Node version: `24.21.0` (from `.nvmrc`)
 
 ## Workspace Map
 
