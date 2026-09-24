@@ -23,12 +23,12 @@ verified against source on February 18, 2026.
 
 | Layer           | Technology                                              |
 | --------------- | ------------------------------------------------------- |
-| UI framework    | React 19 (`react`/`react-dom` 19.2.4)                   |
-| Build tool      | Vite 7 (`vite` 7.3.1)                                   |
+| UI framework    | React 19 (`react`/`react-dom` 19.3.0)                   |
+| Build tool      | Vite 8 (`vite` 8.3.0)                                   |
 | Language        | TypeScript 7 (strict mode, native `tsc`)                |
 | Package manager | pnpm 11 + Turborepo                                     |
 | Linting         | oxlint (type-aware via `oxlint-tsgolint`)               |
-| Tests           | Vitest 4 (unit) + Playwright 1.58 (e2e screenshot flow) |
+| Tests           | Vitest 4 (unit) + Playwright 1.63 (e2e screenshot flow) |
 | Styling         | CSS custom properties + fluid `clamp()` typography      |
 
 ---
