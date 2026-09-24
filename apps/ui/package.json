@@ -8,7 +8,7 @@
     "start": "vite preview --port 3000",
     "build": "vite build",
     "bundle:analyze": "analyze",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc",
     "test": "vitest run --passWithNoTests",
     "e2e": "playwright test --project=smoke",
     "e2e:ui": "playwright test --project=smoke --ui",

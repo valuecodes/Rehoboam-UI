@@ -4,12 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc --noEmit",
+    "build": "tsc",
     "deploy": "wrangler deploy",
     "dev": "wrangler dev --port 3001 --persist-to ../../packages/db/.wrangler/state",
     "start": "wrangler dev",
     "cf-typegen": "wrangler types",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc",
     "postinstall": "wrangler types",
     "test": "vitest run --passWithNoTests",
     "clean": "rm -rf .turbo node_modules .cache"

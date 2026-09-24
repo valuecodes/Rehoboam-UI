@@ -1,11 +1,12 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    "target": "es2023",
-    "lib": ["ES2023"],
-    "module": "ESNext",
+    "target": "ES2024",
+    "lib": ["ES2024"],
+    "module": "Preserve",
     "moduleResolution": "Bundler",
     "strict": true,
+    "noUncheckedIndexedAccess": true,
     "noEmit": true,
     "isolatedModules": true,
     "esModuleInterop": true,
