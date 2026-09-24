@@ -22,7 +22,7 @@
   "dependencies": {
     "@fontsource/barlow-condensed": "5.3.0",
     "@repo/types": "workspace:*",
-    "motion": "12.38.0",
+    "motion": "13.2.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
