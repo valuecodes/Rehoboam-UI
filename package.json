@@ -12,7 +12,7 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
-    "lint": "pnpm -r lint",
+    "lint": "oxlint --type-aware --report-unused-disable-directives",
     "test": "turbo run test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -21,6 +21,8 @@
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "catalog:",
     "@repo/prettier": "workspace:*",
+    "oxlint": "1.80.0",
+    "oxlint-tsgolint": "7.0.2001",
     "prettier": "catalog:",
     "prettier-plugin-tailwindcss": "catalog:",
     "turbo": "2.10.12"

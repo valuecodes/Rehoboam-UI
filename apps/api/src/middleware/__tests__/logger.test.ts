@@ -13,7 +13,7 @@ const ErrorResponseSchema = z.object({ error: z.string() });
 type ConsoleSpy = MockInstance<(...args: unknown[]) => void>;
 
 const parseLogEntry = (spy: ConsoleSpy, callIndex = 0): LogEntry => {
-  const call = spy.mock.calls[callIndex] as unknown[] | undefined;
+  const call = spy.mock.calls[callIndex];
   expect(call).toBeDefined();
   return JSON.parse(String(call?.[0])) as LogEntry;
 };

@@ -48,7 +48,7 @@ describe("BbcNewsService", () => {
 
     expect(items).toHaveLength(2);
     expect(items[0]).toEqual({
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      // oxlint-disable-next-line typescript/no-unsafe-assignment
       id: expect.stringMatching(/^[0-9a-f]{64}$/),
       title: "First Article",
       source: "bbc-world",

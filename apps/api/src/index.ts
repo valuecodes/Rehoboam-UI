@@ -28,5 +28,5 @@ app.route("/api/stats", stats);
 
 app.notFound(notFoundHandler);
 
-// eslint-disable-next-line import/no-default-export -- Cloudflare Workers require a default export
+// oxlint-disable-next-line import/no-default-export -- Cloudflare Workers require a default export
 export default app;

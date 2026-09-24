@@ -164,7 +164,7 @@ describe("DatabaseClient", () => {
     await client.getEvents();
 
     expect(whereMock).toHaveBeenCalledWith(
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- vitest matcher
+      // oxlint-disable-next-line typescript/no-unsafe-assignment -- vitest matcher
       expect.objectContaining({ eq: expect.anything() })
     );
   });
@@ -177,7 +177,7 @@ describe("DatabaseClient", () => {
     await client.getEvents();
 
     expect(eventOrderByMock).toHaveBeenCalledWith(
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- vitest matcher
+      // oxlint-disable-next-line typescript/no-unsafe-assignment -- vitest matcher
       expect.objectContaining({ desc: expect.anything() })
     );
   });
