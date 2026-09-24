@@ -6,6 +6,7 @@
     "*.json"
   ],
   "scripts": {
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "clean": "rm -rf .turbo node_modules .cache"
   }
 }
