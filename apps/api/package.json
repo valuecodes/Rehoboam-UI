@@ -19,21 +19,21 @@
     "@repo/db": "workspace:*",
     "@repo/logger": "workspace:*",
     "@repo/types": "workspace:*",
-    "drizzle-orm": "0.45.2",
+    "drizzle-orm": "catalog:",
     "hono": "4.12.27",
-    "zod": "4.3.6"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@repo/eslint": "workspace:*",
     "@repo/prettier": "workspace:*",
     "@repo/typescript": "workspace:*",
-    "@types/node": "25.6.0",
-    "@types/service-worker-mock": "2.0.4",
+    "@types/node": "catalog:",
+    "@types/service-worker-mock": "catalog:",
     "eslint": "9.39.1",
-    "prettier": "3.8.2",
-    "typescript": "6.0.2",
-    "vitest": "4.1.4",
-    "wrangler": "4.107.0"
+    "prettier": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "wrangler": "catalog:"
   },
   "prettier": "@repo/prettier"
 }

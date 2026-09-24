@@ -3,4 +3,74 @@ packages:
   - "packages/*"
   - "tooling/*"
 
+# Single source of truth for versions used by more than one package. A manifest
+# references an entry with `catalog:` — bare, because there is one catalog — so
+# a shared version is declared here once instead of once per manifest. Bump with
+# `pnpm up --latest -r <pkg>`: it rewrites the entry below and leaves every
+# package.json untouched, so `git diff pnpm-workspace.yaml` is the whole
+# version-change review surface.
+#
+# Two things NOT to put here: `@repo/*` deps stay `workspace:*` (pnpm rejects
+# the workspace protocol as a catalog value), and a dependency with exactly one
+# consumer stays pinned inline in that manifest — the catalog is for versions
+# that can drift apart.
+#
+# Scoped keys must be double-quoted: unquoted `@` is a YAML syntax error, and
+# Prettier checks this file, so single quotes fail `format:check`.
+catalog:
+  # Toolchain — every package runs the same one.
+  "@types/node": 26.4.0
+  prettier: 3.9.6
+  typescript: 6.0.2
+  vitest: 4.1.11
+
+  # Prettier plugins, loaded by the root manifest and tooling/prettier.
+  "@ianvs/prettier-plugin-sort-imports": 4.7.1
+  prettier-plugin-tailwindcss: 0.8.1
+
+  # Schemas shared across the API boundary. Declared in packages/types and
+  # used directly by apps/api (request validation) and apps/jobs (feed parsing).
+  zod: 4.3.6
+
+  # D1 access. packages/db owns the schema; apps/api reads it and apps/jobs
+  # writes it, so all three must agree on one query builder.
+  drizzle-orm: 0.45.2
+
+  # Cloudflare Workers toolchain for apps/api and apps/jobs. Kept in step so
+  # both workers generate `worker-configuration.d.ts` from the same runtime.
+  wrangler: 4.107.0
+  "@types/service-worker-mock": 2.0.4
+
+# Routes `pnpm add` / `pnpm update <pkg>` into the catalog and fails a version
+# that conflicts with an entry, instead of silently pinning one package away
+# from the rest. NOTE: it acts on those commands only — a plain `pnpm install`
+# never evaluates it — so it is an authoring guardrail, not a CI-enforced
+# invariant. A hand-written version in a package.json will still install.
+catalogMode: strict
+
+# Security overrides for transitive dependencies (Dependabot alerts).
+overrides:
+  yaml: ">=2.8.3 <3"
+  # drizzle-kit still pulls esbuild 0.18 through @esbuild-kit.
+  "esbuild@0.18": 0.25.12
+
+allowBuilds:
+  # Vite, Vitest, drizzle-kit and wrangler all bundle through esbuild, whose
+  # install script links the platform binary.
+  esbuild: true
+  # Pulled in by miniflare for local image bindings. Its install script only
+  # compiles libvips from source as a fallback; the prebuilt binary arrives
+  # through the `@img/sharp-*` optional dependencies, so it stays denied.
+  sharp: false
+  # The workerd runtime behind `wrangler dev` and miniflare. Its install script
+  # verifies the platform binary that `wrangler dev` executes.
+  workerd: true
+
+# 14 days, in minutes. A newly published version is not resolvable until it has
+# been on the registry this long, which blunts the compromised-release window.
+#
+# Consequence worth knowing: "latest" now means "newest stable at least 14 days
+# old", so `pnpm up --latest` will deliberately skip a fresh release and pick it
+# up on a later run. Use `minimumReleaseAgeExclude` if one package genuinely
+# needs to move faster.
 minimumReleaseAge: 20160
