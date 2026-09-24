@@ -15,7 +15,6 @@
     "clean": "rm -rf .turbo node_modules .cache"
   },
   "dependencies": {
-    "@hono/zod-validator": "0.7.6",
     "@repo/db": "workspace:*",
     "@repo/logger": "workspace:*",
     "@repo/types": "workspace:*",
