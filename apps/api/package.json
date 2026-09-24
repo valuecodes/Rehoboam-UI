@@ -20,7 +20,7 @@
     "@repo/logger": "workspace:*",
     "@repo/types": "workspace:*",
     "drizzle-orm": "catalog:",
-    "hono": "4.12.27",
+    "hono": "4.13.7",
     "zod": "catalog:"
   },
   "devDependencies": {

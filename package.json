@@ -21,7 +21,7 @@
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "catalog:",
     "@repo/prettier": "workspace:*",
-    "oxlint": "1.80.0",
+    "oxlint": "1.82.0",
     "oxlint-tsgolint": "7.0.2001",
     "prettier": "catalog:",
     "prettier-plugin-tailwindcss": "catalog:",
