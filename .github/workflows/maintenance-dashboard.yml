@@ -1,0 +1,19 @@
+name: Maintenance dashboard
+
+on:
+  schedule:
+    # Daily. An off-peak minute avoids the top-of-the-hour queue.
+    - cron: "41 5 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  # Keeps one issue listing due catalog, pnpm, gitleaks, Node.js and audit
+  # updates. It never changes code. A called workflow cannot raise the caller's
+  # token, so the job grants it here.
+  maintenance-dashboard:
+    permissions:
+      contents: read
+      issues: write
+    uses: valuecodes/automation/.github/workflows/maintenance-dashboard.yml@faff74cb5d78478b0bd271db840916706dc2cce0 # v0.3.1
