@@ -17,16 +17,17 @@ Use it with the repo-level guide at the root: `AGENTS.md`.
 - Entry point: `src/main.tsx`
 - Root app: `src/app.tsx`
 - Scene composition: `src/features/rehoboam/scene/rehoboam-scene.tsx`
+- Scene helpers: `src/features/rehoboam/scene/{active-event,device-capabilities,overlay-debug-state}.ts`, `src/features/rehoboam/scene/use-severity-intensity-transition.ts`
 - Scene styles: `src/features/rehoboam/scene/rehoboam-scene.css`
 - Scene event cycle helper: `src/features/rehoboam/scene/event-cycle.ts`
 - Scene quality tiering: `src/features/rehoboam/scene/quality.ts`
 - Engine core: `src/features/rehoboam/engine/rehoboam-engine.ts`
 - Interaction updates: `src/features/rehoboam/engine/input.ts`
 - Renderer orchestration: `src/features/rehoboam/render/canvas2d/renderer-2d.ts`
-- Renderer trackers: `src/features/rehoboam/render/canvas2d/divergence-pulse-tracker.ts`, `src/features/rehoboam/render/canvas2d/divergence-cluster-tracker.ts`
+- Renderer trackers: `src/features/rehoboam/render/canvas2d/divergence-pulse-tracker.ts`, `src/features/rehoboam/render/canvas2d/divergence-cluster-tracker.ts` (cluster types, hotspots and spawning in `divergence-cluster-{types,hotspots,spawn}.ts`)
 - Render passes: `src/features/rehoboam/render/canvas2d/passes/{background,rings,divergence,sweep,event-contour}-pass.ts`
-- Divergence pass: `src/features/rehoboam/render/canvas2d/passes/divergence-pass.ts`
-- Event callout overlay: `src/features/rehoboam/overlay/callout-overlay.tsx`
+- Divergence pass: `src/features/rehoboam/render/canvas2d/passes/divergence-pass.ts`, with its helpers in `passes/divergence-{pass-constants,descriptors,contour,path-tracing,mountain-samples,layer-drawing}.ts`
+- Event callout overlay: `src/features/rehoboam/overlay/callout-overlay.tsx` (geometry, debug flags and the cycle/motion hooks in `callout-geometry.ts`, `callout-debug.ts`, `use-callout-cycle.ts`, `use-callout-motion.ts`)
 - Intro callout overlay: `src/features/rehoboam/overlay/intro-callout-overlay.tsx`
 - Event list panel: `src/features/rehoboam/overlay/event-list-panel.tsx`
 - Data source + pipeline: `src/features/rehoboam/data/source.ts`
@@ -74,8 +75,8 @@ Run from repo root:
 1. Read relevant files in `src/features/rehoboam/**` before changing timeline behavior.
 2. Read `docs/architecture.md` before changing core engine/render/data behavior.
 3. Make minimal edits and preserve existing named-export patterns.
-4. Run at minimum: `pnpm --filter rehoboam-ui typecheck` and `pnpm lint`.
-5. Run `pnpm format` from root if formatting drifts, then re-run checks.
+4. Run at minimum: `pnpm --filter rehoboam-ui typecheck`, `pnpm lint` and `pnpm knip`.
+5. Run `pnpm format` from root before committing, then re-run checks.
 6. If animation/timeline behavior changes, run `pnpm --filter rehoboam-ui test` and do a quick manual run (`pnpm --filter rehoboam-ui dev`).
 7. If architecture or behavior changes, update `docs/architecture.md` and related docs in `docs/`.
 

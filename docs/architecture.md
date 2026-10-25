@@ -27,8 +27,9 @@ updated on September 24, 2026.
 | UI framework    | React 19 (`react`/`react-dom` 19.3.0)                   |
 | Build tool      | Vite 8 (`vite` 8.3.0)                                   |
 | Language        | TypeScript 7 (strict mode, native `tsc`)                |
-| Package manager | pnpm 11 + Turborepo                                     |
-| Linting         | oxlint (type-aware via `oxlint-tsgolint`)               |
+| Package manager | pnpm 12 + Turborepo                                     |
+| Linting         | oxlint (type-aware via `oxlint-tsgolint`) + knip        |
+| Formatting      | oxfmt                                                   |
 | Tests           | Vitest 5 (unit) + Playwright 1.63 (e2e screenshot flow) |
 | Styling         | CSS custom properties + fluid `clamp()` typography      |
 
