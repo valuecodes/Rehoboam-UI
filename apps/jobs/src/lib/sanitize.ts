@@ -10,11 +10,25 @@ const CONTROL_CHAR_RE = /[^\P{Cc}\n\t]/gu;
 const stripControlChars = (text: string): string =>
   text.replace(CONTROL_CHAR_RE, "");
 
+// Removes `pattern` until nothing matches, so removing one match can't splice
+// a new one together (`<scr<b>ipt>` → `<script>`).
+const removeAll = (text: string, pattern: RegExp): string => {
+  let previous = text;
+  let current = text.replace(pattern, "");
+
+  while (current !== previous) {
+    previous = current;
+    current = current.replace(pattern, "");
+  }
+
+  return current;
+};
+
 const stripHtml = (text: string): string =>
-  text.replace(HTML_TAG_RE, "").replace(ANGLE_BRACKET_RE, "");
+  removeAll(text, HTML_TAG_RE).replace(ANGLE_BRACKET_RE, "");
 
 const stripDangerousHtml = (text: string): string =>
-  stripHtml(text.replace(SCRIPT_OR_STYLE_BLOCK_RE, ""));
+  stripHtml(removeAll(text, SCRIPT_OR_STYLE_BLOCK_RE));
 
 const sanitizeText = (text: string, maxLength: number): string =>
   stripDangerousHtml(stripControlChars(text.normalize("NFC")))
