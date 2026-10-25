@@ -13,7 +13,11 @@
     "typecheck": {
       "dependsOn": ["^typecheck"]
     },
-    "test": {},
+    // `^test` makes a package's changes invalidate its consumers' cached
+    // tests (apps test against the real `@repo/*` sources).
+    "test": {
+      "dependsOn": ["^test"]
+    },
     "clean": {
       "cache": false
     },

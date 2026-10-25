@@ -27,6 +27,14 @@ describe("stripHtml", () => {
   it("handles empty string", () => {
     expect(stripHtml("")).toBe("");
   });
+
+  it("removes an unterminated tag a single pass leaves behind", () => {
+    expect(stripHtml("headline<script")).toBe("headlinescript");
+  });
+
+  it("removes tags rebuilt from nested fragments", () => {
+    expect(stripHtml("<<b>script>alert(1)")).not.toMatch(/[<>]/);
+  });
 });
 
 describe("stripDangerousHtml", () => {

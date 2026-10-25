@@ -1,5 +1,8 @@
 const SCRIPT_OR_STYLE_BLOCK_RE = /<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi;
 const HTML_TAG_RE = /<[^>]*>/g;
+// Angle brackets left after tag removal, e.g. an unterminated `<script`, which
+// a single tag-stripping pass cannot catch.
+const ANGLE_BRACKET_RE = /[<>]/g;
 const WHITESPACE_RE = /\s+/g;
 // C0/C1 control characters (Unicode category Cc), except newline and tab.
 const CONTROL_CHAR_RE = /[^\P{Cc}\n\t]/gu;
@@ -7,15 +10,14 @@ const CONTROL_CHAR_RE = /[^\P{Cc}\n\t]/gu;
 const stripControlChars = (text: string): string =>
   text.replace(CONTROL_CHAR_RE, "");
 
-const stripHtml = (text: string): string => text.replace(HTML_TAG_RE, "");
+const stripHtml = (text: string): string =>
+  text.replace(HTML_TAG_RE, "").replace(ANGLE_BRACKET_RE, "");
 
 const stripDangerousHtml = (text: string): string =>
-  text.replace(SCRIPT_OR_STYLE_BLOCK_RE, "").replace(HTML_TAG_RE, "");
+  stripHtml(text.replace(SCRIPT_OR_STYLE_BLOCK_RE, ""));
 
 const sanitizeText = (text: string, maxLength: number): string =>
-  stripControlChars(text.normalize("NFC"))
-    .replace(SCRIPT_OR_STYLE_BLOCK_RE, "")
-    .replace(HTML_TAG_RE, "")
+  stripDangerousHtml(stripControlChars(text.normalize("NFC")))
     .replace(WHITESPACE_RE, " ")
     .trim()
     .slice(0, maxLength);
