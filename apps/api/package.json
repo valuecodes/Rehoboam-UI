@@ -23,14 +23,11 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@repo/prettier": "workspace:*",
     "@repo/typescript": "workspace:*",
     "@types/node": "catalog:",
     "@types/service-worker-mock": "catalog:",
-    "prettier": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "wrangler": "catalog:"
-  },
-  "prettier": "@repo/prettier"
+  }
 }

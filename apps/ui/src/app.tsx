@@ -1,17 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 
-import { RehoboamScene } from "./features/rehoboam";
-
-import "./features/navigation/app-shell.css";
-
 import {
   getAppRouteFromPathname,
   getPathForAppRoute,
 } from "./features/navigation/app-route";
 import type { AppRoute } from "./features/navigation/app-route";
 import { PrivacyPolicyView } from "./features/navigation/privacy-policy-view";
+import { RehoboamScene } from "./features/rehoboam";
 import { StatsView } from "./features/stats/stats-view";
+
+import "./features/navigation/app-shell.css";
 
 type NavItem = Readonly<{
   code: string;

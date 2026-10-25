@@ -1,6 +1,6 @@
+import { expect, test } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { dirname, extname } from "node:path";
-import { expect, test } from "@playwright/test";
 
 const SCENE_SELECTOR = ".rehoboam-scene__instrument";
 

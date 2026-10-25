@@ -9,15 +9,11 @@
   "scripts": {
     "typecheck": "tsc",
     "test": "vitest run --passWithNoTests",
-    "format": "prettier --check . --ignore-path ../../.gitignore",
     "clean": "rm -rf .turbo node_modules .cache"
   },
   "devDependencies": {
-    "@repo/prettier": "workspace:*",
     "@repo/typescript": "workspace:*",
-    "prettier": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
-  },
-  "prettier": "@repo/prettier"
+  }
 }
