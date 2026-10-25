@@ -1,0 +1,14 @@
+# gitleaks config: the default rule set plus allowlists for known false
+# positives. Allowlist only values that are genuinely not secrets, each with a
+# reason — a real leak gets rotated, not allowlisted.
+[extend]
+useDefault = true
+
+[[allowlists]]
+# Cloudflare Web Analytics beacon token. It is injected into the public HTML of
+# every page, so it is public by design and grants no account access.
+description = "Cloudflare Web Analytics beacon token"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^apps/ui/vite\.config\.ts$''']
+regexes = ['''^caa6f78379254d678e20950e5b7d9bbc$''']

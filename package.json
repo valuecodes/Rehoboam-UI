@@ -17,6 +17,7 @@
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "knip": "knip",
+    "secrets:scan": "sh .github/scripts/secrets-scan.sh",
     "clean": "turbo run clean"
   },
   "devDependencies": {
