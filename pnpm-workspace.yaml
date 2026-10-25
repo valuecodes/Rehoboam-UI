@@ -3,47 +3,52 @@ packages:
   - "packages/*"
   - "tooling/*"
 
-# Single source of truth for versions used by more than one package. A manifest
-# references an entry with `catalog:` — bare, because there is one catalog — so
-# a shared version is declared here once instead of once per manifest. Bump with
-# `pnpm up --latest -r <pkg>`: it rewrites the entry below and leaves every
-# package.json untouched, so `git diff pnpm-workspace.yaml` is the whole
+# Every external dependency version, referenced as `catalog:` from the
+# manifests. Update everything with `pnpm up --latest -r`, which rewrites only
+# this file and the lockfile, so `git diff pnpm-workspace.yaml` is the whole
 # version-change review surface.
 #
-# Two things NOT to put here: `@repo/*` deps stay `workspace:*` (pnpm rejects
-# the workspace protocol as a catalog value), and a dependency with exactly one
-# consumer stays pinned inline in that manifest — the catalog is for versions
-# that can drift apart.
-#
-# Scoped keys must be double-quoted: unquoted `@` is a YAML syntax error, and
-# Prettier checks this file, so single quotes fail `format:check`.
+# Not here: `@repo/*` deps (stay `workspace:*`). Scoped keys must be
+# double-quoted.
 catalog:
-  # Toolchain — every package runs the same one. `typescript` is the native (Go)
-  # compiler; its binary is still called `tsc`. `@types/node` is held on the
-  # Node 24 line to match `.nvmrc` (see `updateConfig` below).
-  "@types/node": 24.19.2
-  prettier: 3.9.6
-  typescript: 7.0.2
-  vitest: 5.0.0
-
-  # Prettier plugins, loaded by the root manifest and tooling/prettier.
+  "@fontsource/barlow-condensed": 5.3.0
   "@ianvs/prettier-plugin-sort-imports": 4.7.1
-  prettier-plugin-tailwindcss: 0.8.1
-
-  # Schemas shared across the API boundary. Declared in packages/types and
-  # used directly by apps/api (request validation) and apps/jobs (feed parsing).
-  zod: 4.6.1
-
+  "@playwright/test": 1.63.0
+  # Held on the Node 24 line to match `.nvmrc` (see `updateConfig` below).
+  "@types/node": 24.19.2
+  "@types/react": 19.3.0
+  "@types/react-dom": 19.3.0
+  "@types/service-worker-mock": 2.0.4
+  "@vitejs/plugin-react": 6.1.1
+  drizzle-kit: 0.31.10
   # D1 access. packages/db owns the schema; apps/api reads it and apps/jobs
   # writes it, so all three must agree on one query builder.
   drizzle-orm: 0.45.2
-
-  # Cloudflare toolchain. apps/api and apps/jobs are kept in step so both
-  # workers generate `worker-configuration.d.ts` from the same runtime; apps/ui
-  # deploys to Pages with it, so that deploy also uses the locked tree and the
-  # overrides below.
+  fast-xml-parser: 5.11.1
+  hono: 4.13.7
+  jsdom: 30.0.1
+  motion: 13.2.0
+  oxlint: 1.82.0
+  oxlint-tsgolint: 7.0.2001
+  playwright: 1.63.0
+  prettier: 3.9.6
+  prettier-plugin-tailwindcss: 0.8.1
+  react: 19.3.0
+  react-dom: 19.3.0
+  turbo: 2.10.12
+  # `typescript` is the native (Go) compiler; its binary is still `tsc`.
+  typescript: 7.0.2
+  vite: 8.3.0
+  vite-bundle-analyzer: 1.3.9
+  vitest: 5.0.0
+  # apps/api and apps/jobs generate `worker-configuration.d.ts` from the same
+  # runtime; apps/ui deploys to Pages with it, so that deploy also uses the
+  # locked tree and the overrides below.
   wrangler: 4.130.0
-  "@types/service-worker-mock": 2.0.4
+  # Schemas shared across the API boundary. Declared in packages/types and
+  # used directly by apps/api (request validation) and apps/jobs (feed parsing).
+  zod: 4.6.1
+  zx: 8.8.5
 
 # Skipped by `pnpm up --latest`. `@types/node` must track the Node major in
 # `.nvmrc`, so bump it by hand within that line.
