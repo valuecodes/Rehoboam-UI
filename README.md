@@ -12,15 +12,15 @@ A pnpm monorepo with a Rehoboam-style React UI, a Cloudflare Worker API, and a s
 - React 19
 - Vite 8
 - TypeScript 7 (native `tsc`)
-- oxlint (type-aware)
-- Prettier 3
+- oxlint (type-aware) + oxfmt
+- knip
 - Vitest 5
-- pnpm 11 + Turborepo
+- pnpm 12 + Turborepo
 
 ## Requirements
 
-- Node.js `24.21.0` (see `.nvmrc`)
-- pnpm `11+` (pinned via `packageManager`; `corepack enable` picks it up)
+- Node.js 24 (exact version in `.nvmrc`)
+- pnpm `12+` (pinned via `packageManager`; `corepack enable` picks it up)
 
 ## Local Development
 
@@ -59,8 +59,10 @@ pnpm --filter rehoboam-ui bundle:analyze
 ```bash
 pnpm typecheck
 pnpm lint
+pnpm knip
 pnpm format:check
 pnpm test
+pnpm secrets:scan
 ```
 
 ## Playwright Screenshots
@@ -105,11 +107,18 @@ be visible, and then applies a short settle delay before capturing.
 1. `pnpm outdated -r`
 2. `pnpm up --latest -r package another-package`
 
-Versions shared by more than one workspace live in the `catalog:` section of
+Every external version lives in the `catalog:` section of
 `pnpm-workspace.yaml`; manifests reference them as `"catalog:"`. `pnpm up`
 rewrites the catalog entry, so `git diff pnpm-workspace.yaml` shows every
-shared bump. New releases are only resolvable after 14 days
-(`minimumReleaseAge`).
+bump. New releases are only resolvable after 14 days (`minimumReleaseAge`),
+and `trustPolicy: no-downgrade` rejects a version with weaker publish
+provenance than an earlier one. `@types/node` is skipped by `pnpm up --latest`
+(`updateConfig`) and bumped by hand within the `.nvmrc` major.
+
+The **Maintenance dashboard** issue (updated daily by
+`.github/workflows/maintenance-dashboard.yml`) lists due catalog, pnpm,
+gitleaks, Node.js and `pnpm audit` updates. For a Node.js bump, change
+`.nvmrc`.
 
 ## Scripts
 
@@ -117,8 +126,10 @@ shared bump. New releases are only resolvable after 14 days
 - `pnpm build` - build all workspaces (cached by Turborepo)
 - `pnpm typecheck` - run TypeScript checks in all workspaces (cached by Turborepo)
 - `pnpm lint` - run type-aware oxlint across the repo (`.oxlintrc.json`)
-- `pnpm format` - auto-format files with Prettier
+- `pnpm knip` - report unused files, exports and dependencies (`knip.jsonc`)
+- `pnpm format` - auto-format files with oxfmt (`.oxfmtrc.jsonc`)
 - `pnpm format:check` - verify formatting
+- `pnpm secrets:scan` - scan the full git history for secrets with gitleaks (local binary or pinned Docker image)
 - `pnpm test` - run tests in all workspaces (cached by Turborepo)
 - `pnpm clean` - remove each workspace's `.turbo`, caches, build output and `node_modules` (the root `node_modules` is kept)
 - `pnpm --filter rehoboam-ui dev` - run only the web dev server (`http://localhost:3000`)
@@ -131,21 +142,23 @@ shared bump. New releases are only resolvable after 14 days
 
 ## CI Pipeline
 
-Two GitHub Actions workflows validate every code change:
+Every check is defined once in the reusable `.github/workflows/checks.yml`:
+typecheck, lint, knip, `format:check`, test, build, e2e (Playwright smoke),
+secrets-scan (gitleaks), CodeQL and workflow-lint (actionlint + zizmor). Two
+workflows call it:
 
-- `.github/workflows/feature.yml`: runs on pull requests to `main`
-- `.github/workflows/main.yml`: runs on pushes to `main`
+- `.github/workflows/feature.yml`: on pull requests to `main`. Its `all-passed`
+  job is the one check to require in branch protection.
+- `.github/workflows/main.yml`: on pushes to `main`. Once the checks pass it
+  applies Jobs D1 migrations, then deploys the API and Jobs workers, and
+  deploys the UI to Cloudflare Pages.
 
-Both workflows run:
-
-- typecheck
-- lint
-- `format:check`
-- test
-
-On pushes to `main`, `.github/workflows/main.yml` also applies Jobs D1 migrations
-before deploying the API and Jobs workers.
-
-Manual operations workflow:
+Other workflows:
 
 - `.github/workflows/migrations.yml`: manually applies Jobs D1 migrations to production for retries/backfills (`workflow_dispatch`, environment-gated)
+- `.github/workflows/maintenance-dashboard.yml`: daily, keeps the **Maintenance dashboard** issue up to date
+
+CodeQL uses advanced setup, so GitHub's CodeQL "default setup" must stay off
+(Settings → Code security). Dependabot (`.github/dependabot.yml`) bumps the
+SHA-pinned actions monthly in one grouped PR; npm dependencies are updated by
+hand.
