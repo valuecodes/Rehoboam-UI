@@ -1,5 +1,6 @@
 {
   "$schema": "https://turborepo.com/schema.json",
+  "agentGuidance": false,
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -12,15 +13,11 @@
     "typecheck": {
       "dependsOn": ["^typecheck"]
     },
-    "test": {
-      "dependsOn": ["^test"]
-    },
+    "test": {},
     "clean": {
-      "dependsOn": ["^clean"],
       "cache": false
     },
     "dev": {
-      "dependsOn": ["^dev"],
       "cache": false,
       "persistent": true
     }
