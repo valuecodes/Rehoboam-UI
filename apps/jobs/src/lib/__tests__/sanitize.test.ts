@@ -38,6 +38,12 @@ describe("stripHtml", () => {
 });
 
 describe("stripDangerousHtml", () => {
+  it("removes script blocks spliced together by a previous removal", () => {
+    expect(
+      stripDangerousHtml("<scr<script></script>ipt>alert(1)</script>headline")
+    ).toBe("headline");
+  });
+
   it("removes script blocks including their contents", () => {
     expect(stripDangerousHtml("<script>alert('xss')</script>headline")).toBe(
       "headline"
