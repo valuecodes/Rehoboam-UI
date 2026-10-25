@@ -24,7 +24,7 @@
     "@repo/logger": "workspace:*",
     "@repo/types": "workspace:*",
     "drizzle-orm": "catalog:",
-    "fast-xml-parser": "5.11.1",
+    "fast-xml-parser": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
@@ -32,7 +32,7 @@
     "@repo/typescript": "workspace:*",
     "@types/node": "catalog:",
     "@types/service-worker-mock": "catalog:",
-    "drizzle-kit": "0.31.10",
+    "drizzle-kit": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
