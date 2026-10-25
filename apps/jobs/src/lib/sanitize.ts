@@ -1,28 +1,18 @@
 const SCRIPT_OR_STYLE_BLOCK_RE = /<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi;
 const HTML_TAG_RE = /<[^>]*>/g;
 const WHITESPACE_RE = /\s+/g;
-
-const isAllowedControlChar = (char: string): boolean =>
-  char === "\n" || char === "\t";
+// C0/C1 control characters (Unicode category Cc), except newline and tab.
+const CONTROL_CHAR_RE = /[^\P{Cc}\n\t]/gu;
 
 const stripControlChars = (text: string): string =>
-  Array.from(text)
-    .filter((char) => {
-      const code = char.codePointAt(0) ?? 0;
-      const isControl =
-        (code >= 0x00 && code <= 0x1f) || (code >= 0x7f && code <= 0x9f);
+  text.replace(CONTROL_CHAR_RE, "");
 
-      return !isControl || isAllowedControlChar(char);
-    })
-    .join("");
+const stripHtml = (text: string): string => text.replace(HTML_TAG_RE, "");
 
-export const stripHtml = (text: string): string =>
-  text.replace(HTML_TAG_RE, "");
-
-export const stripDangerousHtml = (text: string): string =>
+const stripDangerousHtml = (text: string): string =>
   text.replace(SCRIPT_OR_STYLE_BLOCK_RE, "").replace(HTML_TAG_RE, "");
 
-export const sanitizeText = (text: string, maxLength: number): string =>
+const sanitizeText = (text: string, maxLength: number): string =>
   stripControlChars(text.normalize("NFC"))
     .replace(SCRIPT_OR_STYLE_BLOCK_RE, "")
     .replace(HTML_TAG_RE, "")
@@ -30,10 +20,12 @@ export const sanitizeText = (text: string, maxLength: number): string =>
     .trim()
     .slice(0, maxLength);
 
-export const sanitizeNewsInput = (
+const sanitizeNewsInput = (
   title: string,
   description: string
 ): { title: string; description: string } => ({
   title: sanitizeText(title, 200),
   description: sanitizeText(description, 500),
 });
+
+export { sanitizeNewsInput, sanitizeText, stripDangerousHtml, stripHtml };

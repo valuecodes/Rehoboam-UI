@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 
-import { DatabaseClient } from "../clients/database-client";
-import type { AppEnv } from "../types";
+import { DatabaseClient } from "~/clients/database-client";
+import type { AppEnv } from "~/types";
 
 export const stats = new Hono<AppEnv>().get("/", async (c) => {
   const logger = c.get("logger");

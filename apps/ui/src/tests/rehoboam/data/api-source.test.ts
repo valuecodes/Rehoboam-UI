@@ -1,7 +1,7 @@
 import {
   createApiEventSource,
   loadEventsFromSource,
-} from "../../../features/rehoboam/data/source";
+} from "~/features/rehoboam/data/source";
 
 const mockEvents = [
   {

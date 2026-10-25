@@ -2,16 +2,16 @@ import { cache } from "hono/cache";
 import { etag } from "hono/etag";
 import { createMiddleware } from "hono/factory";
 
-import type { AppEnv } from "../types";
+import type { AppEnv } from "~/types";
 
-export const etagMiddleware = etag({ weak: true });
+const etagMiddleware = etag({ weak: true });
 
 type CacheOptions = {
   ttl: number;
   cacheName?: string;
 };
 
-export const createCacheMiddleware = (options: CacheOptions) => {
+const createCacheMiddleware = (options: CacheOptions) => {
   const { ttl, cacheName = "rehoboam-api" } = options;
 
   return cache({
@@ -22,13 +22,13 @@ export const createCacheMiddleware = (options: CacheOptions) => {
   });
 };
 
-export const cacheControl = (directive: string) =>
+const cacheControl = (directive: string) =>
   createMiddleware<AppEnv>(async (c, next) => {
     await next();
     c.header("Cache-Control", directive);
   });
 
-export const defaultNoStoreCacheControlMiddleware = createMiddleware<AppEnv>(
+const defaultNoStoreCacheControlMiddleware = createMiddleware<AppEnv>(
   async (c, next) => {
     await next();
     if (!c.res.headers.has("Cache-Control")) {
@@ -36,3 +36,10 @@ export const defaultNoStoreCacheControlMiddleware = createMiddleware<AppEnv>(
     }
   }
 );
+
+export {
+  cacheControl,
+  createCacheMiddleware,
+  defaultNoStoreCacheControlMiddleware,
+  etagMiddleware,
+};

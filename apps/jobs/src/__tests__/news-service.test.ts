@@ -1,6 +1,6 @@
 import type { NewsItem } from "@repo/types";
 
-import { NewsService } from "../jobs/news/services/news-service";
+import { NewsService } from "~/jobs/news/services/news-service";
 
 class TestNewsService extends NewsService {
   readonly slug = "test-source";

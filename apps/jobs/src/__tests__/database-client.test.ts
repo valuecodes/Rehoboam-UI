@@ -1,4 +1,4 @@
-import { DatabaseClient } from "../clients/database-client";
+import { DatabaseClient } from "~/clients/database-client";
 
 const onConflictDoUpdateMock = vi.fn().mockResolvedValue(undefined);
 const valuesMock = vi

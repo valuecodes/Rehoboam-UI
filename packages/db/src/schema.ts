@@ -1,6 +1,6 @@
 import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
-export const newsItems = sqliteTable(
+const newsItems = sqliteTable(
   "news_items",
   {
     id: text("id").primaryKey(),
@@ -24,7 +24,7 @@ export const newsItems = sqliteTable(
   ]
 );
 
-export const events = sqliteTable(
+const events = sqliteTable(
   "events",
   {
     id: text("id").primaryKey(),
@@ -50,3 +50,5 @@ export const events = sqliteTable(
     index("idx_events_category").on(table.category),
   ]
 );
+
+export { events, newsItems };

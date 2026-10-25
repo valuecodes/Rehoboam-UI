@@ -1,10 +1,10 @@
-import type { WorldEvent } from "../../../features/rehoboam/engine/types";
-import type { ComputedEventAngle } from "../../../features/rehoboam/layout/compute-angles";
-import { TAU } from "../../../features/rehoboam/layout/polar";
+import type { WorldEvent } from "~/features/rehoboam/engine/types";
+import type { ComputedEventAngle } from "~/features/rehoboam/layout/compute-angles";
+import { TAU } from "~/features/rehoboam/layout/polar";
 import {
   getChronologicalCycleIds,
   getRandomizedQuadrantCycleIds,
-} from "../../../features/rehoboam/scene/event-cycle";
+} from "~/features/rehoboam/scene/event-cycle";
 
 const createEventAngle = (
   id: string,
@@ -130,16 +130,17 @@ describe("getRandomizedQuadrantCycleIds", () => {
     ] satisfies readonly ComputedEventAngle[];
 
     const angleById = new Map(
-      eventAngles.map((eventAngle) => {
-        return [eventAngle.event.id, eventAngle.angleRad];
-      })
+      eventAngles.map((eventAngle) => [
+        eventAngle.event.id,
+        eventAngle.angleRad,
+      ])
     );
     const cycle = getRandomizedQuadrantCycleIds(eventAngles);
     const firstRoundQuadrants = new Set(
       cycle.slice(0, 4).map((eventId) => {
         const angleRad = angleById.get(eventId);
 
-        expect(angleRad).not.toBeUndefined();
+        expect(angleRad).toBeDefined();
 
         return getQuadrantIndex(angleRad ?? 0);
       })

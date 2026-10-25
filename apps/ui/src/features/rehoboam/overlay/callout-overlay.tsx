@@ -1,96 +1,30 @@
-import {
-  animate,
-  motion,
-  useMotionTemplate,
-  useMotionValue,
-} from "motion/react";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties } from "react";
+import { motion } from "motion/react";
+import { memo, useMemo, useState } from "react";
 
-import type { WorldEvent } from "../engine/types";
-import { polarToCartesian } from "../layout/polar";
-import { clampNumber, toPointList } from "./utils";
-import type { Point } from "./utils";
+import type { WorldEvent } from "~/features/rehoboam/engine/types";
 
-export type InstrumentSize = Readonly<{
-  width: number;
-  height: number;
-}>;
+import { getCalloutDebugLock, getCalloutDebugSideLock } from "./callout-debug";
+import { getCalloutGeometry } from "./callout-geometry";
+import type { CalloutOverlayTarget, InstrumentSize } from "./callout-geometry";
+import { useCalloutCycle } from "./use-callout-cycle";
+import { useCalloutMotion } from "./use-callout-motion";
+import type { CalloutMotionTiming } from "./use-callout-motion";
 
-export type CalloutOverlayTarget = Readonly<{
-  event: WorldEvent;
-  angleRad: number;
-  anchorRadius: number;
-}>;
-
-export type CalloutOverlayProps = Readonly<{
+type CalloutOverlayProps = Readonly<{
   instrumentSize: InstrumentSize;
   target: CalloutOverlayTarget | null;
   onCycleComplete?: () => void;
   cycleToken?: number;
 }>;
 
-type CalloutGeometry = Readonly<{
-  event: WorldEvent;
-  anchorX: number;
-  anchorY: number;
-  labelX: number;
-  labelY: number;
-  labelWidth: number;
-  textAlign: "left" | "right";
-  connectorPath: string;
-  framePoints: string;
-  timeMarginTop: number;
-  endpointOuterRadius: number;
-  endpointInnerRadius: number;
-  titleLocationStyle: Pick<CSSProperties, "display" | "marginInlineStart">;
-}>;
-
-type CalloutDebugLock = "top" | "bottom";
-type CalloutDebugSideLock = "left" | "right";
-
-const V1_LINE_DELAY_MS = 1_000;
-const V1_LINE_DURATION_MS = 1_000;
-const V1_TEXT_DELAY_MS = 2_000;
-const V1_AUTO_CLOSE_MS = 5_000;
-const V1_CLEAR_CLOSE_MS = 3_200;
-const V1_DASH_LENGTH = 1_800;
-const V1_TEXT_SHIFT_PX = 7;
-const CALLOUT_ENDPOINT_OUTER_RADIUS_PX = 6;
-const CALLOUT_ENDPOINT_INNER_RADIUS_PX = 2.25;
-const TOP_LAYOUT_TIME_MARGIN_PX = 10;
-const RIGHT_LAYOUT_FRAME_START_RATIO = 2 / 3;
-const TOP_LAYOUT_HEADER_LINE_LENGTH_RATIO = 0.53;
-const BOTTOM_LAYOUT_HEADER_LINE_LENGTH_RATIO = 0.53;
-const TOP_LAYOUT_FIRST_FRAME_OFFSET_PX = 30;
-const BOTTOM_LAYOUT_FIRST_FRAME_OFFSET_PX = 55;
-const TOP_LAYOUT_THIRD_FRAME_OFFSET_PX = 40;
-const TOP_LAYOUT_FOURTH_FRAME_OFFSET_PX = 60;
-const TOP_LAYOUT_FIFTH_FRAME_OFFSET_PX = 75;
-const BOTTOM_LAYOUT_THIRD_FRAME_OFFSET_PX = 40;
-const BOTTOM_LAYOUT_FOURTH_FRAME_OFFSET_PX = 20;
-const BOTTOM_LAYOUT_FIFTH_FRAME_OFFSET_PX = 0;
-const CALLOUT_DEBUG_QUERY_KEY = "callout-debug";
-const CALLOUT_DEBUG_HALF_QUERY_KEY = "callout-debug-half";
-const CALLOUT_DEBUG_SIDE_QUERY_KEY = "callout-debug-side";
-const CALLOUT_CENTER_KEEP_OUT_PX = 12;
-const COMPACT_LAYOUT_WIDTH_PX = 700;
-const COMPACT_LABEL_HEIGHT_PX = 108;
-const COMPACT_LABEL_LEFT_INSET_PX = 24;
-const COMPACT_FRAME_INSET_X_PX = 10;
-const COMPACT_BOTTOM_LABEL_SHIFT_PX = 70;
-const COMPACT_TOP_LAYOUT_HEADER_LINE_LENGTH_RATIO = 0.56;
-const COMPACT_BOTTOM_LAYOUT_HEADER_LINE_LENGTH_RATIO = 0.56;
-const COMPACT_TOP_LAYOUT_FIRST_FRAME_OFFSET_PX = 24;
-const COMPACT_BOTTOM_LAYOUT_FIRST_FRAME_OFFSET_PX = 37;
-const COMPACT_TOP_LAYOUT_THIRD_FRAME_OFFSET_PX = 32;
-const COMPACT_TOP_LAYOUT_FOURTH_FRAME_OFFSET_PX = 44;
-const COMPACT_TOP_LAYOUT_FIFTH_FRAME_OFFSET_PX = 59;
-const COMPACT_BOTTOM_LAYOUT_THIRD_FRAME_OFFSET_PX = 30;
-const COMPACT_BOTTOM_LAYOUT_FOURTH_FRAME_OFFSET_PX = 16;
-const COMPACT_BOTTOM_LAYOUT_FIFTH_FRAME_OFFSET_PX = 0;
-const COMPACT_ENDPOINT_OUTER_RADIUS_PX = 4.5;
-const COMPACT_ENDPOINT_INNER_RADIUS_PX = 1.8;
+const V1_DASH_LENGTH = 1800;
+const V1_MOTION_TIMING: CalloutMotionTiming = {
+  dashLength: V1_DASH_LENGTH,
+  textShiftPx: 7,
+  lineDelayMs: 1000,
+  lineDurationMs: 1000,
+  textDelayMs: 2000,
+};
 
 const formatCalloutDate = (timestampMs: number): string => {
   const date = new Date(timestampMs);
@@ -120,350 +54,14 @@ const getCalloutLocationText = (event: WorldEvent): string => {
   return "Unknown location";
 };
 
-const isDebugFlagEnabled = (value: string | null): boolean => {
-  if (value === null) {
-    return false;
-  }
-
-  return ["1", "true", "on", "yes"].includes(value);
-};
-
-const getCalloutDebugLock = (): CalloutDebugLock | null => {
-  const searchParams = new URLSearchParams(window.location.search);
-  const calloutDebugValue = searchParams
-    .get(CALLOUT_DEBUG_QUERY_KEY)
-    ?.trim()
-    .toLowerCase();
-
-  if (calloutDebugValue === "top") {
-    return "top";
-  }
-
-  if (calloutDebugValue === "bottom") {
-    return "bottom";
-  }
-
-  if (!isDebugFlagEnabled(calloutDebugValue ?? null)) {
-    return null;
-  }
-
-  const calloutDebugHalfValue = searchParams
-    .get(CALLOUT_DEBUG_HALF_QUERY_KEY)
-    ?.trim()
-    .toLowerCase();
-
-  if (calloutDebugHalfValue === "bottom") {
-    return "bottom";
-  }
-
-  if (calloutDebugHalfValue === "top") {
-    return "top";
-  }
-
-  return "top";
-};
-
-const getCalloutDebugSideLock = (): CalloutDebugSideLock | null => {
-  const searchParams = new URLSearchParams(window.location.search);
-  const calloutDebugSideValue = searchParams
-    .get(CALLOUT_DEBUG_SIDE_QUERY_KEY)
-    ?.trim()
-    .toLowerCase();
-
-  if (calloutDebugSideValue === "left") {
-    return "left";
-  }
-
-  if (calloutDebugSideValue === "right") {
-    return "right";
-  }
-
-  return null;
-};
-
-const getCalloutGeometry = (
-  instrumentSize: InstrumentSize,
-  target: CalloutOverlayTarget,
-  debugLock: CalloutDebugLock | null,
-  debugSideLock: CalloutDebugSideLock | null
-): CalloutGeometry | null => {
-  if (instrumentSize.width <= 0 || instrumentSize.height <= 0) {
-    return null;
-  }
-
-  const center = {
-    x: instrumentSize.width / 2,
-    y: instrumentSize.height / 2,
-  };
-  const anchor = polarToCartesian(
-    {
-      radius: target.anchorRadius,
-      angleRad: target.angleRad,
-    },
-    center
-  );
-  const isLowerHalf = anchor.y >= center.y;
-  const isCompactViewport = instrumentSize.width <= COMPACT_LAYOUT_WIDTH_PX;
-  const margin = isCompactViewport
-    ? Math.max(20, instrumentSize.width * 0.05)
-    : Math.max(12, instrumentSize.width * 0.02);
-  const lockedToTop = debugLock === "top";
-  const lockedToBottom = debugLock === "bottom";
-  const lockedToLeft = debugSideLock === "left";
-
-  if (isCompactViewport) {
-    const labelX = margin + COMPACT_LABEL_LEFT_INSET_PX;
-    const maxLabelWidth = Math.max(180, instrumentSize.width - labelX - margin);
-    const labelWidth = maxLabelWidth;
-    const labelHeight = COMPACT_LABEL_HEIGHT_PX;
-    const shouldPlaceBottom = lockedToBottom || (!lockedToTop && !isLowerHalf);
-    const compactBottomMargin = Math.max(
-      8,
-      margin - COMPACT_BOTTOM_LABEL_SHIFT_PX
-    );
-    const labelY = shouldPlaceBottom
-      ? instrumentSize.height - labelHeight - compactBottomMargin
-      : margin;
-    const compactCornerStep = clampNumber(
-      Math.round(instrumentSize.width * 0.024),
-      8,
-      12
-    );
-    const firstFrameX = labelX + COMPACT_FRAME_INSET_X_PX;
-    const firstFrameY =
-      labelY +
-      (shouldPlaceBottom
-        ? COMPACT_BOTTOM_LAYOUT_FIRST_FRAME_OFFSET_PX
-        : COMPACT_TOP_LAYOUT_FIRST_FRAME_OFFSET_PX);
-    const secondFrameX = firstFrameX - compactCornerStep;
-    const secondFrameY = firstFrameY;
-    const thirdFrameX = firstFrameX - compactCornerStep * 2;
-    const thirdFrameY =
-      labelY +
-      (shouldPlaceBottom
-        ? COMPACT_BOTTOM_LAYOUT_THIRD_FRAME_OFFSET_PX
-        : COMPACT_TOP_LAYOUT_THIRD_FRAME_OFFSET_PX);
-    const fourthFrameX = thirdFrameX;
-    const fourthFrameY =
-      labelY +
-      (shouldPlaceBottom
-        ? COMPACT_BOTTOM_LAYOUT_FOURTH_FRAME_OFFSET_PX
-        : COMPACT_TOP_LAYOUT_FOURTH_FRAME_OFFSET_PX);
-    const fifthFrameX = firstFrameX;
-    const fifthFrameY =
-      labelY +
-      (shouldPlaceBottom
-        ? COMPACT_BOTTOM_LAYOUT_FIFTH_FRAME_OFFSET_PX
-        : COMPACT_TOP_LAYOUT_FIFTH_FRAME_OFFSET_PX);
-    const compactLineLengthRatio = shouldPlaceBottom
-      ? COMPACT_BOTTOM_LAYOUT_HEADER_LINE_LENGTH_RATIO
-      : COMPACT_TOP_LAYOUT_HEADER_LINE_LENGTH_RATIO;
-    const compactLineLength = labelWidth * compactLineLengthRatio;
-    const lineEndX = firstFrameX + compactLineLength;
-    const lineEndY = fifthFrameY;
-    const framePointList: readonly Point[] = [
-      {
-        x: firstFrameX,
-        y: firstFrameY,
-      },
-      {
-        x: secondFrameX,
-        y: secondFrameY,
-      },
-      {
-        x: thirdFrameX,
-        y: thirdFrameY,
-      },
-      {
-        x: fourthFrameX,
-        y: fourthFrameY,
-      },
-      {
-        x: fifthFrameX,
-        y: fifthFrameY,
-      },
-      {
-        x: lineEndX,
-        y: lineEndY,
-      },
-    ];
-
-    return {
-      event: target.event,
-      anchorX: anchor.x,
-      anchorY: anchor.y,
-      labelX,
-      labelY,
-      labelWidth,
-      textAlign: "left",
-      connectorPath: `M ${anchor.x} ${anchor.y} L ${lineEndX} ${lineEndY}`,
-      framePoints: toPointList(framePointList),
-      timeMarginTop: 0,
-      endpointOuterRadius: COMPACT_ENDPOINT_OUTER_RADIUS_PX,
-      endpointInnerRadius: COMPACT_ENDPOINT_INNER_RADIUS_PX,
-      titleLocationStyle: {
-        display: "inline",
-        marginInlineStart: "0.3ch",
-      },
-    };
-  }
-
-  const maxPanelWidth = Math.max(180, instrumentSize.width - margin * 2);
-  const minPanelWidth = Math.min(260, maxPanelWidth);
-  const panelWidth = clampNumber(600, minPanelWidth, maxPanelWidth);
-  const maxPanelHeight = Math.max(120, instrumentSize.height - margin * 2);
-  const minPanelHeight = Math.min(120, maxPanelHeight);
-  const panelHeight = clampNumber(200, minPanelHeight, maxPanelHeight);
-  const isRightSide = anchor.x >= center.x;
-  const rightPanelX = instrumentSize.width * 0.7;
-  const leftPanelX = instrumentSize.width * 0.1;
-  const prefersSingleSide = instrumentSize.width < 1_050;
-  const hasVerticalDebugLock = lockedToTop || lockedToBottom;
-  const basePanelX = hasVerticalDebugLock
-    ? lockedToLeft
-      ? leftPanelX
-      : rightPanelX
-    : prefersSingleSide || !isRightSide
-      ? leftPanelX
-      : rightPanelX;
-  const basePanelY = lockedToBottom
-    ? instrumentSize.height - panelHeight
-    : lockedToTop
-      ? Math.max(30, margin)
-      : isLowerHalf
-        ? instrumentSize.height - panelHeight
-        : Math.max(30, margin);
-  const panelX = clampNumber(
-    basePanelX,
-    margin,
-    instrumentSize.width - panelWidth - margin
-  );
-  const panelY = clampNumber(
-    basePanelY,
-    margin,
-    instrumentSize.height - panelHeight - margin
-  );
-  const isLeftLayout = panelX < center.x;
-  const isBottomLayout = panelY > center.y;
-  const cornerStep = 10;
-  const firstFrameX =
-    panelX + (isLeftLayout ? 0 : panelWidth * RIGHT_LAYOUT_FRAME_START_RATIO);
-  const firstFrameY =
-    panelY +
-    (isBottomLayout
-      ? BOTTOM_LAYOUT_FIRST_FRAME_OFFSET_PX
-      : TOP_LAYOUT_FIRST_FRAME_OFFSET_PX);
-  const secondFrameX = firstFrameX + (isLeftLayout ? -cornerStep : cornerStep);
-  const secondFrameY = firstFrameY;
-  const thirdFrameX =
-    firstFrameX + (isLeftLayout ? -cornerStep * 2 : cornerStep * 2);
-  const thirdFrameY =
-    panelY +
-    (isBottomLayout
-      ? BOTTOM_LAYOUT_THIRD_FRAME_OFFSET_PX
-      : TOP_LAYOUT_THIRD_FRAME_OFFSET_PX);
-  const fourthFrameX = thirdFrameX;
-  const fourthFrameY =
-    panelY +
-    (isBottomLayout
-      ? BOTTOM_LAYOUT_FOURTH_FRAME_OFFSET_PX
-      : TOP_LAYOUT_FOURTH_FRAME_OFFSET_PX);
-  const fifthFrameX = firstFrameX;
-  const fifthFrameY =
-    panelY +
-    (isBottomLayout
-      ? BOTTOM_LAYOUT_FIFTH_FRAME_OFFSET_PX
-      : TOP_LAYOUT_FIFTH_FRAME_OFFSET_PX);
-  const lineLengthRatio = isBottomLayout
-    ? BOTTOM_LAYOUT_HEADER_LINE_LENGTH_RATIO
-    : TOP_LAYOUT_HEADER_LINE_LENGTH_RATIO;
-  const lineLength = panelWidth * lineLengthRatio;
-  const lineEndX = firstFrameX + (isLeftLayout ? lineLength : -lineLength);
-  const lineEndY = fifthFrameY;
-  const framePointList: readonly Point[] = [
-    {
-      x: firstFrameX,
-      y: firstFrameY,
-    },
-    {
-      x: secondFrameX,
-      y: secondFrameY,
-    },
-    {
-      x: thirdFrameX,
-      y: thirdFrameY,
-    },
-    {
-      x: fourthFrameX,
-      y: fourthFrameY,
-    },
-    {
-      x: fifthFrameX,
-      y: fifthFrameY,
-    },
-    {
-      x: lineEndX,
-      y: lineEndY,
-    },
-  ];
-  const textAlign = panelX < center.x ? "left" : "right";
-  const preferredLabelX = panelX > center.x ? panelX - panelWidth / 3 : panelX;
-  const desiredCenterGap = Math.max(CALLOUT_CENTER_KEEP_OUT_PX, margin);
-  const safeLabelLeftEdge = center.x + desiredCenterGap;
-  const safeLabelRightEdge = center.x - desiredCenterGap;
-  const viewportRightEdge = instrumentSize.width - margin;
-  const availableLeftWidth = Math.max(0, safeLabelRightEdge - margin);
-  const availableRightWidth = Math.max(
-    0,
-    viewportRightEdge - safeLabelLeftEdge
-  );
-  const labelWidth = isLeftLayout
-    ? Math.min(panelWidth, availableLeftWidth)
-    : Math.min(panelWidth, availableRightWidth);
-  const labelX = isLeftLayout
-    ? clampNumber(
-        preferredLabelX,
-        margin,
-        Math.max(margin, safeLabelRightEdge - labelWidth)
-      )
-    : clampNumber(
-        preferredLabelX,
-        Math.min(viewportRightEdge, safeLabelLeftEdge),
-        Math.max(margin, viewportRightEdge - labelWidth)
-      );
-  const labelY = panelY;
-  const timeMarginTop = panelY < 300 ? TOP_LAYOUT_TIME_MARGIN_PX : 0;
-
-  return {
-    event: target.event,
-    anchorX: anchor.x,
-    anchorY: anchor.y,
-    labelX,
-    labelY,
-    labelWidth,
-    textAlign,
-    connectorPath: `M ${anchor.x} ${anchor.y} L ${lineEndX} ${lineEndY}`,
-    framePoints: toPointList(framePointList),
-    timeMarginTop,
-    endpointOuterRadius: CALLOUT_ENDPOINT_OUTER_RADIUS_PX,
-    endpointInnerRadius: CALLOUT_ENDPOINT_INNER_RADIUS_PX,
-    titleLocationStyle: {
-      display: "inline",
-      marginInlineStart: "0.35ch",
-    },
-  };
-};
-
-export const CalloutOverlay = memo(
+const CalloutOverlay = memo(
   ({
     instrumentSize,
     target,
     onCycleComplete,
     cycleToken = 0,
   }: CalloutOverlayProps) => {
-    const calloutDebugLock = useMemo(() => {
-      return getCalloutDebugLock();
-    }, []);
+    const calloutDebugLock = useMemo(() => getCalloutDebugLock(), []);
     const isCalloutDebugMode = calloutDebugLock !== null;
     const calloutDebugSideLock = useMemo(() => {
       if (!isCalloutDebugMode) {
@@ -472,6 +70,7 @@ export const CalloutOverlay = memo(
 
       return getCalloutDebugSideLock();
     }, [isCalloutDebugMode]);
+    // Debug mode freezes the callout on the first target it receives.
     const [debugLockedTarget, setDebugLockedTarget] =
       useState<CalloutOverlayTarget | null>(() => {
         if (!isCalloutDebugMode) {
@@ -480,13 +79,17 @@ export const CalloutOverlay = memo(
 
         return target;
       });
-    const [renderTarget, setRenderTarget] =
-      useState<CalloutOverlayTarget | null>(target);
-    const renderTargetRef = useRef<CalloutOverlayTarget | null>(target);
-    const onCycleCompleteRef = useRef(onCycleComplete);
-    const [open, setOpen] = useState<"open" | "close">("open");
-    const [animationKey, setAnimationKey] = useState(0);
-    const targetEventId = target?.event.id ?? null;
+
+    if (isCalloutDebugMode && debugLockedTarget === null && target !== null) {
+      setDebugLockedTarget(target);
+    }
+
+    const { renderTarget, open, animationKey } = useCalloutCycle({
+      target,
+      cycleToken,
+      enabled: !isCalloutDebugMode,
+      onCycleComplete,
+    });
     const geometryTarget = isCalloutDebugMode
       ? debugLockedTarget
       : (target ?? renderTarget);
@@ -507,160 +110,13 @@ export const CalloutOverlay = memo(
       geometryTarget,
       instrumentSize,
     ]);
-
-    useEffect(() => {
-      onCycleCompleteRef.current = onCycleComplete;
-    }, [onCycleComplete]);
-
-    useEffect(() => {
-      if (!isCalloutDebugMode) {
-        if (debugLockedTarget !== null) {
-          setDebugLockedTarget(null);
-        }
-
-        return;
-      }
-
-      if (target === null) {
-        return;
-      }
-
-      if (debugLockedTarget === null) {
-        setDebugLockedTarget(target);
-      }
-    }, [debugLockedTarget, isCalloutDebugMode, target]);
-
-    useEffect(() => {
-      if (isCalloutDebugMode || target === null) {
-        return;
-      }
-
-      renderTargetRef.current = target;
-    }, [isCalloutDebugMode, target]);
-
-    useEffect(() => {
-      if (isCalloutDebugMode) {
-        setOpen("open");
-
-        return;
-      }
-
-      let clearHandle = 0;
-      let closeHandle = 0;
-      let cycleCompleteHandle = 0;
-
-      if (targetEventId === null) {
-        if (renderTargetRef.current === null) {
-          return;
-        }
-
-        setRenderTarget(renderTargetRef.current);
-        setOpen("close");
-        clearHandle = window.setTimeout(() => {
-          renderTargetRef.current = null;
-          setRenderTarget(null);
-        }, V1_CLEAR_CLOSE_MS);
-
-        return () => {
-          if (clearHandle !== 0) {
-            window.clearTimeout(clearHandle);
-          }
-        };
-      }
-
-      setRenderTarget(null);
-      setOpen("open");
-      setAnimationKey((currentKey) => {
-        return currentKey + 1;
+    const { lineDashOffset, lineNodeOpacity, textOpacity, textTransform } =
+      useCalloutMotion({
+        timing: V1_MOTION_TIMING,
+        open,
+        frozen: isCalloutDebugMode,
+        restartKey: animationKey,
       });
-      closeHandle = window.setTimeout(() => {
-        setOpen("close");
-        cycleCompleteHandle = window.setTimeout(() => {
-          onCycleCompleteRef.current?.();
-        }, V1_CLEAR_CLOSE_MS);
-      }, V1_AUTO_CLOSE_MS);
-
-      return () => {
-        if (closeHandle !== 0) {
-          window.clearTimeout(closeHandle);
-        }
-
-        if (cycleCompleteHandle !== 0) {
-          window.clearTimeout(cycleCompleteHandle);
-        }
-      };
-    }, [cycleToken, isCalloutDebugMode, targetEventId]);
-
-    const lineDashOffset = useMotionValue(0);
-    const lineNodeOpacity = useMotionValue(0);
-    const textOpacity = useMotionValue(0);
-    const textShiftY = useMotionValue(0);
-    const textTransform = useMotionTemplate`translate3d(0, ${textShiftY}px, 0)`;
-
-    useEffect(() => {
-      if (isCalloutDebugMode) {
-        lineDashOffset.set(0);
-        lineNodeOpacity.set(1);
-        textOpacity.set(1);
-        textShiftY.set(0);
-
-        return;
-      }
-
-      const isOpening = open === "open";
-      lineDashOffset.set(isOpening ? -V1_DASH_LENGTH : 0);
-      lineNodeOpacity.set(isOpening ? 0 : 1);
-      textOpacity.set(isOpening ? 0 : 1);
-      textShiftY.set(isOpening ? V1_TEXT_SHIFT_PX : 0);
-
-      const lineAnimation = animate(
-        lineDashOffset,
-        isOpening ? 0 : V1_DASH_LENGTH,
-        {
-          delay: V1_LINE_DELAY_MS / 1_000,
-          duration: V1_LINE_DURATION_MS / 1_000,
-          ease: "linear",
-        }
-      );
-      const nodeAnimation = animate(lineNodeOpacity, isOpening ? 1 : 0, {
-        delay: V1_LINE_DELAY_MS / 1_000,
-        duration: V1_LINE_DURATION_MS / 1_000,
-        ease: "linear",
-      });
-      const textOpacityAnimation = animate(textOpacity, isOpening ? 1 : 0, {
-        delay: V1_TEXT_DELAY_MS / 1_000,
-        type: "spring",
-        mass: 3,
-        stiffness: 600,
-        damping: 100,
-      });
-      const textShiftAnimation = animate(
-        textShiftY,
-        isOpening ? 0 : V1_TEXT_SHIFT_PX,
-        {
-          delay: V1_TEXT_DELAY_MS / 1_000,
-          type: "spring",
-          mass: 3,
-          stiffness: 600,
-          damping: 100,
-        }
-      );
-
-      return () => {
-        lineAnimation.stop();
-        nodeAnimation.stop();
-        textOpacityAnimation.stop();
-        textShiftAnimation.stop();
-      };
-    }, [
-      animationKey,
-      isCalloutDebugMode,
-      lineDashOffset,
-      lineNodeOpacity,
-      open,
-      textOpacity,
-      textShiftY,
-    ]);
 
     if (geometry === null || geometryTarget === null) {
       return null;
@@ -752,3 +208,5 @@ export const CalloutOverlay = memo(
 );
 
 CalloutOverlay.displayName = "CalloutOverlay";
+
+export { CalloutOverlay };

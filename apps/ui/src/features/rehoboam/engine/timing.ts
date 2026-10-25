@@ -1,19 +1,19 @@
-export type MonotonicClock = () => number;
+type MonotonicClock = () => number;
 
-export type RafLoop = Readonly<{
+type RafLoop = Readonly<{
   start: () => void;
   stop: () => void;
   isRunning: () => boolean;
 }>;
 
-export type CreateRafLoopInput = Readonly<{
+type CreateRafLoopInput = Readonly<{
   now: MonotonicClock;
   requestAnimationFrame: (callback: FrameRequestCallback) => number;
   cancelAnimationFrame: (handle: number) => void;
   onFrame: (timeMs: number) => void;
 }>;
 
-export const createMonotonicNow = (clock: () => number): MonotonicClock => {
+const createMonotonicNow = (clock: () => number): MonotonicClock => {
   let lastValue = Number.NEGATIVE_INFINITY;
 
   return () => {
@@ -37,7 +37,7 @@ export const createMonotonicNow = (clock: () => number): MonotonicClock => {
   };
 };
 
-export const createRafLoop = (input: CreateRafLoopInput): RafLoop => {
+const createRafLoop = (input: CreateRafLoopInput): RafLoop => {
   let isRunning = false;
   let rafHandle: number | null = null;
 
@@ -87,3 +87,5 @@ export const createRafLoop = (input: CreateRafLoopInput): RafLoop => {
     isRunning: () => isRunning,
   };
 };
+
+export { createMonotonicNow, createRafLoop };

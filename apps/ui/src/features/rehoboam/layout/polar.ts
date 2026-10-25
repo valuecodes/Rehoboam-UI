@@ -1,22 +1,22 @@
-export const TAU = Math.PI * 2;
+const TAU = Math.PI * 2;
 
-export type CartesianCoordinate = Readonly<{
+type CartesianCoordinate = Readonly<{
   x: number;
   y: number;
 }>;
 
-export type PolarCoordinate = Readonly<{
+type PolarCoordinate = Readonly<{
   radius: number;
   angleRad: number;
 }>;
 
-export const normalizeAngle = (angleRad: number): number => {
+const normalizeAngle = (angleRad: number): number => {
   const normalized = angleRad % TAU;
 
   return normalized >= 0 ? normalized : normalized + TAU;
 };
 
-export const shortestAngularDistance = (
+const shortestAngularDistance = (
   fromAngleRad: number,
   toAngleRad: number
 ): number => {
@@ -29,17 +29,15 @@ export const shortestAngularDistance = (
   return clockwiseDelta;
 };
 
-export const polarToCartesian = (
+const polarToCartesian = (
   polar: PolarCoordinate,
   center: CartesianCoordinate
-): CartesianCoordinate => {
-  return {
-    x: center.x + polar.radius * Math.sin(polar.angleRad),
-    y: center.y - polar.radius * Math.cos(polar.angleRad),
-  };
-};
+): CartesianCoordinate => ({
+  x: center.x + polar.radius * Math.sin(polar.angleRad),
+  y: center.y - polar.radius * Math.cos(polar.angleRad),
+});
 
-export const cartesianToPolar = (
+const cartesianToPolar = (
   point: CartesianCoordinate,
   center: CartesianCoordinate
 ): PolarCoordinate => {
@@ -51,3 +49,12 @@ export const cartesianToPolar = (
     angleRad: normalizeAngle(Math.atan2(deltaX, -deltaY)),
   };
 };
+
+export {
+  cartesianToPolar,
+  normalizeAngle,
+  polarToCartesian,
+  shortestAngularDistance,
+  TAU,
+};
+export type { CartesianCoordinate };

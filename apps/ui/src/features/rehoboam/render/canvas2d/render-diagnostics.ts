@@ -2,7 +2,7 @@ import type {
   RehoboamRenderDiagnostics,
   RehoboamRendererFrame,
   RehoboamTheme,
-} from "../../engine/types";
+} from "~/features/rehoboam/engine/types";
 
 const EMPTY_PASS_DURATIONS: RehoboamRenderDiagnostics["passMs"] = {
   background: 0,
@@ -21,7 +21,7 @@ type DiagnosticsCollectorFinishInput = Readonly<{
   theme: RehoboamTheme;
 }>;
 
-export type RenderDiagnosticsCollector = Readonly<{
+type RenderDiagnosticsCollector = Readonly<{
   finish: (
     input: DiagnosticsCollectorFinishInput
   ) => RehoboamRenderDiagnostics | undefined;
@@ -39,23 +39,21 @@ const getNowMs = (): number => {
   return Date.now();
 };
 
-const getElapsedDurationMs = (startedAtMs: number): number => {
-  return Math.max(0, getNowMs() - startedAtMs);
-};
+const getElapsedDurationMs = (startedAtMs: number): number =>
+  Math.max(0, getNowMs() - startedAtMs);
 
-const createNoopRenderDiagnosticsCollector = (): RenderDiagnosticsCollector => {
-  const measure: RenderDiagnosticsCollector["measure"] = (_, draw) => {
-    return draw();
-  };
-  const finish: RenderDiagnosticsCollector["finish"] = () => {
-    return undefined;
-  };
+const measureWithoutDiagnostics: RenderDiagnosticsCollector["measure"] = (
+  _,
+  draw
+) => draw();
+const finishWithoutDiagnostics: RenderDiagnosticsCollector["finish"] = () =>
+  undefined;
 
-  return {
-    finish,
-    measure,
-  };
-};
+const createNoopRenderDiagnosticsCollector =
+  (): RenderDiagnosticsCollector => ({
+    finish: finishWithoutDiagnostics,
+    measure: measureWithoutDiagnostics,
+  });
 
 const createActiveRenderDiagnosticsCollector =
   (): RenderDiagnosticsCollector => {
@@ -70,17 +68,15 @@ const createActiveRenderDiagnosticsCollector =
 
       return result;
     };
-    const finish: RenderDiagnosticsCollector["finish"] = (input) => {
-      return {
-        fps: input.frame.deltaMs > 0 ? 1000 / input.frame.deltaMs : 0,
-        frameMs: getElapsedDurationMs(frameStartedAtMs),
-        passMs: passDurations,
-        activePulseCount: input.activePulseCount,
-        activeClusterCount: input.activeClusterCount,
-        ringCount: input.theme.ringCount,
-        divergenceSampleCount: input.theme.divergenceSampleCount,
-      };
-    };
+    const finish: RenderDiagnosticsCollector["finish"] = (input) => ({
+      fps: input.frame.deltaMs > 0 ? 1000 / input.frame.deltaMs : 0,
+      frameMs: getElapsedDurationMs(frameStartedAtMs),
+      passMs: passDurations,
+      activePulseCount: input.activePulseCount,
+      activeClusterCount: input.activeClusterCount,
+      ringCount: input.theme.ringCount,
+      divergenceSampleCount: input.theme.divergenceSampleCount,
+    });
 
     return {
       finish,
@@ -88,10 +84,11 @@ const createActiveRenderDiagnosticsCollector =
     };
   };
 
-export const createRenderDiagnosticsCollector = (
+const createRenderDiagnosticsCollector = (
   enabled: boolean
-): RenderDiagnosticsCollector => {
-  return enabled
+): RenderDiagnosticsCollector =>
+  enabled
     ? createActiveRenderDiagnosticsCollector()
     : createNoopRenderDiagnosticsCollector();
-};
+
+export { createRenderDiagnosticsCollector };

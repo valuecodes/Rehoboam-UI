@@ -1,35 +1,38 @@
-export type AppRoute = "home" | "hud" | "privacy" | "stats";
+type AppRoute = "home" | "hud" | "privacy" | "stats";
 
-const normalizePathname = (pathname: string): string => {
-  return pathname.trim().toLowerCase().replace(/\/+$/u, "") || "/";
-};
+const normalizePathname = (pathname: string): string =>
+  pathname.trim().toLowerCase().replace(/\/+$/u, "") || "/";
 
-export const getAppRouteFromPathname = (pathname: string): AppRoute => {
+const getAppRouteFromPathname = (pathname: string): AppRoute => {
   switch (normalizePathname(pathname)) {
     case "/":
-    case "/home":
+    case "/home": {
       return "home";
-    case "/hud":
+    }
+    case "/hud": {
       return "hud";
+    }
     case "/privacy":
-    case "/privacy-policy":
+    case "/privacy-policy": {
       return "privacy";
-    case "/stats":
+    }
+    case "/stats": {
       return "stats";
-    default:
+    }
+    default: {
       return "home";
+    }
   }
 };
 
-export const getPathForAppRoute = (route: AppRoute): string => {
-  switch (route) {
-    case "home":
-      return "/";
-    case "hud":
-      return "/hud";
-    case "privacy":
-      return "/privacy";
-    case "stats":
-      return "/stats";
-  }
+const appRoutePaths: Readonly<Record<AppRoute, string>> = {
+  home: "/",
+  hud: "/hud",
+  privacy: "/privacy",
+  stats: "/stats",
 };
+
+const getPathForAppRoute = (route: AppRoute): string => appRoutePaths[route];
+
+export { getAppRouteFromPathname, getPathForAppRoute };
+export type { AppRoute };

@@ -1,22 +1,26 @@
-import type { WorldEvent, WorldEventSeverity } from "../../engine/types";
+import type {
+  WorldEvent,
+  WorldEventSeverity,
+} from "~/features/rehoboam/engine/types";
+
 import {
   DIVERGENCE_MAX_ACTIVE_PULSES,
   DIVERGENCE_PULSE_LIFETIME_MS,
 } from "./divergence-constants";
 
-export type DivergencePulse = Readonly<{
+type DivergencePulse = Readonly<{
   eventId: string;
   startedAtMs: number;
   severity: WorldEventSeverity;
 }>;
 
-export type DivergencePulseTracker = Readonly<{
+type DivergencePulseTracker = Readonly<{
   updateEvents: (events: readonly WorldEvent[], timeMs: number) => void;
   getActivePulses: (timeMs: number) => readonly DivergencePulse[];
   reset: () => void;
 }>;
 
-export type CreateDivergencePulseTrackerOptions = Readonly<{
+type CreateDivergencePulseTrackerOptions = Readonly<{
   maxActivePulses?: number;
   pulseLifetimeMs?: number;
   emitInitialPulses?: boolean;
@@ -39,20 +43,15 @@ const pruneExpiredPulses = (
   pulses: readonly DivergencePulse[],
   timeMs: number,
   pulseLifetimeMs: number
-): readonly DivergencePulse[] => {
-  return pulses.filter((pulse) => {
-    return timeMs - pulse.startedAtMs <= pulseLifetimeMs;
-  });
-};
+): readonly DivergencePulse[] =>
+  pulses.filter((pulse) => timeMs - pulse.startedAtMs <= pulseLifetimeMs);
 
 const clampPositiveInt = (
   value: number | undefined,
   fallback: number
-): number => {
-  return Math.max(1, Math.trunc(value ?? fallback));
-};
+): number => Math.max(1, Math.trunc(value ?? fallback));
 
-export const createDivergencePulseTracker = (
+const createDivergencePulseTracker = (
   options: CreateDivergencePulseTrackerOptions = {}
 ): DivergencePulseTracker => {
   const maxActivePulses = clampPositiveInt(
@@ -74,9 +73,9 @@ export const createDivergencePulseTracker = (
     timeMs
   ) => {
     const nextKnownRevisionByEventId = new Map<string, string>();
-    const sortedEvents = [...events].sort((left, right) => {
-      return left.id.localeCompare(right.id);
-    });
+    const sortedEvents = [...events].sort((left, right) =>
+      left.id.localeCompare(right.id)
+    );
     const shouldSuppressInitialPulses =
       !emitInitialPulses &&
       !hasInitializedWithEvents &&
@@ -143,3 +142,6 @@ export const createDivergencePulseTracker = (
     reset,
   };
 };
+
+export { createDivergencePulseTracker };
+export type { DivergencePulse };

@@ -1,4 +1,4 @@
-import { normalizeEvent } from "../../../features/rehoboam/data/normalize";
+import { normalizeEvent } from "~/features/rehoboam/data/normalize";
 
 describe("normalizeEvent", () => {
   it("normalizes mixed input shapes into a WorldEvent-safe object", () => {

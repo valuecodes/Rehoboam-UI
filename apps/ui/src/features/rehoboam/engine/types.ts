@@ -1,17 +1,17 @@
-import type { SeedInput } from "../../../shared/utils/seeded-rng";
-import type { CartesianCoordinate } from "../layout/polar";
+import type { CartesianCoordinate } from "~/features/rehoboam/layout/polar";
+import type { SeedInput } from "~/shared/utils/seeded-rng";
 
-export type WorldEventSeverity = "low" | "medium" | "high" | "critical";
+type WorldEventSeverity = "low" | "medium" | "high" | "critical";
 
 type WorldEventCategory = string;
 
-export type WorldEventLocation = Readonly<{
+type WorldEventLocation = Readonly<{
   label: string;
   latitude?: number;
   longitude?: number;
 }>;
 
-export type WorldEvent = Readonly<{
+type WorldEvent = Readonly<{
   id: string;
   title: string;
   timestampMs: number;
@@ -23,7 +23,7 @@ export type WorldEvent = Readonly<{
   updatedAtMs?: number;
 }>;
 
-export type ViewportState = Readonly<{
+type ViewportState = Readonly<{
   width: number;
   height: number;
   dpr: number;
@@ -39,7 +39,7 @@ type PointerState = Readonly<{
   isPrimary: boolean;
 }>;
 
-export type InteractionState = Readonly<{
+type InteractionState = Readonly<{
   pointer: PointerState | null;
   isPointerDown: boolean;
   isDragging: boolean;
@@ -49,7 +49,7 @@ export type InteractionState = Readonly<{
   hoverStartedAtMs: number | null;
 }>;
 
-export type RehoboamTheme = Readonly<{
+type RehoboamTheme = Readonly<{
   backgroundColor: string;
   backgroundCoreColor: string;
   ringColor: string;
@@ -61,13 +61,13 @@ export type RehoboamTheme = Readonly<{
   divergenceIntensity: number;
 }>;
 
-export type EngineResizeInput = Readonly<{
+type EngineResizeInput = Readonly<{
   width: number;
   height: number;
   dpr: number;
 }>;
 
-export type RehoboamRendererFrame = Readonly<{
+type RehoboamRendererFrame = Readonly<{
   viewport: ViewportState;
   events: readonly WorldEvent[];
   interaction: InteractionState;
@@ -77,13 +77,13 @@ export type RehoboamRendererFrame = Readonly<{
   deltaMs: number;
 }>;
 
-export type DivergenceCalloutTarget = Readonly<{
+type DivergenceCalloutTarget = Readonly<{
   id: string;
   angleRad: number;
   strength: number;
 }>;
 
-export type RehoboamRenderDiagnostics = Readonly<{
+type RehoboamRenderDiagnostics = Readonly<{
   fps: number;
   frameMs: number;
   passMs: Readonly<{
@@ -99,31 +99,31 @@ export type RehoboamRenderDiagnostics = Readonly<{
   divergenceSampleCount: number;
 }>;
 
-export type RehoboamRenderSnapshot = Readonly<{
+type RehoboamRenderSnapshot = Readonly<{
   timeMs: number;
   divergenceCalloutTargets: readonly DivergenceCalloutTarget[];
   diagnostics?: RehoboamRenderDiagnostics;
 }>;
 
-export type RehoboamRenderer = Readonly<{
+type RehoboamRenderer = Readonly<{
   resize: (viewport: ViewportState) => void;
   setTheme: (theme: RehoboamTheme) => void;
   render: (frame: RehoboamRendererFrame) => RehoboamRenderSnapshot;
   destroy: () => void;
 }>;
 
-export type RehoboamRendererFactoryOptions = Readonly<{
+type RehoboamRendererFactoryOptions = Readonly<{
   context: CanvasRenderingContext2D;
   diagnosticsEnabled?: boolean;
   viewport: ViewportState;
   theme: RehoboamTheme;
 }>;
 
-export type RehoboamRendererFactory = (
+type RehoboamRendererFactory = (
   options: RehoboamRendererFactoryOptions
 ) => RehoboamRenderer;
 
-export type RehoboamEngine = Readonly<{
+type RehoboamEngine = Readonly<{
   start: () => void;
   stop: () => void;
   resize: (input: EngineResizeInput) => void;
@@ -133,7 +133,7 @@ export type RehoboamEngine = Readonly<{
   destroy: () => void;
 }>;
 
-export type RehoboamEngineOptions = Readonly<{
+type RehoboamEngineOptions = Readonly<{
   canvas: HTMLCanvasElement;
   diagnosticsEnabled?: boolean;
   dprCap?: number;
@@ -143,3 +143,22 @@ export type RehoboamEngineOptions = Readonly<{
   rendererFactory?: RehoboamRendererFactory;
   onRenderSnapshot?: (snapshot: RehoboamRenderSnapshot) => void;
 }>;
+
+export type {
+  DivergenceCalloutTarget,
+  EngineResizeInput,
+  InteractionState,
+  RehoboamEngine,
+  RehoboamEngineOptions,
+  RehoboamRenderDiagnostics,
+  RehoboamRenderer,
+  RehoboamRendererFactory,
+  RehoboamRendererFactoryOptions,
+  RehoboamRendererFrame,
+  RehoboamRenderSnapshot,
+  RehoboamTheme,
+  ViewportState,
+  WorldEvent,
+  WorldEventLocation,
+  WorldEventSeverity,
+};

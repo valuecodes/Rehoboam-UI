@@ -1,40 +1,37 @@
 import {
   createViewportState,
   DEFAULT_THEME,
-} from "../../../features/rehoboam/engine/defaults";
-import { createInitialInteractionState } from "../../../features/rehoboam/engine/input";
-import type { WorldEvent } from "../../../features/rehoboam/engine/types";
-import type { DivergenceCluster } from "../../../features/rehoboam/render/canvas2d/divergence-cluster-tracker";
-import { drawDivergencePass } from "../../../features/rehoboam/render/canvas2d/passes/divergence-pass";
+} from "~/features/rehoboam/engine/defaults";
+import { createInitialInteractionState } from "~/features/rehoboam/engine/input";
+import type { WorldEvent } from "~/features/rehoboam/engine/types";
+import type { DivergenceCluster } from "~/features/rehoboam/render/canvas2d/divergence-cluster-types";
+import { drawDivergencePass } from "~/features/rehoboam/render/canvas2d/passes/divergence-pass";
+
 import { createMockCanvasContext } from "./mock-canvas-context";
 
-const createEvent = (): WorldEvent => {
-  return {
-    id: "event-1",
-    title: "Event 1",
-    timestampMs: 1_770_500_000_000,
-    severity: "high",
-    category: "system",
-  };
-};
+const createEvent = (): WorldEvent => ({
+  id: "event-1",
+  title: "Event 1",
+  timestampMs: 1_770_500_000_000,
+  severity: "high",
+  category: "system",
+});
 
-const createZeroDurationCluster = (): DivergenceCluster => {
-  return {
-    id: "cluster-1",
-    centerAngleRad: 0.5,
-    widthRad: 0.2,
-    strength: 0.01,
-    severity: "high",
-    startedAtMs: 0,
-    attackMs: 0,
-    holdMs: 0,
-    decayMs: 0,
-    driftRadPerSecond: 0,
-    flareSpeedHz: 0.1,
-    flarePhaseOffsetRad: 0,
-    spikes: [],
-  };
-};
+const createZeroDurationCluster = (): DivergenceCluster => ({
+  id: "cluster-1",
+  centerAngleRad: 0.5,
+  widthRad: 0.2,
+  strength: 0.01,
+  severity: "high",
+  startedAtMs: 0,
+  attackMs: 0,
+  holdMs: 0,
+  decayMs: 0,
+  driftRadPerSecond: 0,
+  flareSpeedHz: 0.1,
+  flarePhaseOffsetRad: 0,
+  spikes: [],
+});
 
 describe("drawDivergencePass", () => {
   it("handles clusters with zero attack/decay without non-finite draw commands", () => {
@@ -61,9 +58,9 @@ describe("drawDivergencePass", () => {
     });
 
     expect(
-      mock.commands.some((command) => {
-        return command.includes("NaN") || command.includes("Infinity");
-      })
+      mock.commands.some(
+        (command) => command.includes("NaN") || command.includes("Infinity")
+      )
     ).toBe(false);
   });
 
@@ -133,8 +130,8 @@ describe("drawDivergencePass", () => {
       eventAnglesByEventId: new Map(),
       pulses: [],
       clusters: [],
-      elapsedMs: 5_000,
-      timeMs: 5_000,
+      elapsedMs: 5000,
+      timeMs: 5000,
       entranceScale: 1,
     });
 
@@ -148,8 +145,8 @@ describe("drawDivergencePass", () => {
       eventAnglesByEventId: new Map(),
       pulses: [],
       clusters: [],
-      elapsedMs: 5_000,
-      timeMs: 5_000,
+      elapsedMs: 5000,
+      timeMs: 5000,
       entranceScale: 1,
     });
 
@@ -163,8 +160,8 @@ describe("drawDivergencePass", () => {
       eventAnglesByEventId: new Map(),
       pulses: [],
       clusters: [],
-      elapsedMs: 5_000,
-      timeMs: 5_000,
+      elapsedMs: 5000,
+      timeMs: 5000,
       entranceScale: 1,
     });
 

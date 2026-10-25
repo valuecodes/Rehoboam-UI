@@ -8,12 +8,12 @@ import {
   useState,
 } from "react";
 
-import { refreshEventsFromSourceWithStatus } from "../data/bootstrap";
-import { createApiEventSource } from "../data/source";
-import { DEFAULT_DPR_CAP, DEFAULT_THEME } from "../engine/defaults";
-import { createInitialInteractionState } from "../engine/input";
-import { createRehoboamEngine } from "../engine/rehoboam-engine";
-import { SEVERITY_INTENSITY } from "../engine/severity";
+import { refreshEventsFromSourceWithStatus } from "~/features/rehoboam/data/bootstrap";
+import { createApiEventSource } from "~/features/rehoboam/data/source";
+import { DEFAULT_DPR_CAP } from "~/features/rehoboam/engine/defaults";
+import { createInitialInteractionState } from "~/features/rehoboam/engine/input";
+import { createRehoboamEngine } from "~/features/rehoboam/engine/rehoboam-engine";
+import { SEVERITY_INTENSITY } from "~/features/rehoboam/engine/severity";
 import type {
   DivergenceCalloutTarget,
   InteractionState,
@@ -21,22 +21,37 @@ import type {
   RehoboamRenderDiagnostics,
   RehoboamRenderSnapshot,
   WorldEvent,
-} from "../engine/types";
+} from "~/features/rehoboam/engine/types";
 import {
   computeAngles,
   DEFAULT_MAX_VISIBLE_EVENT_COUNT,
-} from "../layout/compute-angles";
-import type { ComputedEventAngle } from "../layout/compute-angles";
-import { getLayoutNowMs } from "../layout/layout-time";
-import { CalloutOverlay } from "../overlay/callout-overlay";
+} from "~/features/rehoboam/layout/compute-angles";
+import { getLayoutNowMs } from "~/features/rehoboam/layout/layout-time";
 import type {
   CalloutOverlayTarget,
   InstrumentSize,
-} from "../overlay/callout-overlay";
-import { IntroCalloutOverlay } from "../overlay/intro-callout-overlay";
+} from "~/features/rehoboam/overlay/callout-geometry";
+import { CalloutOverlay } from "~/features/rehoboam/overlay/callout-overlay";
+import { IntroCalloutOverlay } from "~/features/rehoboam/overlay/intro-callout-overlay";
+
+import {
+  getMarkerAnchorRadius,
+  getNextAutoEventId,
+  pickRandomClusterTarget,
+  resolveActiveEventAngle,
+  resolveActiveEventId,
+  resolveAutoEventId,
+} from "./active-event";
+import {
+  readDeviceMemoryGiB,
+  readDevicePixelRatio,
+  readHardwareConcurrency,
+} from "./device-capabilities";
 import { getChronologicalCycleIds } from "./event-cycle";
+import { readOverlayDebugState } from "./overlay-debug-state";
 import type { SceneQualityTier } from "./quality";
 import { resolveSceneQualityProfile } from "./quality";
+import { useSeverityIntensityTransition } from "./use-severity-intensity-transition";
 
 import "./rehoboam-scene.css";
 
@@ -44,177 +59,24 @@ import "./rehoboam-scene.css";
 // without reintroducing client-side persistence.
 let cachedEvents: readonly WorldEvent[] = [];
 
-const INTRO_DEBUG_QUERY_KEY = "intro-debug";
-const HUD_DEBUG_QUERY_KEY = "hud";
 const HUD_PUBLISH_INTERVAL_MS = 240;
-const CALLOUT_DEBUG_QUERY_KEYS = [
-  "callout-debug",
-  "callout-debug-half",
-  "callout-debug-side",
-] as const;
-
-type OverlayDebugState = Readonly<{
-  hasCalloutDebugQuery: boolean;
-  isHudEnabled: boolean;
-  isIntroDebugMode: boolean;
-}>;
 
 type HudNetworkStatus = "idle" | "loading" | "success" | "fallback";
 
-export type RehoboamSceneProps = Readonly<{
+type RehoboamSceneProps = Readonly<{
   forceHudEnabled?: boolean;
 }>;
 
 const LazyDeveloperHud = lazy(async () => {
-  const module = await import("../overlay/developer-hud");
+  const module = await import("~/features/rehoboam/overlay/developer-hud");
 
   return {
     default: module.DeveloperHud,
   };
 });
 
-const isDebugFlagEnabled = (value: string | null): boolean => {
-  if (value === null) {
-    return false;
-  }
-
-  const normalizedValue = value.trim().toLowerCase();
-
-  if (normalizedValue.length === 0) {
-    return true;
-  }
-
-  return ["1", "true", "on", "yes"].includes(normalizedValue);
-};
-
-const readOverlayDebugState = (): OverlayDebugState => {
-  const searchParams = new URLSearchParams(window.location.search);
-  const hasCalloutDebugQuery = CALLOUT_DEBUG_QUERY_KEYS.some((queryKey) => {
-    return searchParams.has(queryKey);
-  });
-  const isIntroDebugMode =
-    !hasCalloutDebugQuery &&
-    isDebugFlagEnabled(searchParams.get(INTRO_DEBUG_QUERY_KEY));
-
-  return {
-    hasCalloutDebugQuery,
-    isHudEnabled: isDebugFlagEnabled(searchParams.get(HUD_DEBUG_QUERY_KEY)),
-    isIntroDebugMode,
-  };
-};
-
-const readDevicePixelRatio = (): number => {
-  const value = window.devicePixelRatio;
-
-  return Number.isFinite(value) && value > 0 ? value : 1;
-};
-
-const readHardwareConcurrency = (): number | null => {
-  const value = navigator.hardwareConcurrency;
-
-  if (!Number.isFinite(value) || value <= 0) {
-    return null;
-  }
-
-  return Math.trunc(value);
-};
-
-const readDeviceMemoryGiB = (): number | null => {
-  const capabilityNavigator = navigator as Navigator & {
-    deviceMemory?: number;
-  };
-  const value = capabilityNavigator.deviceMemory;
-
-  if (value === undefined || !Number.isFinite(value) || value <= 0) {
-    return null;
-  }
-
-  return value;
-};
-
-const compareEventAnglesByTimestamp = (
-  left: ComputedEventAngle,
-  right: ComputedEventAngle
-): number => {
-  if (left.event.timestampMs !== right.event.timestampMs) {
-    return left.event.timestampMs - right.event.timestampMs;
-  }
-
-  return left.event.id.localeCompare(right.event.id);
-};
-
-const getMarkerAnchorRadius = (instrumentSize: InstrumentSize): number => {
-  const outerRadius =
-    Math.min(instrumentSize.width, instrumentSize.height) * 0.46;
-
-  return outerRadius * 0.84;
-};
-
-const resolveActiveEventAngle = (
-  eventAngles: readonly ComputedEventAngle[],
-  activeEventId: string | null
-): ComputedEventAngle | null => {
-  if (eventAngles.length === 0) {
-    return null;
-  }
-
-  if (activeEventId !== null) {
-    const matchedEventAngle = eventAngles.find((eventAngle) => {
-      return eventAngle.eventIds.includes(activeEventId);
-    });
-
-    if (matchedEventAngle !== undefined) {
-      return matchedEventAngle;
-    }
-  }
-
-  return [...eventAngles].sort(compareEventAnglesByTimestamp)[0] ?? null;
-};
-
-const resolveActiveEventId = (
-  eventAngles: readonly ComputedEventAngle[],
-  autoEventId: string | null
-): string | null => {
-  if (autoEventId !== null) {
-    const hasAutoEvent = eventAngles.some((eventAngle) => {
-      return eventAngle.eventIds.includes(autoEventId);
-    });
-
-    if (hasAutoEvent) {
-      return autoEventId;
-    }
-  }
-
-  return (
-    [...eventAngles].sort(compareEventAnglesByTimestamp)[0]?.event.id ?? null
-  );
-};
-
-const pickRandomClusterTarget = (
-  clusterTargets: readonly DivergenceCalloutTarget[],
-  previousClusterTargetId: string | null
-): DivergenceCalloutTarget | null => {
-  if (clusterTargets.length === 0) {
-    return null;
-  }
-
-  const candidateTargets =
-    previousClusterTargetId === null || clusterTargets.length <= 1
-      ? clusterTargets
-      : clusterTargets.filter((target) => {
-          return target.id !== previousClusterTargetId;
-        });
-  const randomIndex = Math.floor(Math.random() * candidateTargets.length);
-
-  return candidateTargets[randomIndex] ?? clusterTargets[0];
-};
-
-export const RehoboamScene = ({
-  forceHudEnabled = false,
-}: RehoboamSceneProps) => {
-  const overlayDebugState = useMemo(() => {
-    return readOverlayDebugState();
-  }, []);
+const RehoboamScene = ({ forceHudEnabled = false }: RehoboamSceneProps) => {
+  const overlayDebugState = useMemo(() => readOverlayDebugState(), []);
   const isHudEnabled = forceHudEnabled || overlayDebugState.isHudEnabled;
   const instrumentRef = useRef<HTMLElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -224,9 +86,9 @@ export const RehoboamScene = ({
     height: 0,
   });
   const [events, setEvents] = useState<readonly WorldEvent[]>([]);
-  const [isIntroComplete, setIsIntroComplete] = useState(() => {
-    return overlayDebugState.hasCalloutDebugQuery;
-  });
+  const [isIntroComplete, setIsIntroComplete] = useState(
+    () => overlayDebugState.hasCalloutDebugQuery
+  );
   const [autoEventId, setAutoEventId] = useState<string | null>(null);
   const [activeClusterTarget, setActiveClusterTarget] =
     useState<DivergenceCalloutTarget | null>(null);
@@ -245,32 +107,48 @@ export const RehoboamScene = ({
     null
   );
   const eventSource = useMemo(() => createApiEventSource("/api/events"), []);
-  const qualityProfile = useMemo(() => {
-    return resolveSceneQualityProfile({
-      width: instrumentSize.width,
-      height: instrumentSize.height,
-      hardwareConcurrency: readHardwareConcurrency(),
-      deviceMemoryGiB: readDeviceMemoryGiB(),
-    });
-  }, [instrumentSize.height, instrumentSize.width]);
-  const eventAngles = useMemo(() => {
-    return computeAngles(events, {
-      nowMs: getLayoutNowMs(events),
-      maxVisibleCount: DEFAULT_MAX_VISIBLE_EVENT_COUNT,
-      distributionMode: "ordered",
-    });
-  }, [events]);
-  const autoCycleEventIds = useMemo(() => {
-    return getChronologicalCycleIds(eventAngles);
-  }, [eventAngles]);
-  const activeEventId = useMemo(() => {
-    return resolveActiveEventId(eventAngles, autoEventId);
-  }, [autoEventId, eventAngles]);
-  const activeEventAngle = useMemo(() => {
-    return resolveActiveEventAngle(eventAngles, activeEventId);
-  }, [activeEventId, eventAngles]);
-  const engineInteraction = useMemo<InteractionState>(() => {
-    return {
+  const qualityProfile = useMemo(
+    () =>
+      resolveSceneQualityProfile({
+        width: instrumentSize.width,
+        height: instrumentSize.height,
+        hardwareConcurrency: readHardwareConcurrency(),
+        deviceMemoryGiB: readDeviceMemoryGiB(),
+      }),
+    [instrumentSize.height, instrumentSize.width]
+  );
+  const eventAngles = useMemo(
+    () =>
+      computeAngles(events, {
+        nowMs: getLayoutNowMs(events),
+        maxVisibleCount: DEFAULT_MAX_VISIBLE_EVENT_COUNT,
+        distributionMode: "ordered",
+      }),
+    [events]
+  );
+  const autoCycleEventIds = useMemo(
+    () => getChronologicalCycleIds(eventAngles),
+    [eventAngles]
+  );
+  const [previousAutoCycleEventIds, setPreviousAutoCycleEventIds] =
+    useState(autoCycleEventIds);
+
+  // Re-anchor the auto-cycled event whenever the cycle itself changes.
+  if (previousAutoCycleEventIds !== autoCycleEventIds) {
+    setPreviousAutoCycleEventIds(autoCycleEventIds);
+    setAutoEventId(resolveAutoEventId(autoCycleEventIds, autoEventId));
+  }
+
+  const activeEventId = useMemo(
+    () => resolveActiveEventId(eventAngles, autoEventId),
+    [autoEventId, eventAngles]
+  );
+  const activeEventAngle = useMemo(
+    () => resolveActiveEventAngle(eventAngles, activeEventId),
+    [activeEventId, eventAngles]
+  );
+  const engineInteraction = useMemo<InteractionState>(
+    () => ({
       pointer: null,
       isPointerDown: false,
       isDragging: false,
@@ -278,8 +156,9 @@ export const RehoboamScene = ({
       hoveredEventId: activeEventId,
       selectedEventId: null,
       hoverStartedAtMs: null,
-    };
-  }, [activeEventId]);
+    }),
+    [activeEventId]
+  );
   const activeCalloutTarget = useMemo<CalloutOverlayTarget | null>(() => {
     if (
       activeEventAngle === null ||
@@ -316,9 +195,7 @@ export const RehoboamScene = ({
   }, [activeEventId]);
 
   const advanceCalloutClusterTarget = useCallback(() => {
-    setCalloutCycleToken((currentToken) => {
-      return currentToken + 1;
-    });
+    setCalloutCycleToken((currentToken) => currentToken + 1);
 
     const nextClusterTarget = pickRandomClusterTarget(
       clusterTargetsRef.current,
@@ -327,31 +204,9 @@ export const RehoboamScene = ({
     activeClusterTargetRef.current = nextClusterTarget;
     setActiveClusterTarget(nextClusterTarget);
 
-    const cycleEventIds = autoCycleEventIdsRef.current;
-    const currentActiveEventId = activeEventIdRef.current;
-
-    if (cycleEventIds.length === 0) {
-      setAutoEventId(null);
-
-      return;
-    }
-
-    if (currentActiveEventId === null) {
-      setAutoEventId(cycleEventIds[0]);
-
-      return;
-    }
-
-    const currentIndex = cycleEventIds.indexOf(currentActiveEventId);
-
-    if (currentIndex < 0) {
-      setAutoEventId(cycleEventIds[0]);
-
-      return;
-    }
-
-    const nextIndex = (currentIndex + 1) % cycleEventIds.length;
-    setAutoEventId(cycleEventIds[nextIndex]);
+    setAutoEventId(
+      getNextAutoEventId(autoCycleEventIdsRef.current, activeEventIdRef.current)
+    );
   }, []);
 
   const handleRenderSnapshot = useCallback(
@@ -374,46 +229,6 @@ export const RehoboamScene = ({
     []
   );
 
-  useEffect(() => {
-    if (!isHudEnabled) {
-      return;
-    }
-
-    const publishDiagnostics = () => {
-      setPublishedHudDiagnostics(latestRenderDiagnosticsRef.current);
-      setPublishedSeverityIntensity(severityIntensityRef.current);
-    };
-
-    publishDiagnostics();
-    const intervalHandle = window.setInterval(
-      publishDiagnostics,
-      HUD_PUBLISH_INTERVAL_MS
-    );
-
-    return () => {
-      window.clearInterval(intervalHandle);
-    };
-  }, [isHudEnabled]);
-
-  useEffect(() => {
-    if (autoCycleEventIds.length === 0) {
-      setAutoEventId(null);
-
-      return;
-    }
-
-    setAutoEventId((previousAutoEventId) => {
-      if (
-        previousAutoEventId === null ||
-        !autoCycleEventIds.includes(previousAutoEventId)
-      ) {
-        return autoCycleEventIds[0];
-      }
-
-      return previousAutoEventId;
-    });
-  }, [autoCycleEventIds]);
-
   const handleCalloutCycleComplete = useCallback(() => {
     advanceCalloutClusterTarget();
   }, [advanceCalloutClusterTarget]);
@@ -424,9 +239,7 @@ export const RehoboamScene = ({
 
   useEffect(() => {
     const abortController = new AbortController();
-    const shouldAbort = (): boolean => {
-      return abortController.signal.aborted;
-    };
+    const shouldAbort = (): boolean => abortController.signal.aborted;
 
     const bootEvents = async () => {
       setNetworkStatus("loading");
@@ -455,61 +268,41 @@ export const RehoboamScene = ({
     activeEventAngle !== null
       ? SEVERITY_INTENSITY[activeEventAngle.event.severity]
       : 1;
-  const severityIntensityRef = useRef(targetSeverityIntensity);
-
-  useEffect(() => {
-    const engine = engineRef.current;
-
-    if (engine === null) {
-      return;
-    }
-
-    const TRANSITION_MS = 1500;
-    const smoothstep = (t: number) => t * t * (3 - 2 * t);
-    const startValue = severityIntensityRef.current;
-    const startTime = performance.now();
-    let rafId: number;
-
-    const animate = () => {
-      rafId = requestAnimationFrame((now) => {
-        const progress = Math.min((now - startTime) / TRANSITION_MS, 1);
-        const eased = smoothstep(progress);
-        const next =
-          startValue + (targetSeverityIntensity - startValue) * eased;
-
-        severityIntensityRef.current = next;
-
-        engine.setTheme({
-          ...DEFAULT_THEME,
-          ringCount: qualityProfile.ringCount,
-          divergenceSampleCount: qualityProfile.divergenceSampleCount,
-          divergenceIntensity: (divergenceIntensity / 50) * next,
-        });
-
-        if (progress < 1) {
-          animate();
-        }
-      });
-    };
-
-    animate();
-
-    return () => {
-      cancelAnimationFrame(rafId);
-    };
-  }, [
+  const severityIntensityRef = useSeverityIntensityTransition({
+    engineRef,
     targetSeverityIntensity,
     divergenceIntensity,
-    qualityProfile.divergenceSampleCount,
-    qualityProfile.ringCount,
-  ]);
+    ringCount: qualityProfile.ringCount,
+    divergenceSampleCount: qualityProfile.divergenceSampleCount,
+  });
+
+  useEffect(() => {
+    if (!isHudEnabled) {
+      return undefined;
+    }
+
+    const publishDiagnostics = () => {
+      setPublishedHudDiagnostics(latestRenderDiagnosticsRef.current);
+      setPublishedSeverityIntensity(severityIntensityRef.current);
+    };
+
+    publishDiagnostics();
+    const intervalHandle = globalThis.setInterval(
+      publishDiagnostics,
+      HUD_PUBLISH_INTERVAL_MS
+    );
+
+    return () => {
+      globalThis.clearInterval(intervalHandle);
+    };
+  }, [isHudEnabled, severityIntensityRef]);
 
   useEffect(() => {
     const instrument = instrumentRef.current;
     const canvas = canvasRef.current;
 
     if (instrument === null || canvas === null) {
-      return;
+      return undefined;
     }
 
     const engine = createRehoboamEngine({
@@ -641,3 +434,5 @@ export const RehoboamScene = ({
     </div>
   );
 };
+
+export { RehoboamScene };

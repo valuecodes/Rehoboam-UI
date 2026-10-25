@@ -1,5 +1,5 @@
-import { createSeededRng } from "../../../shared/utils/seeded-rng";
-import type { ComputedEventAngle } from "../layout/compute-angles";
+import type { ComputedEventAngle } from "~/features/rehoboam/layout/compute-angles";
+import { createSeededRng } from "~/shared/utils/seeded-rng";
 
 const compareEventAnglesByTimestamp = (
   left: ComputedEventAngle,
@@ -12,13 +12,12 @@ const compareEventAnglesByTimestamp = (
   return left.event.id.localeCompare(right.event.id);
 };
 
-export const getChronologicalCycleIds = (
+const getChronologicalCycleIds = (
   eventAngles: readonly ComputedEventAngle[]
-): readonly string[] => {
-  return [...eventAngles]
+): readonly string[] =>
+  [...eventAngles]
     .sort(compareEventAnglesByTimestamp)
     .map((eventAngle) => eventAngle.event.id);
-};
 
 const compareEventAnglesForCycle = (
   left: ComputedEventAngle,
@@ -55,22 +54,22 @@ const shuffleInPlace = (items: unknown[], seed: string): void => {
   }
 };
 
-const getCycleSeed = (eventAngles: readonly ComputedEventAngle[]): string => {
-  return eventAngles
-    .map((eventAngle) => {
-      return `${eventAngle.event.id}:${eventAngle.angleRad.toFixed(6)}`;
-    })
+const getCycleSeed = (eventAngles: readonly ComputedEventAngle[]): string =>
+  eventAngles
+    .map(
+      (eventAngle) => `${eventAngle.event.id}:${eventAngle.angleRad.toFixed(6)}`
+    )
     .join("|");
-};
 
-export const getRandomizedQuadrantCycleIds = (
+const getRandomizedQuadrantCycleIds = (
   eventAngles: readonly ComputedEventAngle[]
 ): readonly string[] => {
   const sortedEventAngles = [...eventAngles].sort(compareEventAnglesForCycle);
   const cycleSeed = getCycleSeed(sortedEventAngles);
-  const quadrantBuckets = Array.from({ length: QUADRANT_COUNT }, () => {
-    return [] as string[];
-  });
+  const quadrantBuckets = Array.from(
+    { length: QUADRANT_COUNT },
+    () => [] as string[]
+  );
 
   for (const eventAngle of sortedEventAngles) {
     const quadrantIndex = getQuadrantIndexForAngle(eventAngle.angleRad);
@@ -119,3 +118,5 @@ export const getRandomizedQuadrantCycleIds = (
 
   return cycleEventIds;
 };
+
+export { getChronologicalCycleIds, getRandomizedQuadrantCycleIds };

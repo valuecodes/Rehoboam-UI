@@ -1,7 +1,7 @@
 import { act, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
-import { AppErrorBoundary } from "../../../shared/errors/app-error-boundary";
+import { AppErrorBoundary } from "~/shared/errors/app-error-boundary";
 
 const testGlobals = globalThis as typeof globalThis & {
   IS_REACT_ACT_ENVIRONMENT?: boolean;

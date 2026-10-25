@@ -1,8 +1,8 @@
 import type { RehoboamTheme, ViewportState } from "./types";
 
-export const DEFAULT_DPR_CAP = 2;
+const DEFAULT_DPR_CAP = 2;
 
-export const DEFAULT_THEME: RehoboamTheme = {
+const DEFAULT_THEME: RehoboamTheme = {
   backgroundColor: "#efefed",
   backgroundCoreColor: "#fbfbf9",
   ringColor: "#1f1f1f",
@@ -14,7 +14,7 @@ export const DEFAULT_THEME: RehoboamTheme = {
   divergenceIntensity: 1,
 };
 
-export type CreateViewportStateInput = Readonly<{
+type CreateViewportStateInput = Readonly<{
   width: number;
   height: number;
   dpr: number;
@@ -36,7 +36,7 @@ const clampDpr = (dpr: number, dprCap: number): number => {
   return Math.min(sanitizedDpr, sanitizedCap);
 };
 
-export const createViewportState = (
+const createViewportState = (
   input: CreateViewportStateInput
 ): ViewportState => {
   const width = clampPositiveNumber(input.width);
@@ -58,3 +58,5 @@ export const createViewportState = (
     outerRadius: Math.min(width, height) * 0.46,
   };
 };
+
+export { createViewportState, DEFAULT_DPR_CAP, DEFAULT_THEME };

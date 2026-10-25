@@ -3,7 +3,7 @@ import {
   getMockFixtureEvents,
   loadEventsFromSource,
   runEventPipeline,
-} from "../../../features/rehoboam/data/source";
+} from "~/features/rehoboam/data/source";
 
 describe("data/source pipeline", () => {
   it("normalizes + dedupes raw arrays deterministically", () => {

@@ -7,8 +7,8 @@ import {
   updateInteractionForClick,
   updateInteractionForPointerLeave,
   updateInteractionForPointerMove,
-} from "../../../features/rehoboam/engine/input";
-import type { MarkerHitTarget } from "../../../features/rehoboam/engine/input";
+} from "~/features/rehoboam/engine/input";
+import type { MarkerHitTarget } from "~/features/rehoboam/engine/input";
 
 const MARKERS: readonly MarkerHitTarget[] = [
   {
@@ -72,7 +72,7 @@ describe("interaction input state", () => {
         isPrimary: true,
       },
       markerEventId: "event-alpha",
-      timeMs: 1_000,
+      timeMs: 1000,
       hoverDwellMs: DEFAULT_HOVER_DWELL_MS,
     });
 
@@ -81,7 +81,7 @@ describe("interaction input state", () => {
 
     const beforeDwell = applyHoverDwellTick({
       interaction: moved,
-      timeMs: 1_000 + DEFAULT_HOVER_DWELL_MS - 1,
+      timeMs: 1000 + DEFAULT_HOVER_DWELL_MS - 1,
       hoverDwellMs: DEFAULT_HOVER_DWELL_MS,
     });
 
@@ -89,7 +89,7 @@ describe("interaction input state", () => {
 
     const afterDwell = applyHoverDwellTick({
       interaction: moved,
-      timeMs: 1_000 + DEFAULT_HOVER_DWELL_MS,
+      timeMs: 1000 + DEFAULT_HOVER_DWELL_MS,
       hoverDwellMs: DEFAULT_HOVER_DWELL_MS,
     });
 
@@ -113,7 +113,7 @@ describe("interaction input state", () => {
         isPrimary: true,
       },
       markerEventId: "event-beta",
-      timeMs: 3_000,
+      timeMs: 3000,
       hoverDwellMs: DEFAULT_HOVER_DWELL_MS,
     });
 

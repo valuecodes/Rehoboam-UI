@@ -1,4 +1,5 @@
-import { createRenderer2D } from "../render/canvas2d/renderer-2d";
+import { createRenderer2D } from "~/features/rehoboam/render/canvas2d/renderer-2d";
+
 import {
   createViewportState,
   DEFAULT_DPR_CAP,
@@ -27,30 +28,27 @@ const getDefaultNow = (): number => {
 };
 
 const getDefaultRaf = (): ((callback: FrameRequestCallback) => number) => {
-  if (typeof window.requestAnimationFrame !== "function") {
+  if (typeof globalThis.requestAnimationFrame !== "function") {
     throw new Error("requestAnimationFrame is unavailable in this environment");
   }
 
-  return window.requestAnimationFrame.bind(window);
+  return globalThis.requestAnimationFrame.bind(globalThis);
 };
 
 const getDefaultCancelRaf = (): ((handle: number) => void) => {
-  if (typeof window.cancelAnimationFrame !== "function") {
+  if (typeof globalThis.cancelAnimationFrame !== "function") {
     throw new Error("cancelAnimationFrame is unavailable in this environment");
   }
 
-  return window.cancelAnimationFrame.bind(window);
+  return globalThis.cancelAnimationFrame.bind(globalThis);
 };
 
-const cloneTheme = (theme: RehoboamTheme): RehoboamTheme => {
-  return {
-    ...theme,
-  };
-};
+const cloneTheme = (theme: RehoboamTheme): RehoboamTheme => ({
+  ...theme,
+});
 
-const clampFrameDeltaMs = (deltaMs: number): number => {
-  return Math.max(0, Math.min(MAX_FRAME_DELTA_MS, deltaMs));
-};
+const clampFrameDeltaMs = (deltaMs: number): number =>
+  Math.max(0, Math.min(MAX_FRAME_DELTA_MS, deltaMs));
 
 const applyCanvasDimensions = (
   canvas: HTMLCanvasElement,
@@ -74,7 +72,7 @@ const applyCanvasDimensions = (
   return viewport;
 };
 
-export const createRehoboamEngine = (
+const createRehoboamEngine = (
   options: RehoboamEngineOptions
 ): RehoboamEngine => {
   const context = options.canvas.getContext("2d");
@@ -103,7 +101,7 @@ export const createRehoboamEngine = (
   let viewport = createViewportState({
     width: options.canvas.clientWidth,
     height: options.canvas.clientHeight,
-    dpr: window.devicePixelRatio,
+    dpr: globalThis.devicePixelRatio,
     dprCap,
   });
 
@@ -127,9 +125,8 @@ export const createRehoboamEngine = (
     const elapsedMs = timeMs - startedAtMs;
     const rawDeltaMs =
       previousFrameAtMs === null ? 0 : timeMs - previousFrameAtMs;
-    const deltaMs = frameOptions.freezeDelta
-      ? 0
-      : clampFrameDeltaMs(rawDeltaMs);
+    const deltaMs =
+      frameOptions.freezeDelta === true ? 0 : clampFrameDeltaMs(rawDeltaMs);
     previousFrameAtMs = timeMs;
 
     const snapshot = renderer.render({
@@ -237,3 +234,5 @@ export const createRehoboamEngine = (
     destroy,
   };
 };
+
+export { createRehoboamEngine };

@@ -1,16 +1,14 @@
-import { dedupeEvents } from "../../../features/rehoboam/data/dedupe";
-import type { WorldEvent } from "../../../features/rehoboam/engine/types";
+import { dedupeEvents } from "~/features/rehoboam/data/dedupe";
+import type { WorldEvent } from "~/features/rehoboam/engine/types";
 
-const createEvent = (overrides: Partial<WorldEvent>): WorldEvent => {
-  return {
-    id: "event-default",
-    title: "Default title",
-    timestampMs: 1_770_500_000_000,
-    severity: "low",
-    category: "general",
-    ...overrides,
-  };
-};
+const createEvent = (overrides: Partial<WorldEvent>): WorldEvent => ({
+  id: "event-default",
+  title: "Default title",
+  timestampMs: 1_770_500_000_000,
+  severity: "low",
+  category: "general",
+  ...overrides,
+});
 
 describe("dedupeEvents", () => {
   it("merges duplicates by id and keeps newest update fields", () => {

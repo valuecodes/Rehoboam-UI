@@ -1,22 +1,22 @@
-import type { WorldEvent } from "../engine/types";
-import mockEventsFixture from "../fixtures/mock-events.json";
+import type { WorldEvent } from "~/features/rehoboam/engine/types";
+import mockEventsFixture from "~/features/rehoboam/fixtures/mock-events.json";
+
 import { dedupeEvents } from "./dedupe";
 import type { DedupeEventsOptions } from "./dedupe";
 import { normalizeEvents } from "./normalize";
 import type { NormalizeEventOptions } from "./normalize";
 
-export type EventPipelineOptions = Readonly<{
+type EventPipelineOptions = Readonly<{
   normalize?: NormalizeEventOptions;
   dedupe?: DedupeEventsOptions;
 }>;
 
-export type RehoboamEventSource = Readonly<{
+type RehoboamEventSource = Readonly<{
   loadEvents: () => Promise<unknown>;
 }>;
 
-const toEventList = (input: unknown): readonly unknown[] => {
-  return Array.isArray(input) ? input : [];
-};
+const toEventList = (input: unknown): readonly unknown[] =>
+  Array.isArray(input) ? input : [];
 
 const isWorldEventLike = (value: unknown): value is WorldEvent => {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
@@ -38,7 +38,7 @@ const isWorldEventLike = (value: unknown): value is WorldEvent => {
   );
 };
 
-export const runEventPipeline = (
+const runEventPipeline = (
   input: unknown,
   options: EventPipelineOptions = {}
 ): readonly WorldEvent[] => {
@@ -53,13 +53,11 @@ export const runEventPipeline = (
   return dedupeEvents(normalized, options.dedupe);
 };
 
-export const getMockFixtureEvents = (
+const getMockFixtureEvents = (
   options: EventPipelineOptions = {}
-): readonly WorldEvent[] => {
-  return runEventPipeline(mockEventsFixture, options);
-};
+): readonly WorldEvent[] => runEventPipeline(mockEventsFixture, options);
 
-export const createStaticEventSource = (
+const createStaticEventSource = (
   input: unknown,
   options: EventPipelineOptions = {}
 ): RehoboamEventSource => {
@@ -70,7 +68,7 @@ export const createStaticEventSource = (
   };
 };
 
-export const loadEventsFromSource = async (
+const loadEventsFromSource = async (
   source: RehoboamEventSource,
   options: EventPipelineOptions = {}
 ): Promise<readonly WorldEvent[]> => {
@@ -79,18 +77,25 @@ export const loadEventsFromSource = async (
   return runEventPipeline(payload, options);
 };
 
-export const createApiEventSource = (url: string): RehoboamEventSource => {
-  return {
-    loadEvents: async () => {
-      const response = await fetch(url);
+const createApiEventSource = (url: string): RehoboamEventSource => ({
+  loadEvents: async () => {
+    const response = await fetch(url);
 
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch events: ${response.status} ${response.statusText}`
-        );
-      }
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch events: ${response.status} ${response.statusText}`
+      );
+    }
 
-      return response.json() as Promise<unknown>;
-    },
-  };
+    return response.json() as Promise<unknown>;
+  },
+});
+
+export {
+  createApiEventSource,
+  createStaticEventSource,
+  getMockFixtureEvents,
+  loadEventsFromSource,
+  runEventPipeline,
 };
+export type { EventPipelineOptions, RehoboamEventSource };

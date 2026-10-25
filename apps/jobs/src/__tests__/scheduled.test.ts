@@ -1,4 +1,4 @@
-import { handleScheduled } from "../scheduled";
+import { handleScheduled } from "~/scheduled";
 
 const { getJobsForCronMock, warnMock } = vi.hoisted(() => ({
   getJobsForCronMock: vi.fn(),
@@ -14,7 +14,7 @@ vi.mock("@repo/logger", () => ({
   },
 }));
 
-vi.mock("../jobs", () => ({
+vi.mock("~/jobs", () => ({
   JobRegistry: class {
     getJobsForCron = getJobsForCronMock;
   },

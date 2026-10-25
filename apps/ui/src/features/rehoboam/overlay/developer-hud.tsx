@@ -1,12 +1,13 @@
 import type { CSSProperties } from "react";
 
-import type { RehoboamRenderDiagnostics } from "../engine/types";
-import type { SceneQualityTier } from "../scene/quality";
-import type { InstrumentSize } from "./callout-overlay";
+import type { RehoboamRenderDiagnostics } from "~/features/rehoboam/engine/types";
+import type { SceneQualityTier } from "~/features/rehoboam/scene/quality";
+
+import type { InstrumentSize } from "./callout-geometry";
 
 type DeveloperHudNetworkStatus = "idle" | "loading" | "success" | "fallback";
 
-export type DeveloperHudProps = Readonly<{
+type DeveloperHudProps = Readonly<{
   diagnostics: RehoboamRenderDiagnostics | null;
   divergenceIntensity: number;
   eventCount: number;
@@ -100,7 +101,7 @@ const getDiagnosticsMetrics = (
   ];
 };
 
-export const DeveloperHud = ({
+const DeveloperHud = ({
   diagnostics,
   divergenceIntensity,
   eventCount,
@@ -192,3 +193,5 @@ export const DeveloperHud = ({
     </aside>
   );
 };
+
+export { DeveloperHud };

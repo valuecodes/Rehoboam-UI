@@ -6,10 +6,12 @@ const ALLOWED_ORIGINS = [
   "http://localhost:3000",
 ];
 
-export const corsMiddleware = cors({
+const corsMiddleware = cors({
   origin: ALLOWED_ORIGINS,
   allowMethods: ["GET", "OPTIONS"],
   exposeHeaders: ["X-Request-Id"],
 });
 
-export const secureHeadersMiddleware = secureHeaders();
+const secureHeadersMiddleware = secureHeaders();
+
+export { corsMiddleware, secureHeadersMiddleware };

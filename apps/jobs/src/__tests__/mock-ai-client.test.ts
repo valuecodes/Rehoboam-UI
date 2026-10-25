@@ -1,6 +1,6 @@
 import type { NewsItem } from "@repo/types";
 
-import { MockAiClient } from "../clients/mock-ai-client";
+import { MockAiClient } from "~/clients/mock-ai-client";
 
 const loggerMock = {
   debug: vi.fn(),

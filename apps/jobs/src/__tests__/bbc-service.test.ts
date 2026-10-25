@@ -1,4 +1,4 @@
-import { BbcNewsService } from "../jobs/news/services/bbc-service";
+import { BbcNewsService } from "~/jobs/news/services/bbc-service";
 
 const loggerMock = {
   debug: vi.fn(),

@@ -1,9 +1,9 @@
-import { NewsJob } from "../jobs/news-job";
+import { NewsJob } from "~/jobs/news-job";
 
 const fetchMock = vi.hoisted(() => vi.fn());
 
 const { MockService } = await vi.hoisted(async () => {
-  const { NewsService } = await import("../jobs/news/services/news-service");
+  const { NewsService } = await import("~/jobs/news/services/news-service");
 
   class MockServiceClass extends NewsService {
     readonly slug = "test-feed";
@@ -35,7 +35,7 @@ const { MockService } = await vi.hoisted(async () => {
   return { MockService: MockServiceClass };
 });
 
-vi.mock("../jobs/news/services/bbc-service", () => ({
+vi.mock("~/jobs/news/services/bbc-service", () => ({
   BbcNewsService: MockService,
 }));
 

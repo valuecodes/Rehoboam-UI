@@ -23,11 +23,7 @@
       "Read(**/.env*)",
       "Read(**/secrets/**)"
     ],
-    "ask": [
-      "Bash(pnpm install:*)",
-      "Bash(pnpm add:*)",
-      "Bash(pnpm remove:*)"
-    ],
+    "ask": ["Bash(pnpm install:*)", "Bash(pnpm add:*)", "Bash(pnpm remove:*)"],
     "defaultMode": "default"
   }
 }

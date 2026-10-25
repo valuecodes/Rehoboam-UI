@@ -236,41 +236,48 @@ const resolveScenarioSequence = (
   const scenarioName = (value ?? "default") as ScreenshotScenarioName;
 
   switch (scenarioName) {
-    case "default":
+    case "default": {
       return [{ name: "default", pagePath: "/" }];
-    case "intro":
+    }
+    case "intro": {
       return [{ name: "intro", pagePath: "/?intro-debug=1" }];
-    case "hud":
+    }
+    case "hud": {
       return [{ name: "hud", pagePath: "/?hud=1" }];
-    case "callout-top-left":
+    }
+    case "callout-top-left": {
       return [
         {
           name: "callout-top-left",
           pagePath: "/?callout-debug=top&callout-debug-side=left",
         },
       ];
-    case "callout-top-right":
+    }
+    case "callout-top-right": {
       return [
         {
           name: "callout-top-right",
           pagePath: "/?callout-debug=top&callout-debug-side=right",
         },
       ];
-    case "callout-bottom-left":
+    }
+    case "callout-bottom-left": {
       return [
         {
           name: "callout-bottom-left",
           pagePath: "/?callout-debug=bottom&callout-debug-side=left",
         },
       ];
-    case "callout-bottom-right":
+    }
+    case "callout-bottom-right": {
       return [
         {
           name: "callout-bottom-right",
           pagePath: "/?callout-debug=bottom&callout-debug-side=right",
         },
       ];
-    case "all-debug":
+    }
+    case "all-debug": {
       return [
         { name: "intro", pagePath: "/?intro-debug=1" },
         { name: "hud", pagePath: "/?hud=1" },
@@ -291,10 +298,12 @@ const resolveScenarioSequence = (
           pagePath: "/?callout-debug=bottom&callout-debug-side=right",
         },
       ];
-    default:
+    }
+    default: {
       throw new Error(
         `Unknown scenario: ${value ?? ""}. See --help for supported scenario names.`
       );
+    }
   }
 };
 

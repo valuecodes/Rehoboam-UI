@@ -1,11 +1,11 @@
-const UINT32_RANGE = 0x1_0000_0000;
-const MULBERRY32_CONSTANT = 0x6d2b79f5;
-const FNV_OFFSET_BASIS = 0x811c9dc5;
-const FNV_PRIME = 0x01000193;
+const UINT32_RANGE = 0x1_00_00_00_00;
+const MULBERRY32_CONSTANT = 0x6d_2b_79_f5;
+const FNV_OFFSET_BASIS = 0x81_1c_9d_c5;
+const FNV_PRIME = 0x01_00_01_93;
 
-export type SeedInput = number | string;
+type SeedInput = number | string;
 
-export type SeededRng = Readonly<{
+type SeededRng = Readonly<{
   next: () => number;
   nextFloat: (min?: number, max?: number) => number;
   nextInt: (min: number, max: number) => number;
@@ -83,6 +83,8 @@ const createFromState = (initialState: number): SeededRng => {
   };
 };
 
-export const createSeededRng = (seed: SeedInput): SeededRng => {
-  return createFromState(normalizeSeed(seed));
-};
+const createSeededRng = (seed: SeedInput): SeededRng =>
+  createFromState(normalizeSeed(seed));
+
+export { createSeededRng };
+export type { SeedInput, SeededRng };

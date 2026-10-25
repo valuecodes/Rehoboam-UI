@@ -1,17 +1,18 @@
-import {
-  animate,
-  motion,
-  useMotionTemplate,
-  useMotionValue,
-} from "motion/react";
+import { motion } from "motion/react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 
-import { polarToCartesian } from "../layout/polar";
-import type { InstrumentSize } from "./callout-overlay";
+import { polarToCartesian } from "~/features/rehoboam/layout/polar";
+
+import type { InstrumentSize } from "./callout-geometry";
+import { useCalloutMotion } from "./use-callout-motion";
+import type {
+  CalloutMotionTiming,
+  CalloutOpenState,
+} from "./use-callout-motion";
 import { clampNumber, toPointList } from "./utils";
 import type { Point } from "./utils";
 
-export type IntroCalloutOverlayProps = Readonly<{
+type IntroCalloutOverlayProps = Readonly<{
   instrumentSize: InstrumentSize;
   onComplete?: () => void;
   debugMode?: boolean;
@@ -27,13 +28,16 @@ type IntroCalloutGeometry = Readonly<{
   labelWidth: number;
 }>;
 
-const INTRO_LINE_DELAY_MS = 450;
-const INTRO_LINE_DURATION_MS = 900;
-const INTRO_TEXT_DELAY_MS = 1_150;
-const INTRO_AUTO_CLOSE_MS = 4_800;
-const INTRO_CLEAR_CLOSE_MS = 3_200;
-const INTRO_DASH_LENGTH = 1_200;
-const INTRO_TEXT_SHIFT_PX = 6;
+const INTRO_AUTO_CLOSE_MS = 4800;
+const INTRO_CLEAR_CLOSE_MS = 3200;
+const INTRO_DASH_LENGTH = 1200;
+const INTRO_MOTION_TIMING: CalloutMotionTiming = {
+  dashLength: INTRO_DASH_LENGTH,
+  textShiftPx: 6,
+  lineDelayMs: 450,
+  lineDurationMs: 900,
+  textDelayMs: 1150,
+};
 const INTRO_ENDPOINT_OUTER_RADIUS_PX = 6;
 const INTRO_ENDPOINT_INNER_RADIUS_PX = 2.25;
 const INTRO_CORNER_STEP_PX = 10;
@@ -181,20 +185,26 @@ const getIntroCalloutGeometry = (
   };
 };
 
-export const IntroCalloutOverlay = memo(
+const IntroCalloutOverlay = memo(
   ({
     instrumentSize,
     onComplete,
     debugMode = false,
   }: IntroCalloutOverlayProps) => {
     const onCompleteRef = useRef(onComplete);
-    const [open, setOpen] = useState<"open" | "close">("open");
-    const currentDateText = useMemo(() => {
-      return formatCurrentDate();
-    }, []);
-    const geometry = useMemo(() => {
-      return getIntroCalloutGeometry(instrumentSize);
-    }, [instrumentSize]);
+    const [open, setOpen] = useState<CalloutOpenState>("open");
+    const [previousDebugMode, setPreviousDebugMode] = useState(debugMode);
+    const currentDateText = useMemo(() => formatCurrentDate(), []);
+    const geometry = useMemo(
+      () => getIntroCalloutGeometry(instrumentSize),
+      [instrumentSize]
+    );
+
+    // Toggling debug mode restarts the intro from its open state.
+    if (previousDebugMode !== debugMode) {
+      setPreviousDebugMode(debugMode);
+      setOpen("open");
+    }
 
     useEffect(() => {
       onCompleteRef.current = onComplete;
@@ -202,98 +212,32 @@ export const IntroCalloutOverlay = memo(
 
     useEffect(() => {
       if (debugMode) {
-        setOpen("open");
-
-        return;
+        return undefined;
       }
 
-      setOpen("open");
-      let completeHandle = 0;
-      const closeHandle = window.setTimeout(() => {
+      let completeHandle: ReturnType<typeof setTimeout> | undefined;
+      const closeHandle = globalThis.setTimeout(() => {
         setOpen("close");
-        completeHandle = window.setTimeout(() => {
+        completeHandle = globalThis.setTimeout(() => {
           onCompleteRef.current?.();
         }, INTRO_CLEAR_CLOSE_MS);
       }, INTRO_AUTO_CLOSE_MS);
 
       return () => {
-        window.clearTimeout(closeHandle);
+        globalThis.clearTimeout(closeHandle);
 
-        if (completeHandle !== 0) {
-          window.clearTimeout(completeHandle);
+        if (completeHandle !== undefined) {
+          globalThis.clearTimeout(completeHandle);
         }
       };
     }, [debugMode]);
 
-    const lineDashOffset = useMotionValue(0);
-    const lineNodeOpacity = useMotionValue(0);
-    const textOpacity = useMotionValue(0);
-    const textShiftY = useMotionValue(0);
-    const textTransform = useMotionTemplate`translate3d(0, ${textShiftY}px, 0)`;
-
-    useEffect(() => {
-      if (debugMode) {
-        lineDashOffset.set(0);
-        lineNodeOpacity.set(1);
-        textOpacity.set(1);
-        textShiftY.set(0);
-
-        return;
-      }
-
-      const isOpening = open === "open";
-      lineDashOffset.set(isOpening ? -INTRO_DASH_LENGTH : 0);
-      lineNodeOpacity.set(isOpening ? 0 : 1);
-      textOpacity.set(isOpening ? 0 : 1);
-      textShiftY.set(isOpening ? INTRO_TEXT_SHIFT_PX : 0);
-
-      const lineAnimation = animate(
-        lineDashOffset,
-        isOpening ? 0 : INTRO_DASH_LENGTH,
-        {
-          delay: INTRO_LINE_DELAY_MS / 1_000,
-          duration: INTRO_LINE_DURATION_MS / 1_000,
-          ease: "linear",
-        }
-      );
-      const nodeAnimation = animate(lineNodeOpacity, isOpening ? 1 : 0, {
-        delay: INTRO_LINE_DELAY_MS / 1_000,
-        duration: INTRO_LINE_DURATION_MS / 1_000,
-        ease: "linear",
+    const { lineDashOffset, lineNodeOpacity, textOpacity, textTransform } =
+      useCalloutMotion({
+        timing: INTRO_MOTION_TIMING,
+        open,
+        frozen: debugMode,
       });
-      const textOpacityAnimation = animate(textOpacity, isOpening ? 1 : 0, {
-        delay: INTRO_TEXT_DELAY_MS / 1_000,
-        type: "spring",
-        mass: 3,
-        stiffness: 600,
-        damping: 100,
-      });
-      const textShiftAnimation = animate(
-        textShiftY,
-        isOpening ? 0 : INTRO_TEXT_SHIFT_PX,
-        {
-          delay: INTRO_TEXT_DELAY_MS / 1_000,
-          type: "spring",
-          mass: 3,
-          stiffness: 600,
-          damping: 100,
-        }
-      );
-
-      return () => {
-        lineAnimation.stop();
-        nodeAnimation.stop();
-        textOpacityAnimation.stop();
-        textShiftAnimation.stop();
-      };
-    }, [
-      debugMode,
-      lineDashOffset,
-      lineNodeOpacity,
-      open,
-      textOpacity,
-      textShiftY,
-    ]);
 
     if (geometry === null) {
       return null;
@@ -361,7 +305,7 @@ export const IntroCalloutOverlay = memo(
             UNDISCLOSED LOCATION
           </p>
           <p className="rehoboam-scene__callout-boot rehoboam-scene__callout-boot--intro">
-            {"'SOLOMON' BUILD 0.06"}
+            &apos;SOLOMON&apos; BUILD 0.06
           </p>
         </motion.div>
       </>
@@ -370,3 +314,5 @@ export const IntroCalloutOverlay = memo(
 );
 
 IntroCalloutOverlay.displayName = "IntroCalloutOverlay";
+
+export { IntroCalloutOverlay };
