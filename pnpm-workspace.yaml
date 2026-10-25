@@ -11,41 +11,41 @@ packages:
 # double-quoted.
 catalog:
   "@fontsource/barlow-condensed": 5.3.0
-  "@playwright/test": 1.63.0
+  "@playwright/test": 1.64.0
   # Held on the Node 24 line to match `.nvmrc` (see `updateConfig` below).
   "@types/node": 24.19.2
   "@types/react": 19.3.0
   "@types/react-dom": 19.3.0
   "@types/service-worker-mock": 2.0.4
-  "@vitejs/plugin-react": 6.1.1
-  drizzle-kit: 0.31.10
+  "@vitejs/plugin-react": 6.1.2
+  drizzle-kit: 0.31.11
   # D1 access. packages/db owns the schema; apps/api reads it and apps/jobs
   # writes it, so all three must agree on one query builder.
-  drizzle-orm: 0.45.2
-  fast-xml-parser: 5.11.1
-  hono: 4.13.7
-  jsdom: 30.0.1
+  drizzle-orm: 0.45.4
+  fast-xml-parser: 5.11.2
+  hono: 4.13.13
+  jsdom: 30.1.2
   knip: 6.41.0
-  motion: 13.2.0
+  motion: 13.5.1
   oxfmt: 0.72.0
   oxlint: 1.87.0
-  oxlint-tsgolint: 7.0.2003
-  playwright: 1.63.0
+  oxlint-tsgolint: 7.0.2004
+  playwright: 1.64.0
   react: 19.3.0
   react-dom: 19.3.0
   turbo: 2.11.7
   # `typescript` is the native (Go) compiler; its binary is still `tsc`.
   typescript: 7.0.2
-  vite: 8.3.0
+  vite: 8.3.4
   vite-bundle-analyzer: 1.3.9
-  vitest: 5.0.0
+  vitest: 5.0.3
   # apps/api and apps/jobs generate `worker-configuration.d.ts` from the same
   # runtime; apps/ui deploys to Pages with it, so that deploy also uses the
   # locked tree and the overrides below.
-  wrangler: 4.130.0
+  wrangler: 4.149.0
   # Schemas shared across the API boundary. Declared in packages/types and
   # used directly by apps/api (request validation) and apps/jobs (feed parsing).
-  zod: 4.6.1
+  zod: 4.6.5
   zx: 8.8.5
 
 # Skipped by `pnpm up --latest`. `@types/node` must track the Node major in
@@ -70,8 +70,9 @@ savePrefix: ""
 overrides:
   # drizzle-kit still pulls esbuild 0.18 through @esbuild-kit.
   "esbuild@0.18": 0.25.12
-  # miniflare (via wrangler) pins sharp 0.35.2 exactly.
-  "sharp@0.35.2": 0.35.4
+  # GHSA-68fv-2mgg-jv7q: postcss (via vite/vitest) and css-tree declare
+  # `source-map-js` `^1.2.1`, so no parent bump moves it off 1.2.1.
+  "source-map-js@<1.2.2": 1.2.2
 
 allowBuilds:
   # Vite, Vitest, drizzle-kit and wrangler all bundle through esbuild, whose
