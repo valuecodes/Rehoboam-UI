@@ -2,10 +2,13 @@ import type {
   InteractionState,
   RehoboamTheme,
   ViewportState,
-} from "../../../engine/types";
-import { cartesianToPolar, normalizeAngle } from "../../../layout/polar";
+} from "~/features/rehoboam/engine/types";
+import {
+  cartesianToPolar,
+  normalizeAngle,
+} from "~/features/rehoboam/layout/polar";
 
-export type SweepPassInput = Readonly<{
+type SweepPassInput = Readonly<{
   context: CanvasRenderingContext2D;
   viewport: ViewportState;
   theme: RehoboamTheme;
@@ -13,9 +16,7 @@ export type SweepPassInput = Readonly<{
   elapsedMs: number;
 }>;
 
-const degreesToRadians = (degrees: number): number => {
-  return (degrees * Math.PI) / 180;
-};
+const degreesToRadians = (degrees: number): number => (degrees * Math.PI) / 180;
 
 const getTargetAngle = (
   interaction: InteractionState,
@@ -35,7 +36,7 @@ const getTargetAngle = (
     .angleRad;
 };
 
-export const drawSweepPass = (input: SweepPassInput): void => {
+const drawSweepPass = (input: SweepPassInput): void => {
   const { context, viewport, theme, interaction, elapsedMs } = input;
   const angle = getTargetAngle(interaction, viewport, elapsedMs, theme);
 
@@ -54,3 +55,6 @@ export const drawSweepPass = (input: SweepPassInput): void => {
   context.stroke();
   context.restore();
 };
+
+export { drawSweepPass };
+export type { SweepPassInput };

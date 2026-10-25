@@ -4,12 +4,10 @@ import {
   polarToCartesian,
   shortestAngularDistance,
   TAU,
-} from "../../../features/rehoboam/layout/polar";
-import type { CartesianCoordinate } from "../../../features/rehoboam/layout/polar";
+} from "~/features/rehoboam/layout/polar";
+import type { CartesianCoordinate } from "~/features/rehoboam/layout/polar";
 
-const degreesToRadians = (degrees: number): number => {
-  return (degrees * Math.PI) / 180;
-};
+const degreesToRadians = (degrees: number): number => (degrees * Math.PI) / 180;
 
 describe("normalizeAngle", () => {
   it("normalizes angles into [0, 2pi)", () => {

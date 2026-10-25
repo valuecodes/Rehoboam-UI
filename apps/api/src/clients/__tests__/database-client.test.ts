@@ -1,4 +1,4 @@
-import { DatabaseClient } from "../database-client";
+import { DatabaseClient } from "~/clients/database-client";
 
 const eventLimitMock = vi.fn();
 const eventOrderByMock = vi.fn().mockReturnValue({ limit: eventLimitMock });
@@ -229,39 +229,36 @@ describe("DatabaseClient", () => {
   });
 });
 
+// Build a thenable object that also exposes the next builder methods.
+// This allows both `await chain.where(...)` and `chain.where(...).groupBy(...)`.
+const makeThenable = (
+  resolved: unknown,
+  methods: Record<string, unknown> = {}
+) => {
+  const obj: Record<string, unknown> = {
+    then: (resolve: (v: unknown) => unknown) =>
+      Promise.resolve(resolved).then(resolve),
+    catch: (reject: (e: unknown) => unknown) =>
+      Promise.resolve(resolved).catch(reject),
+    ...methods,
+  };
+  return obj;
+};
+
+// Helpers to build per-query mock chains for the four sequential select() calls.
+// Query 1 (total):      select -> from -> where  -> resolves [{ total }]
+// Query 2 (category):   select -> from -> where -> groupBy -> resolves [{ category, total }]
+// Query 3 (severity):   select -> from -> where -> groupBy -> resolves [{ severity, total }]
+// Query 4 (activity):   select -> from -> where -> groupBy -> orderBy -> resolves [{ date, total }]
+const makeChain = (resolved: unknown) => {
+  const orderBy = vi.fn().mockReturnValue(makeThenable(resolved));
+  const groupBy = vi.fn().mockReturnValue(makeThenable(resolved, { orderBy }));
+  const where = vi.fn().mockReturnValue(makeThenable(resolved, { groupBy }));
+  const from = vi.fn().mockReturnValue({ where });
+  return { from };
+};
+
 describe("DatabaseClient.getStats", () => {
-  // Helpers to build per-query mock chains for the four sequential select() calls.
-  // Query 1 (total):      select -> from -> where  -> resolves [{ total }]
-  // Query 2 (category):   select -> from -> where -> groupBy -> resolves [{ category, total }]
-  // Query 3 (severity):   select -> from -> where -> groupBy -> resolves [{ severity, total }]
-  // Query 4 (activity):   select -> from -> where -> groupBy -> orderBy -> resolves [{ date, total }]
-
-  // Build a thenable object that also exposes the next builder methods.
-  // This allows both `await chain.where(...)` and `chain.where(...).groupBy(...)`.
-  const makeThenable = (
-    resolved: unknown,
-    methods: Record<string, unknown> = {}
-  ) => {
-    const obj: Record<string, unknown> = {
-      then: (resolve: (v: unknown) => unknown) =>
-        Promise.resolve(resolved).then(resolve),
-      catch: (reject: (e: unknown) => unknown) =>
-        Promise.resolve(resolved).catch(reject),
-      ...methods,
-    };
-    return obj;
-  };
-
-  const makeChain = (resolved: unknown) => {
-    const orderBy = vi.fn().mockReturnValue(makeThenable(resolved));
-    const groupBy = vi
-      .fn()
-      .mockReturnValue(makeThenable(resolved, { orderBy }));
-    const where = vi.fn().mockReturnValue(makeThenable(resolved, { groupBy }));
-    const from = vi.fn().mockReturnValue({ where });
-    return { from };
-  };
-
   beforeEach(() => {
     vi.clearAllMocks();
   });

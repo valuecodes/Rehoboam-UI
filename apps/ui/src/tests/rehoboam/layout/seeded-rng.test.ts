@@ -1,4 +1,4 @@
-import { createSeededRng } from "../../../shared/utils/seeded-rng";
+import { createSeededRng } from "~/shared/utils/seeded-rng";
 
 describe("createSeededRng", () => {
   it("produces identical sequences for the same seed", () => {

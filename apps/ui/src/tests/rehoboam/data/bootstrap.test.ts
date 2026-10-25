@@ -2,20 +2,18 @@ import {
   mergeEventSnapshots,
   refreshEventsFromSource,
   refreshEventsFromSourceWithStatus,
-} from "../../../features/rehoboam/data/bootstrap";
-import type { RehoboamEventSource } from "../../../features/rehoboam/data/source";
-import type { WorldEvent } from "../../../features/rehoboam/engine/types";
+} from "~/features/rehoboam/data/bootstrap";
+import type { RehoboamEventSource } from "~/features/rehoboam/data/source";
+import type { WorldEvent } from "~/features/rehoboam/engine/types";
 
-const createEvent = (overrides: Partial<WorldEvent>): WorldEvent => {
-  return {
-    id: "event-default",
-    title: "Default event",
-    timestampMs: 1_770_500_000_000,
-    severity: "low",
-    category: "general",
-    ...overrides,
-  };
-};
+const createEvent = (overrides: Partial<WorldEvent>): WorldEvent => ({
+  id: "event-default",
+  title: "Default event",
+  timestampMs: 1_770_500_000_000,
+  severity: "low",
+  category: "general",
+  ...overrides,
+});
 
 describe("data/bootstrap", () => {
   it("replaces stale events with the refreshed source snapshot", async () => {
@@ -35,8 +33,8 @@ describe("data/bootstrap", () => {
       }),
     ];
     const source: RehoboamEventSource = {
-      loadEvents: () => {
-        return Promise.resolve([
+      loadEvents: () =>
+        Promise.resolve([
           createEvent({
             id: "event-1",
             title: "Relay incident",
@@ -51,8 +49,7 @@ describe("data/bootstrap", () => {
             category: "transport",
             timestampMs: 1_770_500_100_000,
           }),
-        ] satisfies readonly WorldEvent[]);
-      },
+        ] satisfies readonly WorldEvent[]),
     };
 
     const refreshed = await refreshEventsFromSource({
@@ -79,9 +76,7 @@ describe("data/bootstrap", () => {
       }),
     ];
     const source: RehoboamEventSource = {
-      loadEvents: () => {
-        return Promise.reject(new Error("Source unavailable"));
-      },
+      loadEvents: () => Promise.reject(new Error("Source unavailable")),
     };
 
     await expect(
@@ -101,15 +96,14 @@ describe("data/bootstrap", () => {
       }),
     ];
     const source: RehoboamEventSource = {
-      loadEvents: () => {
-        return Promise.resolve([
+      loadEvents: () =>
+        Promise.resolve([
           createEvent({
             id: "event-5",
             title: "Fresh event",
             severity: "high",
           }),
-        ] satisfies readonly WorldEvent[]);
-      },
+        ] satisfies readonly WorldEvent[]),
     };
 
     await expect(

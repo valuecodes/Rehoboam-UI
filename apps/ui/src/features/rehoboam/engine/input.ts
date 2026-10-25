@@ -1,7 +1,8 @@
-import type { CartesianCoordinate } from "../layout/polar";
+import type { CartesianCoordinate } from "~/features/rehoboam/layout/polar";
+
 import type { InteractionState } from "./types";
 
-export const DEFAULT_HOVER_DWELL_MS = 120;
+const DEFAULT_HOVER_DWELL_MS = 120;
 const MIN_MARKER_HIT_RADIUS_PX = 24;
 
 type PointerInput = Readonly<{
@@ -9,14 +10,14 @@ type PointerInput = Readonly<{
   isPrimary: boolean;
 }>;
 
-export type MarkerHitTarget = Readonly<{
+type MarkerHitTarget = Readonly<{
   eventId: string;
   eventIds: readonly string[];
   position: CartesianCoordinate;
   hitRadiusPx: number;
 }>;
 
-export type PointerMoveUpdateInput = Readonly<{
+type PointerMoveUpdateInput = Readonly<{
   interaction: InteractionState;
   pointer: PointerInput;
   markerEventId: string | null;
@@ -24,13 +25,13 @@ export type PointerMoveUpdateInput = Readonly<{
   hoverDwellMs?: number;
 }>;
 
-export type HoverDwellTickInput = Readonly<{
+type HoverDwellTickInput = Readonly<{
   interaction: InteractionState;
   timeMs: number;
   hoverDwellMs?: number;
 }>;
 
-export type PointerClickUpdateInput = Readonly<{
+type PointerClickUpdateInput = Readonly<{
   interaction: InteractionState;
   markerEventId: string | null;
 }>;
@@ -38,9 +39,7 @@ export type PointerClickUpdateInput = Readonly<{
 const getDistance = (
   left: CartesianCoordinate,
   right: CartesianCoordinate
-): number => {
-  return Math.hypot(left.x - right.x, left.y - right.y);
-};
+): number => Math.hypot(left.x - right.x, left.y - right.y);
 
 const resolveHoverByDwell = (
   interaction: InteractionState,
@@ -85,48 +84,42 @@ const resolveHoverByDwell = (
 const withPointerState = (
   interaction: InteractionState,
   pointer: PointerInput
-): InteractionState => {
-  return {
-    ...interaction,
-    pointer: {
-      position: {
-        ...pointer.position,
-      },
-      isPrimary: pointer.isPrimary,
+): InteractionState => ({
+  ...interaction,
+  pointer: {
+    position: {
+      ...pointer.position,
     },
-  };
-};
+    isPrimary: pointer.isPrimary,
+  },
+});
 
-export const createInitialInteractionState = (): InteractionState => {
-  return {
-    pointer: null,
-    isPointerDown: false,
-    isDragging: false,
-    hoverCandidateEventId: null,
-    hoveredEventId: null,
-    selectedEventId: null,
-    hoverStartedAtMs: null,
-  };
-};
+const createInitialInteractionState = (): InteractionState => ({
+  pointer: null,
+  isPointerDown: false,
+  isDragging: false,
+  hoverCandidateEventId: null,
+  hoveredEventId: null,
+  selectedEventId: null,
+  hoverStartedAtMs: null,
+});
 
-export const cloneInteractionState = (
+const cloneInteractionState = (
   interaction: InteractionState
-): InteractionState => {
-  return {
-    ...interaction,
-    pointer:
-      interaction.pointer === null
-        ? null
-        : {
-            ...interaction.pointer,
-            position: {
-              ...interaction.pointer.position,
-            },
+): InteractionState => ({
+  ...interaction,
+  pointer:
+    interaction.pointer === null
+      ? null
+      : {
+          ...interaction.pointer,
+          position: {
+            ...interaction.pointer.position,
           },
-  };
-};
+        },
+});
 
-export const pickMarkerHitTarget = (
+const pickMarkerHitTarget = (
   pointerPosition: CartesianCoordinate,
   markers: readonly MarkerHitTarget[]
 ): MarkerHitTarget | null => {
@@ -148,7 +141,7 @@ export const pickMarkerHitTarget = (
   return nearestTarget;
 };
 
-export const updateInteractionForPointerMove = (
+const updateInteractionForPointerMove = (
   input: PointerMoveUpdateInput
 ): InteractionState => {
   const hoverDwellMs = Math.max(
@@ -196,9 +189,7 @@ export const updateInteractionForPointerMove = (
   };
 };
 
-export const applyHoverDwellTick = (
-  input: HoverDwellTickInput
-): InteractionState => {
+const applyHoverDwellTick = (input: HoverDwellTickInput): InteractionState => {
   const hoverDwellMs = Math.max(
     1,
     Math.trunc(input.hoverDwellMs ?? DEFAULT_HOVER_DWELL_MS)
@@ -215,21 +206,19 @@ export const applyHoverDwellTick = (
   };
 };
 
-export const updateInteractionForPointerLeave = (
+const updateInteractionForPointerLeave = (
   interaction: InteractionState
-): InteractionState => {
-  return {
-    ...interaction,
-    pointer: null,
-    isPointerDown: false,
-    isDragging: false,
-    hoverCandidateEventId: null,
-    hoveredEventId: null,
-    hoverStartedAtMs: null,
-  };
-};
+): InteractionState => ({
+  ...interaction,
+  pointer: null,
+  isPointerDown: false,
+  isDragging: false,
+  hoverCandidateEventId: null,
+  hoveredEventId: null,
+  hoverStartedAtMs: null,
+});
 
-export const updateInteractionForClick = (
+const updateInteractionForClick = (
   input: PointerClickUpdateInput
 ): InteractionState => {
   if (input.markerEventId === null) {
@@ -245,14 +234,25 @@ export const updateInteractionForClick = (
   };
 };
 
-export const clearInteractionSelection = (
+const clearInteractionSelection = (
   interaction: InteractionState
-): InteractionState => {
-  return {
-    ...interaction,
-    selectedEventId: null,
-    hoverCandidateEventId: null,
-    hoveredEventId: null,
-    hoverStartedAtMs: null,
-  };
+): InteractionState => ({
+  ...interaction,
+  selectedEventId: null,
+  hoverCandidateEventId: null,
+  hoveredEventId: null,
+  hoverStartedAtMs: null,
+});
+
+export {
+  applyHoverDwellTick,
+  clearInteractionSelection,
+  cloneInteractionState,
+  createInitialInteractionState,
+  DEFAULT_HOVER_DWELL_MS,
+  pickMarkerHitTarget,
+  updateInteractionForClick,
+  updateInteractionForPointerLeave,
+  updateInteractionForPointerMove,
 };
+export type { MarkerHitTarget };

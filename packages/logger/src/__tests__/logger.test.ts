@@ -1,7 +1,7 @@
 import type { MockInstance } from "vitest";
 
-import { Logger } from "../logger";
-import type { LogEntry } from "../types";
+import { Logger } from "#logger";
+import type { LogEntry } from "#types";
 
 type ConsoleSpy = MockInstance<(...args: unknown[]) => void>;
 

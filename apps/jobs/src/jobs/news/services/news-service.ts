@@ -64,9 +64,7 @@ export abstract class NewsService {
       const buffer = await crypto.subtle.digest("SHA-256", data);
       const bytes = new Uint8Array(buffer);
 
-      return Array.from(bytes)
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("");
+      return [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
     } catch {
       return raw;
     }

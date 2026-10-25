@@ -50,38 +50,38 @@ const appRouteTitles: Record<AppRoute, string> = {
 
 export const App = () => {
   const [appRoute, setAppRoute] = useState<AppRoute>(() => {
-    if (typeof window === "undefined") {
+    if (!("window" in globalThis)) {
       return "home";
     }
 
-    return getAppRouteFromPathname(window.location.pathname);
+    return getAppRouteFromPathname(globalThis.location.pathname);
   });
 
   const navigateTo = useCallback((route: AppRoute) => {
     const path = getPathForAppRoute(route);
 
-    if (window.location.pathname !== path) {
-      window.history.pushState(null, "", path);
+    if (globalThis.location.pathname !== path) {
+      globalThis.history.pushState(null, "", path);
     }
 
-    setAppRoute((currentRoute) => {
-      return currentRoute === route ? currentRoute : route;
-    });
+    setAppRoute((currentRoute) =>
+      currentRoute === route ? currentRoute : route
+    );
   }, []);
 
   useEffect(() => {
     const handlePopState = () => {
-      const nextRoute = getAppRouteFromPathname(window.location.pathname);
+      const nextRoute = getAppRouteFromPathname(globalThis.location.pathname);
 
-      setAppRoute((currentRoute) => {
-        return currentRoute === nextRoute ? currentRoute : nextRoute;
-      });
+      setAppRoute((currentRoute) =>
+        currentRoute === nextRoute ? currentRoute : nextRoute
+      );
     };
 
-    window.addEventListener("popstate", handlePopState);
+    globalThis.addEventListener("popstate", handlePopState);
 
     return () => {
-      window.removeEventListener("popstate", handlePopState);
+      globalThis.removeEventListener("popstate", handlePopState);
     };
   }, []);
 
@@ -122,12 +122,20 @@ export const App = () => {
   const renderView = () => {
     switch (appRoute) {
       case "home":
-      case "hud":
+      case "hud": {
         return <RehoboamScene forceHudEnabled={appRoute === "hud"} />;
-      case "stats":
+      }
+      case "stats": {
         return <StatsView />;
-      case "privacy":
+      }
+      case "privacy": {
         return <PrivacyPolicyView />;
+      }
+      default: {
+        const unknownRoute: never = appRoute;
+
+        throw new Error(`Unhandled app route: ${String(unknownRoute)}`);
+      }
     }
   };
 

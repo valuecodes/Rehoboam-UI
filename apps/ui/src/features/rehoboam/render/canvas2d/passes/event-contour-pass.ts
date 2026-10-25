@@ -1,19 +1,19 @@
-import { SEVERITY_RANK } from "../../../engine/severity";
+import { SEVERITY_RANK } from "~/features/rehoboam/engine/severity";
 import type {
   InteractionState,
   RehoboamTheme,
   ViewportState,
-} from "../../../engine/types";
-import type { ComputedEventAngle } from "../../../layout/compute-angles";
+} from "~/features/rehoboam/engine/types";
+import type { ComputedEventAngle } from "~/features/rehoboam/layout/compute-angles";
 import {
   polarToCartesian,
   shortestAngularDistance,
   TAU,
-} from "../../../layout/polar";
+} from "~/features/rehoboam/layout/polar";
 
 const MAX_CONTOUR_TARGETS = 12;
 
-export type EventContourPassInput = Readonly<{
+type EventContourPassInput = Readonly<{
   context: CanvasRenderingContext2D;
   viewport: ViewportState;
   theme: RehoboamTheme;
@@ -83,8 +83,8 @@ const getInteractionWeight = (
 const resolveContourTargets = (
   eventAngles: readonly ComputedEventAngle[],
   interaction: InteractionState
-): readonly ContourTarget[] => {
-  return [...eventAngles]
+): readonly ContourTarget[] =>
+  [...eventAngles]
     .sort(compareEventAnglesByPriority)
     .slice(0, MAX_CONTOUR_TARGETS)
     .map((eventAngle, rank) => {
@@ -96,7 +96,6 @@ const resolveContourTargets = (
         weight: rankWeight * getInteractionWeight(eventAngle, interaction),
       };
     });
-};
 
 const getSeverityScale = (eventAngle: ComputedEventAngle): number => {
   const { severity } = eventAngle.event;
@@ -241,7 +240,7 @@ const drawContourStroke = (
   context.restore();
 };
 
-export const drawEventContourPass = (input: EventContourPassInput): void => {
+const drawEventContourPass = (input: EventContourPassInput): void => {
   const {
     context,
     viewport,
@@ -272,3 +271,6 @@ export const drawEventContourPass = (input: EventContourPassInput): void => {
   drawContourStroke(context, viewport, contourSamples, 0.56, 2.6);
   drawContourStroke(context, viewport, contourSamples, 0.08, 5.6);
 };
+
+export { drawEventContourPass };
+export type { EventContourPassInput };

@@ -1,8 +1,9 @@
 import type { Logger } from "@repo/logger";
 import type { NewsItem } from "@repo/types";
 
-import type { AiProcessingResult, AiProcessor } from "../clients/ai-client";
-import type { DatabaseClient } from "../clients/database-client";
+import type { AiProcessingResult, AiProcessor } from "~/clients/ai-client";
+import type { DatabaseClient } from "~/clients/database-client";
+
 import type { Job } from "./index";
 import { BbcNewsService } from "./news/services/bbc-service";
 import type { NewsService } from "./news/services/news-service";

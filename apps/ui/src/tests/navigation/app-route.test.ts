@@ -1,7 +1,7 @@
 import {
   getAppRouteFromPathname,
   getPathForAppRoute,
-} from "../../features/navigation/app-route";
+} from "~/features/navigation/app-route";
 
 describe("app route helpers", () => {
   it("maps canonical pathnames to app routes", () => {

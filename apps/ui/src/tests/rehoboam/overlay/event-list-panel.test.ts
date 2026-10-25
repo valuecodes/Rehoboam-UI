@@ -1,4 +1,4 @@
-import { getNextPanelIndexForLength } from "../../../features/rehoboam/overlay/event-list-panel";
+import { getNextPanelIndexForLength } from "~/features/rehoboam/overlay/event-list-panel";
 
 describe("getNextPanelIndexForLength", () => {
   it("returns -1 for empty lists", () => {

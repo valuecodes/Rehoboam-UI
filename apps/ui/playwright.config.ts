@@ -47,21 +47,20 @@ const apiServer = {
   reuseExistingServer: true,
 };
 
-const getSelectedProjects = (argv: readonly string[]): string[] => {
-  return argv.flatMap((arg, index) => {
+const getSelectedProjects = (argv: readonly string[]): string[] =>
+  argv.flatMap((arg, index) => {
     if (arg.startsWith("--project=")) {
       return [arg.slice("--project=".length)];
     }
 
     if (arg === "--project") {
-      const project = argv[index + 1];
+      const project = argv.at(index + 1);
 
       return project === undefined ? [] : [project];
     }
 
     return [];
   });
-};
 
 const selectedProjects = getSelectedProjects(process.argv);
 const isSmokeOnly =

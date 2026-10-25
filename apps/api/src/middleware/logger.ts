@@ -1,7 +1,7 @@
 import { Logger } from "@repo/logger";
 import { createMiddleware } from "hono/factory";
 
-import type { AppEnv } from "../types";
+import type { AppEnv } from "~/types";
 
 export const loggerMiddleware = createMiddleware<AppEnv>(async (c, next) => {
   const requestId = crypto.randomUUID();

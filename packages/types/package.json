@@ -6,6 +6,9 @@
   "exports": {
     ".": "./src/rehoboam.ts"
   },
+  "imports": {
+    "#*": "./src/*.ts"
+  },
   "scripts": {
     "typecheck": "tsc",
     "test": "vitest run --passWithNoTests",

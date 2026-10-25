@@ -1,5 +1,8 @@
-import type { RehoboamTheme, ViewportState } from "../../../engine/types";
-import { TAU } from "../../../layout/polar";
+import type {
+  RehoboamTheme,
+  ViewportState,
+} from "~/features/rehoboam/engine/types";
+import { TAU } from "~/features/rehoboam/layout/polar";
 
 export type BackgroundPassInput = Readonly<{
   context: CanvasRenderingContext2D;

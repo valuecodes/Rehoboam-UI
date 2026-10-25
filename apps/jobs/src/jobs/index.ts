@@ -1,15 +1,16 @@
 import type { Logger } from "@repo/logger";
 
-import { AiClient } from "../clients/ai-client";
-import { DatabaseClient } from "../clients/database-client";
-import { MockAiClient } from "../clients/mock-ai-client";
-import type { JobsEnv } from "../types";
+import { AiClient } from "~/clients/ai-client";
+import { DatabaseClient } from "~/clients/database-client";
+import { MockAiClient } from "~/clients/mock-ai-client";
+import type { JobsEnv } from "~/types";
+
 import { NewsJob } from "./news-job";
 
 export type Job = {
   readonly name: string;
   readonly cron: string;
-  run(): Promise<void>;
+  run: () => Promise<void>;
 };
 
 export class JobRegistry {

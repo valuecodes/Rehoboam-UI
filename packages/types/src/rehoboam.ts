@@ -1,10 +1,10 @@
 import { z } from "zod";
 
-export const SeveritySchema = z.enum(["low", "medium", "high", "critical"]);
+const SeveritySchema = z.enum(["low", "medium", "high", "critical"]);
 
-export type Severity = z.infer<typeof SeveritySchema>;
+type Severity = z.infer<typeof SeveritySchema>;
 
-export const CategorySchema = z.enum([
+const CategorySchema = z.enum([
   "conflict",
   "politics",
   "climate",
@@ -16,13 +16,13 @@ export const CategorySchema = z.enum([
   "general",
 ]);
 
-export type Category = z.infer<typeof CategorySchema>;
+type Category = z.infer<typeof CategorySchema>;
 
-export const EventPublishedAtSchema = z.iso
+const EventPublishedAtSchema = z.iso
   .datetime()
   .transform((value) => value.slice(0, 10));
 
-export const EventSchema = z.object({
+const EventSchema = z.object({
   id: z.string().min(1),
   date: z.iso.date(),
   title: z.string().min(1),
@@ -31,13 +31,13 @@ export const EventSchema = z.object({
   category: CategorySchema,
 });
 
-export type RehoboamEvent = z.infer<typeof EventSchema>;
+type RehoboamEvent = z.infer<typeof EventSchema>;
 
-export const EventsResponseSchema = z.array(EventSchema);
+const EventsResponseSchema = z.array(EventSchema);
 
-export type EventsResponse = z.infer<typeof EventsResponseSchema>;
+type EventsResponse = z.infer<typeof EventsResponseSchema>;
 
-export const NewsItemSchema = z.object({
+const NewsItemSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
   source: z.string().min(1),
@@ -46,16 +46,16 @@ export const NewsItemSchema = z.object({
   description: z.string().optional(),
 });
 
-export type NewsItem = z.infer<typeof NewsItemSchema>;
+type NewsItem = z.infer<typeof NewsItemSchema>;
 
-export const StatsDailyActivitySchema = z.object({
+const StatsDailyActivitySchema = z.object({
   date: z.iso.date(),
   count: z.number().int().nonnegative(),
 });
 
-export type StatsDailyActivity = z.infer<typeof StatsDailyActivitySchema>;
+type StatsDailyActivity = z.infer<typeof StatsDailyActivitySchema>;
 
-export const StatsResponseSchema = z.object({
+const StatsResponseSchema = z.object({
   totals: z.object({
     events: z.number().int().nonnegative(),
   }),
@@ -64,4 +64,24 @@ export const StatsResponseSchema = z.object({
   recentActivity: z.array(StatsDailyActivitySchema),
 });
 
-export type StatsResponse = z.infer<typeof StatsResponseSchema>;
+type StatsResponse = z.infer<typeof StatsResponseSchema>;
+
+export {
+  CategorySchema,
+  EventPublishedAtSchema,
+  EventSchema,
+  EventsResponseSchema,
+  NewsItemSchema,
+  SeveritySchema,
+  StatsDailyActivitySchema,
+  StatsResponseSchema,
+};
+export type {
+  Category,
+  EventsResponse,
+  NewsItem,
+  RehoboamEvent,
+  Severity,
+  StatsDailyActivity,
+  StatsResponse,
+};

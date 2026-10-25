@@ -1,7 +1,10 @@
 {
   "extends": "@repo/typescript/base.json",
   "compilerOptions": {
-    "types": ["node", "@types/service-worker-mock", "vitest/globals"]
+    "types": ["node", "@types/service-worker-mock", "vitest/globals"],
+    // `~/` is the only way up the tree: oxlint bans `../` imports. Wrangler's
+    // bundler and Vitest (`resolve.tsconfigPaths`) both read this.
+    "paths": { "~/*": ["./src/*"] }
   },
   "include": ["src", "worker-configuration.d.ts", "*.ts"],
   "exclude": ["node_modules", "dist"]

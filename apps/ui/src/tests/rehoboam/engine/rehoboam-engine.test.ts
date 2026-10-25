@@ -1,13 +1,13 @@
-import { DEFAULT_THEME } from "../../../features/rehoboam/engine/defaults";
-import { createInitialInteractionState } from "../../../features/rehoboam/engine/input";
-import { createRehoboamEngine } from "../../../features/rehoboam/engine/rehoboam-engine";
+import { DEFAULT_THEME } from "~/features/rehoboam/engine/defaults";
+import { createInitialInteractionState } from "~/features/rehoboam/engine/input";
+import { createRehoboamEngine } from "~/features/rehoboam/engine/rehoboam-engine";
 import type {
   RehoboamRenderer,
   RehoboamRendererFactory,
   RehoboamRendererFrame,
   WorldEvent,
-} from "../../../features/rehoboam/engine/types";
-import { createMockCanvasContext } from "../render/mock-canvas-context";
+} from "~/features/rehoboam/engine/types";
+import { createMockCanvasContext } from "~/tests/rehoboam/render/mock-canvas-context";
 
 const createRafHarness = () => {
   let nextHandle = 1;
@@ -30,7 +30,7 @@ const createRafHarness = () => {
   const runSingleFrame = (timestampMs: number): void => {
     const iteratorResult = pendingFrames.entries().next();
 
-    if (iteratorResult.done) {
+    if (iteratorResult.done === true) {
       return;
     }
 
@@ -64,25 +64,21 @@ const createTestCanvas = (
   return canvas;
 };
 
-const createFrameCaptureRendererFactory = (
-  capturedFrames: RehoboamRendererFrame[]
-): RehoboamRendererFactory => {
-  return (): RehoboamRenderer => {
-    return {
-      resize: vi.fn(),
-      setTheme: vi.fn(),
-      render: (frame) => {
-        capturedFrames.push(frame);
+const createFrameCaptureRendererFactory =
+  (capturedFrames: RehoboamRendererFrame[]): RehoboamRendererFactory =>
+  (): RehoboamRenderer => ({
+    resize: vi.fn(),
+    setTheme: vi.fn(),
+    render: (frame) => {
+      capturedFrames.push(frame);
 
-        return {
-          timeMs: frame.timeMs,
-          divergenceCalloutTargets: [],
-        };
-      },
-      destroy: vi.fn(),
-    };
-  };
-};
+      return {
+        timeMs: frame.timeMs,
+        divergenceCalloutTargets: [],
+      };
+    },
+    destroy: vi.fn(),
+  });
 
 describe("createRehoboamEngine", () => {
   it("starts and stops a single RAF loop without leaks", () => {
@@ -197,14 +193,13 @@ describe("createRehoboamEngine", () => {
     const mockContext = createMockCanvasContext();
     const canvas = createTestCanvas(mockContext.context);
     const capturedFrames: RehoboamRendererFrame[] = [];
-    const nowSequence = [0, 1_000];
+    const nowSequence = [0, 1000];
     let nowIndex = 0;
 
     const engine = createRehoboamEngine({
       canvas,
       now: () => {
-        const sampledNowMs =
-          nowSequence[nowIndex] ?? nowSequence[nowSequence.length - 1];
+        const sampledNowMs = nowSequence[nowIndex] ?? nowSequence.at(-1);
         nowIndex += 1;
 
         return sampledNowMs;
@@ -234,8 +229,7 @@ describe("createRehoboamEngine", () => {
     const engine = createRehoboamEngine({
       canvas,
       now: () => {
-        const sampledNowMs =
-          nowSequence[nowIndex] ?? nowSequence[nowSequence.length - 1];
+        const sampledNowMs = nowSequence[nowIndex] ?? nowSequence.at(-1);
         nowIndex += 1;
 
         return sampledNowMs;
@@ -258,11 +252,11 @@ describe("createRehoboamEngine", () => {
 
     expect(capturedFrames).toHaveLength(frameCountBeforeSnapshot + 1);
 
-    const latestFrame = capturedFrames[capturedFrames.length - 1];
+    const latestFrame = capturedFrames.at(-1);
     const firstFrame = capturedFrames[0];
 
-    expect(latestFrame.timeMs).toBe(firstFrame.timeMs);
-    expect(latestFrame.elapsedMs).toBe(firstFrame.elapsedMs);
-    expect(latestFrame.deltaMs).toBe(0);
+    expect(latestFrame?.timeMs).toBe(firstFrame.timeMs);
+    expect(latestFrame?.elapsedMs).toBe(firstFrame.elapsedMs);
+    expect(latestFrame?.deltaMs).toBe(0);
   });
 });

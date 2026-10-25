@@ -5,16 +5,17 @@ import type {
   RehoboamRendererFrame,
   RehoboamRenderSnapshot,
   RehoboamTheme,
-} from "../../engine/types";
+} from "~/features/rehoboam/engine/types";
 import {
   computeAngles,
   DEFAULT_LAYOUT_WINDOW_MS,
   DEFAULT_MAX_VISIBLE_EVENT_COUNT,
-} from "../../layout/compute-angles";
-import { getLayoutNowMs } from "../../layout/layout-time";
-import { normalizeAngle, TAU } from "../../layout/polar";
+} from "~/features/rehoboam/layout/compute-angles";
+import { getLayoutNowMs } from "~/features/rehoboam/layout/layout-time";
+import { normalizeAngle, TAU } from "~/features/rehoboam/layout/polar";
+
 import { createDivergenceClusterTracker } from "./divergence-cluster-tracker";
-import type { DivergenceCluster } from "./divergence-cluster-tracker";
+import type { DivergenceCluster } from "./divergence-cluster-types";
 import { createDivergencePulseTracker } from "./divergence-pulse-tracker";
 import { getClusterEnvelope } from "./divergence-utils";
 import { drawBackgroundPass } from "./passes/background-pass";
@@ -33,19 +34,15 @@ const EMPTY_DIVERGENCE_CALLOUT_TARGETS = [] as const;
 const shouldRebuildRingSpecs = (
   previousTheme: RehoboamTheme,
   nextTheme: RehoboamTheme
-): boolean => {
-  return (
-    previousTheme.ringSeed !== nextTheme.ringSeed ||
-    previousTheme.ringCount !== nextTheme.ringCount
-  );
-};
+): boolean =>
+  previousTheme.ringSeed !== nextTheme.ringSeed ||
+  previousTheme.ringCount !== nextTheme.ringCount;
 
-const buildRingSpecs = (theme: RehoboamTheme): readonly RingSpec[] => {
-  return createRingSpecs({
+const buildRingSpecs = (theme: RehoboamTheme): readonly RingSpec[] =>
+  createRingSpecs({
     seed: theme.ringSeed,
     ringCount: theme.ringCount,
   });
-};
 
 const resolveClusterCalloutTargets = (
   clusters: readonly DivergenceCluster[],
@@ -100,7 +97,11 @@ const resolveClusterCalloutTargets = (
   return targets;
 };
 
-export const createRenderer2D = (
+const resize: RehoboamRenderer["resize"] = () => {
+  // The engine owns viewport updates. No local resize bookkeeping is needed yet.
+};
+
+const createRenderer2D = (
   options: RehoboamRendererFactoryOptions
 ): RehoboamRenderer => {
   const { context } = options;
@@ -114,10 +115,6 @@ export const createRenderer2D = (
   let isDestroyed = false;
   let cachedEvents: readonly unknown[] = [];
   let cachedEventAnglesByEventId: ReadonlyMap<string, number> = new Map();
-
-  const resize: RehoboamRenderer["resize"] = () => {
-    // The engine owns viewport updates. No local resize bookkeeping is needed yet.
-  };
 
   const setTheme: RehoboamRenderer["setTheme"] = (nextTheme) => {
     const shouldRebuild = shouldRebuildRingSpecs(theme, nextTheme);
@@ -259,3 +256,5 @@ export const createRenderer2D = (
     destroy,
   };
 };
+
+export { createRenderer2D };

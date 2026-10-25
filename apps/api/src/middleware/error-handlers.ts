@@ -1,8 +1,8 @@
 import type { Context, ErrorHandler } from "hono";
 
-import type { AppEnv } from "../types";
+import type { AppEnv } from "~/types";
 
-export const onErrorHandler: ErrorHandler<AppEnv> = (err, c) => {
+const onErrorHandler: ErrorHandler<AppEnv> = (err, c) => {
   const logger = c.get("logger");
   const requestId = c.get("requestId");
 
@@ -17,6 +17,7 @@ export const onErrorHandler: ErrorHandler<AppEnv> = (err, c) => {
   return c.json({ error: "Internal Server Error" }, 500);
 };
 
-export const notFoundHandler = (c: Context<AppEnv>) => {
-  return c.json({ error: "Not Found" }, 404);
-};
+const notFoundHandler = (c: Context<AppEnv>) =>
+  c.json({ error: "Not Found" }, 404);
+
+export { notFoundHandler, onErrorHandler };

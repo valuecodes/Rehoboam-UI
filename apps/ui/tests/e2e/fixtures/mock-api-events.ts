@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 import type { RehoboamEvent } from "@repo/types";
 
-export const MOCK_API_EVENTS: RehoboamEvent[] = [
+const MOCK_API_EVENTS: RehoboamEvent[] = [
   {
     id: "e2e-001",
     date: "2025-06-15",
@@ -28,28 +28,30 @@ export const MOCK_API_EVENTS: RehoboamEvent[] = [
   },
 ];
 
-export const interceptEventsApi = async (
+const interceptEventsApi = async (
   page: Page,
   events: RehoboamEvent[] = MOCK_API_EVENTS
 ): Promise<void> => {
-  await page.route("**/api/events", (route) => {
-    return route.fulfill({
+  await page.route("**/api/events", (route) =>
+    route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify(events),
-    });
-  });
+    })
+  );
 };
 
-export const interceptEventsApiError = async (
+const interceptEventsApiError = async (
   page: Page,
   status = 500
 ): Promise<void> => {
-  await page.route("**/api/events", (route) => {
-    return route.fulfill({
+  await page.route("**/api/events", (route) =>
+    route.fulfill({
       status,
       contentType: "application/json",
       body: JSON.stringify({ error: "Internal Server Error" }),
-    });
-  });
+    })
+  );
 };
+
+export { interceptEventsApi, interceptEventsApiError, MOCK_API_EVENTS };

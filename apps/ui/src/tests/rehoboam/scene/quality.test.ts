@@ -1,4 +1,4 @@
-import { resolveSceneQualityProfile } from "../../../features/rehoboam/scene/quality";
+import { resolveSceneQualityProfile } from "~/features/rehoboam/scene/quality";
 
 describe("resolveSceneQualityProfile", () => {
   it("returns low quality on constrained small devices", () => {

@@ -44,7 +44,7 @@ export class AppErrorBoundary extends Component<
             <button
               className="app-error-boundary__reload"
               onClick={() => {
-                window.location.reload();
+                globalThis.location.reload();
               }}
               type="button"
             >

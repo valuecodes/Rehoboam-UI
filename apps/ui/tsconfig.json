@@ -6,7 +6,10 @@
     // enabling it here surfaces ~100 errors that each need a real guard.
     // Turning it on is tracked as its own change.
     "noUncheckedIndexedAccess": false,
-    "types": ["node", "vite/client", "vitest/globals"]
+    "types": ["node", "vite/client", "vitest/globals"],
+    // `~/` is the only way up the tree: oxlint bans `../` imports. Vite and
+    // Vitest read this via `resolve.tsconfigPaths`.
+    "paths": { "~/*": ["./src/*"] }
   },
   "include": ["src", "scripts", "tests", "*.ts"]
 }

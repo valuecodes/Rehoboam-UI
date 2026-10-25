@@ -1,6 +1,6 @@
-import type { WorldEvent } from "../../../features/rehoboam/engine/types";
-import { DIVERGENCE_PULSE_LIFETIME_MS } from "../../../features/rehoboam/render/canvas2d/divergence-constants";
-import { createDivergencePulseTracker } from "../../../features/rehoboam/render/canvas2d/divergence-pulse-tracker";
+import type { WorldEvent } from "~/features/rehoboam/engine/types";
+import { DIVERGENCE_PULSE_LIFETIME_MS } from "~/features/rehoboam/render/canvas2d/divergence-constants";
+import { createDivergencePulseTracker } from "~/features/rehoboam/render/canvas2d/divergence-pulse-tracker";
 
 const BASE_EVENT: WorldEvent = {
   id: "event-1",
@@ -14,13 +14,13 @@ describe("createDivergencePulseTracker", () => {
   it("suppresses pulses for the first loaded snapshot and emits afterwards", () => {
     const tracker = createDivergencePulseTracker();
 
-    tracker.updateEvents([BASE_EVENT], 1_000);
+    tracker.updateEvents([BASE_EVENT], 1000);
 
-    expect(tracker.getActivePulses(1_000)).toStrictEqual([]);
+    expect(tracker.getActivePulses(1000)).toStrictEqual([]);
 
-    tracker.updateEvents([BASE_EVENT], 1_100);
+    tracker.updateEvents([BASE_EVENT], 1100);
 
-    expect(tracker.getActivePulses(1_100)).toHaveLength(0);
+    expect(tracker.getActivePulses(1100)).toHaveLength(0);
 
     tracker.updateEvents(
       [
@@ -32,13 +32,13 @@ describe("createDivergencePulseTracker", () => {
           severity: "medium",
         },
       ],
-      1_200
+      1200
     );
 
-    expect(tracker.getActivePulses(1_200)).toStrictEqual([
+    expect(tracker.getActivePulses(1200)).toStrictEqual([
       {
         eventId: "event-2",
-        startedAtMs: 1_200,
+        startedAtMs: 1200,
         severity: "medium",
       },
     ]);
@@ -51,18 +51,18 @@ describe("createDivergencePulseTracker", () => {
           severity: "critical",
         },
       ],
-      1_300
+      1300
     );
 
-    expect(tracker.getActivePulses(1_300)).toStrictEqual([
+    expect(tracker.getActivePulses(1300)).toStrictEqual([
       {
         eventId: "event-2",
-        startedAtMs: 1_200,
+        startedAtMs: 1200,
         severity: "medium",
       },
       {
         eventId: "event-1",
-        startedAtMs: 1_300,
+        startedAtMs: 1300,
         severity: "critical",
       },
     ]);
@@ -73,12 +73,12 @@ describe("createDivergencePulseTracker", () => {
       emitInitialPulses: true,
     });
 
-    tracker.updateEvents([BASE_EVENT], 2_000);
+    tracker.updateEvents([BASE_EVENT], 2000);
 
-    expect(tracker.getActivePulses(2_000)).toStrictEqual([
+    expect(tracker.getActivePulses(2000)).toStrictEqual([
       {
         eventId: "event-1",
-        startedAtMs: 2_000,
+        startedAtMs: 2000,
         severity: "high",
       },
     ]);
@@ -89,10 +89,10 @@ describe("createDivergencePulseTracker", () => {
       emitInitialPulses: true,
     });
 
-    tracker.updateEvents([BASE_EVENT], 2_000);
+    tracker.updateEvents([BASE_EVENT], 2000);
 
     expect(
-      tracker.getActivePulses(2_000 + DIVERGENCE_PULSE_LIFETIME_MS + 1)
+      tracker.getActivePulses(2000 + DIVERGENCE_PULSE_LIFETIME_MS + 1)
     ).toHaveLength(0);
   });
 });

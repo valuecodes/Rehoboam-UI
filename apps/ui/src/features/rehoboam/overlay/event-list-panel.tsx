@@ -1,10 +1,13 @@
 import { useMemo } from "react";
-import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+import type {
+  KeyboardEvent as ReactKeyboardEvent,
+  MouseEvent as ReactMouseEvent,
+} from "react";
 
-import { SEVERITY_RANK } from "../engine/severity";
-import type { ComputedEventAngle } from "../layout/compute-angles";
+import { SEVERITY_RANK } from "~/features/rehoboam/engine/severity";
+import type { ComputedEventAngle } from "~/features/rehoboam/layout/compute-angles";
 
-export type EventListPanelProps = Readonly<{
+type EventListPanelProps = Readonly<{
   eventAngles: readonly ComputedEventAngle[];
   activeEventId: string | null;
   onSelectEvent: (eventId: string) => void;
@@ -42,7 +45,7 @@ const comparePanelItems = (
 const formatPanelTime = (timestampMs: number): string => {
   const isoTime = new Date(timestampMs).toISOString().slice(11, 19);
 
-  return isoTime.replace(/:/gu, ".");
+  return isoTime.replaceAll(":", ".");
 };
 
 const getActivePanelIndex = (
@@ -62,7 +65,7 @@ const getActivePanelIndex = (
   return -1;
 };
 
-export const getNextPanelIndexForLength = (
+const getNextPanelIndexForLength = (
   length: number,
   currentIndex: number,
   direction: -1 | 1
@@ -90,28 +93,37 @@ export const getNextPanelIndexForLength = (
   return nextIndex;
 };
 
-const getPanelItemClassName = (isActive: boolean): string => {
-  return isActive
+const getPanelItemClassName = (isActive: boolean): string =>
+  isActive
     ? "rehoboam-scene__event-option rehoboam-scene__event-option--active"
     : "rehoboam-scene__event-option";
+
+// Options carry their event id so the listbox can handle clicks for all of
+// them; focus stays on the listbox (aria-activedescendant pattern).
+const getClickedOptionEventId = (target: EventTarget): string | undefined => {
+  if (!(target instanceof Element)) {
+    return undefined;
+  }
+
+  return target.closest<HTMLElement>("[data-event-id]")?.dataset.eventId;
 };
 
-export const EventListPanel = ({
+const EventListPanel = ({
   eventAngles,
   activeEventId,
   onSelectEvent,
   onClearSelection,
 }: EventListPanelProps) => {
-  const panelItems = useMemo(() => {
-    return [...eventAngles]
-      .map((eventAngle) => {
-        return {
+  const panelItems = useMemo(
+    () =>
+      [...eventAngles]
+        .map((eventAngle) => ({
           eventAngle,
           optionId: `rehoboam-event-option-${eventAngle.event.id}`,
-        };
-      })
-      .sort(comparePanelItems);
-  }, [eventAngles]);
+        }))
+        .sort(comparePanelItems),
+    [eventAngles]
+  );
   const activePanelIndex = getActivePanelIndex(panelItems, activeEventId);
   const activeDescendantId =
     activePanelIndex < 0 ? undefined : panelItems[activePanelIndex].optionId;
@@ -160,7 +172,11 @@ export const EventListPanel = ({
 
     if (event.key === "End") {
       event.preventDefault();
-      onSelectEvent(panelItems[panelItems.length - 1].eventAngle.event.id);
+      const lastItem = panelItems.at(-1);
+
+      if (lastItem !== undefined) {
+        onSelectEvent(lastItem.eventAngle.event.id);
+      }
 
       return;
     }
@@ -178,6 +194,14 @@ export const EventListPanel = ({
     if (event.key === "Escape") {
       event.preventDefault();
       onClearSelection();
+    }
+  };
+
+  const handleListClick = (event: ReactMouseEvent<HTMLDivElement>) => {
+    const eventId = getClickedOptionEventId(event.target);
+
+    if (eventId !== undefined) {
+      onSelectEvent(eventId);
     }
   };
 
@@ -201,6 +225,7 @@ export const EventListPanel = ({
         aria-activedescendant={activeDescendantId}
         aria-labelledby="rehoboam-event-panel-title"
         className="rehoboam-scene__event-list"
+        onClick={handleListClick}
         onKeyDown={handleListKeyDown}
         role="listbox"
         tabIndex={0}
@@ -217,11 +242,9 @@ export const EventListPanel = ({
               <div
                 aria-selected={isActive}
                 className={getPanelItemClassName(isActive)}
+                data-event-id={item.eventAngle.event.id}
                 id={item.optionId}
                 key={item.eventAngle.event.id}
-                onClick={() => {
-                  onSelectEvent(item.eventAngle.event.id);
-                }}
                 role="option"
               >
                 <p className="rehoboam-scene__event-time">
@@ -245,3 +268,6 @@ export const EventListPanel = ({
     </aside>
   );
 };
+
+export { EventListPanel, getNextPanelIndexForLength };
+export type { EventListPanelProps };

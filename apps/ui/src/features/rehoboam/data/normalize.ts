@@ -1,18 +1,22 @@
-import { compareStrings, SEVERITY_RANK } from "../engine/severity";
+import {
+  compareStrings,
+  SEVERITY_RANK,
+} from "~/features/rehoboam/engine/severity";
 import type {
   WorldEvent,
   WorldEventLocation,
   WorldEventSeverity,
-} from "../engine/types";
+} from "~/features/rehoboam/engine/types";
+
 import { isRecord } from "./utils";
 
 const HALF_HOUR_MS = 30 * 60 * 1000;
-const FNV_OFFSET_BASIS = 0x811c9dc5;
-const FNV_PRIME = 0x01000193;
+const FNV_OFFSET_BASIS = 0x81_1c_9d_c5;
+const FNV_PRIME = 0x01_00_01_93;
 const DEFAULT_TITLE = "Untitled Event";
 const DEFAULT_CATEGORY = "general";
 
-export type NormalizeEventOptions = Readonly<{
+type NormalizeEventOptions = Readonly<{
   idPrefix?: string;
   timeBucketMs?: number;
   defaultCategory?: string;
@@ -102,9 +106,8 @@ const toTimestampMs = (value: unknown): number | undefined => {
   return undefined;
 };
 
-const sanitizeForKey = (value: string): string => {
-  return value.trim().toLowerCase().replace(/\s+/gu, " ");
-};
+const sanitizeForKey = (value: string): string =>
+  value.trim().toLowerCase().replaceAll(/\s+/gu, " ");
 
 const hashString = (value: string): number => {
   let hash = FNV_OFFSET_BASIS;
@@ -269,61 +272,52 @@ const buildStableEventId = (
 
 const normalizeSummary = (
   record: Record<string, unknown>
-): string | undefined => {
-  return firstDefined([
+): string | undefined =>
+  firstDefined([
     toTrimmedString(readProperty(record, ["summary"])),
     toTrimmedString(readProperty(record, ["description"])),
     toTrimmedString(readProperty(record, ["details"])),
   ]);
-};
 
 const normalizeCreatedAtMs = (
   record: Record<string, unknown>
-): number | undefined => {
-  return firstDefined([
+): number | undefined =>
+  firstDefined([
     toTimestampMs(readProperty(record, ["createdAtMs"])),
     toTimestampMs(readProperty(record, ["createdAt"])),
   ]);
-};
 
 const normalizeUpdatedAtMs = (
   record: Record<string, unknown>
-): number | undefined => {
-  return firstDefined([
+): number | undefined =>
+  firstDefined([
     toTimestampMs(readProperty(record, ["updatedAtMs"])),
     toTimestampMs(readProperty(record, ["updatedAt"])),
     toTimestampMs(readProperty(record, ["modifiedAt"])),
   ]);
-};
 
-const normalizeTitle = (record: Record<string, unknown>): string => {
-  return (
-    firstDefined([
-      toTrimmedString(readProperty(record, ["title"])),
-      toTrimmedString(readProperty(record, ["headline"])),
-      toTrimmedString(readProperty(record, ["name"])),
-      toTrimmedString(readProperty(record, ["event"])),
-    ]) ?? DEFAULT_TITLE
-  );
-};
+const normalizeTitle = (record: Record<string, unknown>): string =>
+  firstDefined([
+    toTrimmedString(readProperty(record, ["title"])),
+    toTrimmedString(readProperty(record, ["headline"])),
+    toTrimmedString(readProperty(record, ["name"])),
+    toTrimmedString(readProperty(record, ["event"])),
+  ]) ?? DEFAULT_TITLE;
 
 const normalizeCategory = (
   record: Record<string, unknown>,
   options: NormalizeEventOptions
-): string => {
-  return (
-    firstDefined([
-      toTrimmedString(readProperty(record, ["category"])),
-      toTrimmedString(readProperty(record, ["type"])),
-      toTrimmedString(readProperty(record, ["kind"])),
-      toTrimmedString(readProperty(record, ["topic"])),
-    ]) ??
-    options.defaultCategory ??
-    DEFAULT_CATEGORY
-  );
-};
+): string =>
+  firstDefined([
+    toTrimmedString(readProperty(record, ["category"])),
+    toTrimmedString(readProperty(record, ["type"])),
+    toTrimmedString(readProperty(record, ["kind"])),
+    toTrimmedString(readProperty(record, ["topic"])),
+  ]) ??
+  options.defaultCategory ??
+  DEFAULT_CATEGORY;
 
-export const normalizeEvent = (
+const normalizeEvent = (
   input: unknown,
   options: NormalizeEventOptions = {}
 ): WorldEvent => {
@@ -373,13 +367,11 @@ const compareWorldEvents = (left: WorldEvent, right: WorldEvent): number => {
   return compareStrings(left.title, right.title);
 };
 
-export const sortWorldEvents = (
+const sortWorldEvents = (
   events: readonly WorldEvent[]
-): readonly WorldEvent[] => {
-  return [...events].sort(compareWorldEvents);
-};
+): readonly WorldEvent[] => [...events].sort(compareWorldEvents);
 
-export const normalizeEvents = (
+const normalizeEvents = (
   inputs: readonly unknown[],
   options: NormalizeEventOptions = {}
 ): readonly WorldEvent[] => {
@@ -387,3 +379,6 @@ export const normalizeEvents = (
 
   return sortWorldEvents(normalized);
 };
+
+export { normalizeEvent, normalizeEvents, sortWorldEvents };
+export type { NormalizeEventOptions };

@@ -28,8 +28,8 @@ catalog:
   knip: 6.41.0
   motion: 13.2.0
   oxfmt: 0.72.0
-  oxlint: 1.82.0
-  oxlint-tsgolint: 7.0.2001
+  oxlint: 1.87.0
+  oxlint-tsgolint: 7.0.2003
   playwright: 1.63.0
   react: 19.3.0
   react-dom: 19.3.0

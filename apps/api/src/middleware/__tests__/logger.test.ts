@@ -3,9 +3,9 @@ import { Hono } from "hono";
 import type { MockInstance } from "vitest";
 import { z } from "zod";
 
-import type { AppEnv } from "../../types";
-import { onErrorHandler } from "../error-handlers";
-import { loggerMiddleware } from "../logger";
+import { onErrorHandler } from "~/middleware/error-handlers";
+import { loggerMiddleware } from "~/middleware/logger";
+import type { AppEnv } from "~/types";
 
 const IdResponseSchema = z.object({ id: z.string() });
 const ErrorResponseSchema = z.object({ error: z.string() });

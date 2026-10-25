@@ -1,12 +1,12 @@
-export type SceneQualityTier = "low" | "medium" | "high";
+type SceneQualityTier = "low" | "medium" | "high";
 
-export type SceneQualityProfile = Readonly<{
+type SceneQualityProfile = Readonly<{
   tier: SceneQualityTier;
   ringCount: number;
   divergenceSampleCount: number;
 }>;
 
-export type ResolveSceneQualityInput = Readonly<{
+type ResolveSceneQualityInput = Readonly<{
   width: number;
   height: number;
   hardwareConcurrency: number | null;
@@ -55,7 +55,7 @@ const isLimitedMemory = (deviceMemoryGiB: number | null): boolean => {
   return deviceMemoryGiB <= 4;
 };
 
-export const resolveSceneQualityProfile = (
+const resolveSceneQualityProfile = (
   input: ResolveSceneQualityInput
 ): SceneQualityProfile => {
   const width = sanitizePositiveNumber(input.width);
@@ -80,3 +80,6 @@ export const resolveSceneQualityProfile = (
 
   return HIGH_QUALITY_PROFILE;
 };
+
+export { resolveSceneQualityProfile };
+export type { SceneQualityTier };

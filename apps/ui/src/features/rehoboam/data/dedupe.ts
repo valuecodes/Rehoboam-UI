@@ -1,20 +1,22 @@
-import { compareStrings, SEVERITY_RANK } from "../engine/severity";
-import type { WorldEvent } from "../engine/types";
+import {
+  compareStrings,
+  SEVERITY_RANK,
+} from "~/features/rehoboam/engine/severity";
+import type { WorldEvent } from "~/features/rehoboam/engine/types";
+
 import { sortWorldEvents } from "./normalize";
 
 const HALF_HOUR_MS = 30 * 60 * 1000;
 
-export type DedupeEventsOptions = Readonly<{
+type DedupeEventsOptions = Readonly<{
   timeBucketMs?: number;
 }>;
 
-const normalizeForKey = (value: string): string => {
-  return value.trim().toLowerCase().replace(/\s+/gu, " ");
-};
+const normalizeForKey = (value: string): string =>
+  value.trim().toLowerCase().replaceAll(/\s+/gu, " ");
 
-const getRevisionMs = (event: WorldEvent): number => {
-  return event.updatedAtMs ?? event.createdAtMs ?? event.timestampMs;
-};
+const getRevisionMs = (event: WorldEvent): number =>
+  event.updatedAtMs ?? event.createdAtMs ?? event.timestampMs;
 
 const minDefined = (
   left: number | undefined,
@@ -134,7 +136,7 @@ const dedupeBySemanticKey = (
   return sortWorldEvents([...byKey.values()]);
 };
 
-export const dedupeEvents = (
+const dedupeEvents = (
   events: readonly WorldEvent[],
   options: DedupeEventsOptions = {}
 ): readonly WorldEvent[] => {
@@ -146,3 +148,6 @@ export const dedupeEvents = (
 
   return dedupeBySemanticKey(dedupedById, timeBucketMs);
 };
+
+export { dedupeEvents };
+export type { DedupeEventsOptions };

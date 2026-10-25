@@ -45,11 +45,7 @@ export class BbcNewsService extends NewsService {
     }
 
     const rawItems = result.data.rss.channel.item;
-    const items = Array.isArray(rawItems)
-      ? rawItems
-      : rawItems
-        ? [rawItems]
-        : [];
+    const items = rawItems === undefined ? [] : [rawItems].flat();
 
     const mapped = await Promise.all(
       items.map(async (item) => {

@@ -4,7 +4,7 @@ import {
   EventSchema,
   EventsResponseSchema,
   SeveritySchema,
-} from "../rehoboam";
+} from "#rehoboam";
 
 describe("SeveritySchema", () => {
   it("accepts valid severity values", () => {

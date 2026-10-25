@@ -1,35 +1,40 @@
-import { compareStrings, SEVERITY_RANK } from "../engine/severity";
-import type { WorldEvent, WorldEventSeverity } from "../engine/types";
+import {
+  compareStrings,
+  SEVERITY_RANK,
+} from "~/features/rehoboam/engine/severity";
+import type {
+  WorldEvent,
+  WorldEventSeverity,
+} from "~/features/rehoboam/engine/types";
+
 import { normalizeAngle, TAU } from "./polar";
 
-export const DEFAULT_LAYOUT_WINDOW_MS = 24 * 60 * 60 * 1000;
-export const DEFAULT_MAX_VISIBLE_EVENT_COUNT = 48;
+const DEFAULT_LAYOUT_WINDOW_MS = 24 * 60 * 60 * 1000;
+const DEFAULT_MAX_VISIBLE_EVENT_COUNT = 48;
 const DEFAULT_MIN_TIME_SPAN_RATIO_FOR_TIME_MAPPING = 0.35;
 
-export const SEVERITY_MARKER_HEIGHT: Readonly<
-  Record<WorldEventSeverity, number>
-> = {
+const SEVERITY_MARKER_HEIGHT: Readonly<Record<WorldEventSeverity, number>> = {
   low: 0.01,
   medium: 0.02,
   high: 0.032,
   critical: 0.045,
 };
 
-export type TimeWindowAngleOptions = Readonly<{
+type TimeWindowAngleOptions = Readonly<{
   nowMs: number;
   windowMs?: number;
 }>;
 
 type EventAngleDistributionMode = "adaptive" | "time-window" | "ordered";
 
-export type ComputeAnglesOptions = TimeWindowAngleOptions &
+type ComputeAnglesOptions = TimeWindowAngleOptions &
   Readonly<{
     maxVisibleCount?: number;
     distributionMode?: EventAngleDistributionMode;
     minTimeSpanRatioForTimeMapping?: number;
   }>;
 
-export type ComputedEventAngle = Readonly<{
+type ComputedEventAngle = Readonly<{
   event: WorldEvent;
   eventIds: readonly string[];
   angleRad: number;
@@ -44,24 +49,15 @@ type ResolvedEventMarker = Readonly<{
   markerHeight: number;
 }>;
 
-const sanitizeWindowMs = (windowMs: number | undefined): number => {
-  return Math.max(1, Math.trunc(windowMs ?? DEFAULT_LAYOUT_WINDOW_MS));
-};
+const sanitizeWindowMs = (windowMs: number | undefined): number =>
+  Math.max(1, Math.trunc(windowMs ?? DEFAULT_LAYOUT_WINDOW_MS));
 
-const sanitizeMaxVisibleCount = (
-  maxVisibleCount: number | undefined
-): number => {
-  return Math.max(
-    1,
-    Math.trunc(maxVisibleCount ?? DEFAULT_MAX_VISIBLE_EVENT_COUNT)
-  );
-};
+const sanitizeMaxVisibleCount = (maxVisibleCount: number | undefined): number =>
+  Math.max(1, Math.trunc(maxVisibleCount ?? DEFAULT_MAX_VISIBLE_EVENT_COUNT));
 
 const sanitizeDistributionMode = (
   distributionMode: EventAngleDistributionMode | undefined
-): EventAngleDistributionMode => {
-  return distributionMode ?? "adaptive";
-};
+): EventAngleDistributionMode => distributionMode ?? "adaptive";
 
 const sanitizeMinTimeSpanRatio = (
   minTimeSpanRatioForTimeMapping: number | undefined
@@ -122,19 +118,16 @@ const compareForRepresentative = (
   return compareStrings(left.event.id, right.event.id);
 };
 
-export const getMarkerHeightForSeverity = (
-  severity: WorldEventSeverity
-): number => {
-  return SEVERITY_MARKER_HEIGHT[severity];
-};
+const getMarkerHeightForSeverity = (severity: WorldEventSeverity): number =>
+  SEVERITY_MARKER_HEIGHT[severity];
 
-export const getClusteringThresholdRad = (maxVisibleCount: number): number => {
+const getClusteringThresholdRad = (maxVisibleCount: number): number => {
   const sanitizedMaxVisibleCount = sanitizeMaxVisibleCount(maxVisibleCount);
 
   return TAU / sanitizedMaxVisibleCount;
 };
 
-export const mapTimestampToTimeWindowAngle = (
+const mapTimestampToTimeWindowAngle = (
   timestampMs: number,
   options: TimeWindowAngleOptions
 ): number => {
@@ -230,27 +223,23 @@ const resolveEventMarkers = (
   });
 };
 
-const toComputedMarker = (marker: ResolvedEventMarker): ComputedEventAngle => {
-  return {
-    event: marker.event,
-    eventIds: [marker.event.id],
-    angleRad: marker.angleRad,
-    markerHeight: marker.markerHeight,
-    clusterSize: 1,
-    isCluster: false,
-  };
-};
+const toComputedMarker = (marker: ResolvedEventMarker): ComputedEventAngle => ({
+  event: marker.event,
+  eventIds: [marker.event.id],
+  angleRad: marker.angleRad,
+  markerHeight: marker.markerHeight,
+  clusterSize: 1,
+  isCluster: false,
+});
 
 const resolveCircularMeanAngle = (
   markers: readonly ResolvedEventMarker[]
 ): number => {
   const { sinSum, cosSum } = markers.reduce(
-    (accumulator, marker) => {
-      return {
-        sinSum: accumulator.sinSum + Math.sin(marker.angleRad),
-        cosSum: accumulator.cosSum + Math.cos(marker.angleRad),
-      };
-    },
+    (accumulator, marker) => ({
+      sinSum: accumulator.sinSum + Math.sin(marker.angleRad),
+      cosSum: accumulator.cosSum + Math.cos(marker.angleRad),
+    }),
     {
       sinSum: 0,
       cosSum: 0,
@@ -290,9 +279,10 @@ const clusterMarkers = (
     const sortedBucket = [...bucket].sort(compareForRepresentative);
     const representative = sortedBucket[0];
     const meanAngle = resolveCircularMeanAngle(bucket);
-    const markerHeight = bucket.reduce((maxHeight, marker) => {
-      return Math.max(maxHeight, marker.markerHeight);
-    }, 0);
+    const markerHeight = bucket.reduce(
+      (maxHeight, marker) => Math.max(maxHeight, marker.markerHeight),
+      0
+    );
     const eventIds = [...bucket]
       .map((marker) => marker.event.id)
       .sort(compareStrings);
@@ -316,7 +306,7 @@ const clusterMarkers = (
   });
 };
 
-export const computeAngles = (
+const computeAngles = (
   events: readonly WorldEvent[],
   options: ComputeAnglesOptions
 ): readonly ComputedEventAngle[] => {
@@ -331,3 +321,14 @@ export const computeAngles = (
 
   return clusterMarkers(resolvedMarkers, maxVisibleCount);
 };
+
+export {
+  computeAngles,
+  DEFAULT_LAYOUT_WINDOW_MS,
+  DEFAULT_MAX_VISIBLE_EVENT_COUNT,
+  getClusteringThresholdRad,
+  getMarkerHeightForSeverity,
+  mapTimestampToTimeWindowAngle,
+  SEVERITY_MARKER_HEIGHT,
+};
+export type { ComputedEventAngle };

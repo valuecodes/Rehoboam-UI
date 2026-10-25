@@ -1,15 +1,16 @@
-import type { WorldEvent } from "../engine/types";
+import type { WorldEvent } from "~/features/rehoboam/engine/types";
+
 import { dedupeEvents } from "./dedupe";
 import { loadEventsFromSource, runEventPipeline } from "./source";
 import type { EventPipelineOptions, RehoboamEventSource } from "./source";
 
-export type RefreshEventsFromSourceOptions = Readonly<{
+type RefreshEventsFromSourceOptions = Readonly<{
   existingEvents: readonly WorldEvent[];
   source: RehoboamEventSource;
   pipeline?: EventPipelineOptions;
 }>;
 
-export type RefreshEventsFromSourceResult = Readonly<{
+type RefreshEventsFromSourceResult = Readonly<{
   events: readonly WorldEvent[];
   status: "success" | "fallback";
 }>;
@@ -17,11 +18,9 @@ export type RefreshEventsFromSourceResult = Readonly<{
 const normalizeSnapshot = (
   events: unknown,
   options: EventPipelineOptions = {}
-): readonly WorldEvent[] => {
-  return runEventPipeline(events, options);
-};
+): readonly WorldEvent[] => runEventPipeline(events, options);
 
-export const mergeEventSnapshots = (
+const mergeEventSnapshots = (
   existingEvents: unknown,
   refreshedEvents: unknown,
   options: EventPipelineOptions = {}
@@ -35,7 +34,7 @@ export const mergeEventSnapshots = (
   );
 };
 
-export const refreshEventsFromSourceWithStatus = async (
+const refreshEventsFromSourceWithStatus = async (
   options: RefreshEventsFromSourceOptions
 ): Promise<RefreshEventsFromSourceResult> => {
   const existingSnapshot = normalizeSnapshot(
@@ -61,10 +60,16 @@ export const refreshEventsFromSourceWithStatus = async (
   }
 };
 
-export const refreshEventsFromSource = async (
+const refreshEventsFromSource = async (
   options: RefreshEventsFromSourceOptions
 ): Promise<readonly WorldEvent[]> => {
   const result = await refreshEventsFromSourceWithStatus(options);
 
   return result.events;
+};
+
+export {
+  mergeEventSnapshots,
+  refreshEventsFromSource,
+  refreshEventsFromSourceWithStatus,
 };

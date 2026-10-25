@@ -8,7 +8,7 @@ import {
   sanitizeText,
   stripDangerousHtml,
   stripHtml,
-} from "../lib/sanitize";
+} from "~/lib/sanitize";
 
 const BATCH_SIZE = 5;
 const MAX_OUTPUT_TOKENS = 2048;
@@ -122,7 +122,7 @@ const AiResponseSchema = z.object({
   items: z.array(z.union([AiIncludedItemSchema, AiSkippedItemSchema])),
 });
 
-export type ProcessedEvent = {
+type ProcessedEvent = {
   newsItemId: string;
   title: string;
   category: Category;
@@ -132,16 +132,16 @@ export type ProcessedEvent = {
   skipped: boolean;
 };
 
-export type AiProcessingResult = {
+type AiProcessingResult = {
   events: ProcessedEvent[];
   failed: number;
 };
 
-export type AiProcessor = {
-  processNewsItems(items: NewsItem[]): Promise<AiProcessingResult>;
+type AiProcessor = {
+  processNewsItems: (items: NewsItem[]) => Promise<AiProcessingResult>;
 };
 
-export class AiClient implements AiProcessor {
+class AiClient implements AiProcessor {
   constructor(
     private readonly ai: Ai,
     private readonly logger: Logger
@@ -426,3 +426,6 @@ export class AiClient implements AiProcessor {
     return trimmed.slice(firstBrace, lastBrace + 1);
   }
 }
+
+export { AiClient };
+export type { AiProcessingResult, AiProcessor, ProcessedEvent };

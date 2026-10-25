@@ -1,20 +1,13 @@
-export type Point = Readonly<{
+type Point = Readonly<{
   x: number;
   y: number;
 }>;
 
-export const clampNumber = (
-  value: number,
-  min: number,
-  max: number
-): number => {
-  return Math.min(max, Math.max(min, value));
-};
+const clampNumber = (value: number, min: number, max: number): number =>
+  Math.min(max, Math.max(min, value));
 
-export const toPointList = (points: readonly Point[]): string => {
-  return points
-    .map((point) => {
-      return `${point.x} ${point.y}`;
-    })
-    .join(",");
-};
+const toPointList = (points: readonly Point[]): string =>
+  points.map((point) => `${point.x} ${point.y}`).join(",");
+
+export { clampNumber, toPointList };
+export type { Point };

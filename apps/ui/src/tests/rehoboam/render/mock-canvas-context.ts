@@ -1,19 +1,16 @@
-export type MockCanvasContext = Readonly<{
+type MockCanvasContext = Readonly<{
   context: CanvasRenderingContext2D;
   commands: string[];
 }>;
 
-const formatNumber = (value: number): string => {
-  return Number.isFinite(value) ? value.toFixed(4) : `${value}`;
-};
+const formatNumber = (value: number): string =>
+  Number.isFinite(value) ? value.toFixed(4) : `${value}`;
 
 const formatStyleValue = (
   value: string | CanvasGradient | CanvasPattern
-): string => {
-  return typeof value === "string" ? value : "[object]";
-};
+): string => (typeof value === "string" ? value : "[object]");
 
-export const createMockCanvasContext = (): MockCanvasContext => {
+const createMockCanvasContext = (): MockCanvasContext => {
   const commands: string[] = [];
   const pushCommand = (command: string) => {
     commands.push(command);
@@ -83,13 +80,11 @@ export const createMockCanvasContext = (): MockCanvasContext => {
       );
     },
     setLineDash: (segments: Iterable<number>) => {
-      const values = Array.from(segments);
+      const values = [...segments];
       currentLineDash = [...values];
       pushCommand(`setLineDash(${values.map(formatNumber).join(",")})`);
     },
-    getLineDash: () => {
-      return [...currentLineDash];
-    },
+    getLineDash: () => [...currentLineDash],
     stroke: () => {
       pushCommand("stroke");
     },
@@ -143,3 +138,5 @@ export const createMockCanvasContext = (): MockCanvasContext => {
     commands,
   };
 };
+
+export { createMockCanvasContext };

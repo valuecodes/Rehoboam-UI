@@ -1,4 +1,4 @@
-import type { DivergenceCluster } from "./divergence-cluster-tracker";
+import type { DivergenceCluster } from "./divergence-cluster-types";
 
 export const getClusterEnvelope = (
   cluster: DivergenceCluster,

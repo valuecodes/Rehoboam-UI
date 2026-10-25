@@ -1,23 +1,21 @@
-import type { WorldEvent } from "../../../features/rehoboam/engine/types";
+import type { WorldEvent } from "~/features/rehoboam/engine/types";
 import {
   computeAngles,
   getClusteringThresholdRad,
   getMarkerHeightForSeverity,
   mapTimestampToTimeWindowAngle,
   SEVERITY_MARKER_HEIGHT,
-} from "../../../features/rehoboam/layout/compute-angles";
-import { TAU } from "../../../features/rehoboam/layout/polar";
+} from "~/features/rehoboam/layout/compute-angles";
+import { TAU } from "~/features/rehoboam/layout/polar";
 
-const createEvent = (overrides: Partial<WorldEvent>): WorldEvent => {
-  return {
-    id: "event-default",
-    title: "Default event",
-    timestampMs: 1_770_500_000_000,
-    severity: "low",
-    category: "general",
-    ...overrides,
-  };
-};
+const createEvent = (overrides: Partial<WorldEvent>): WorldEvent => ({
+  id: "event-default",
+  title: "Default event",
+  timestampMs: 1_770_500_000_000,
+  severity: "low",
+  category: "general",
+  ...overrides,
+});
 
 describe("mapTimestampToTimeWindowAngle", () => {
   it("maps rolling window boundaries deterministically", () => {
@@ -60,19 +58,19 @@ describe("computeAngles", () => {
       createEvent({
         id: "event-b",
         title: "B",
-        timestampMs: nowMs - 8_000,
+        timestampMs: nowMs - 8000,
         severity: "high",
       }),
       createEvent({
         id: "event-a",
         title: "A",
-        timestampMs: nowMs - 8_000,
+        timestampMs: nowMs - 8000,
         severity: "medium",
       }),
       createEvent({
         id: "event-c",
         title: "C",
-        timestampMs: nowMs - 4_000,
+        timestampMs: nowMs - 4000,
         severity: "critical",
       }),
     ] satisfies readonly WorldEvent[];
@@ -98,15 +96,15 @@ describe("computeAngles", () => {
   it("clusters markers when event count exceeds max visible count", () => {
     const nowMs = 1_770_600_000_000;
     const maxVisibleCount = 3;
-    const clusteredInput = Array.from({ length: 12 }, (_, index) => {
-      return createEvent({
+    const clusteredInput = Array.from({ length: 12 }, (_, index) =>
+      createEvent({
         id: `event-${index}`,
         title: `Event ${index}`,
-        timestampMs: nowMs - 5_000 - index * 200,
+        timestampMs: nowMs - 5000 - index * 200,
         severity: index % 2 === 0 ? "medium" : "high",
         category: "system",
-      });
-    });
+      })
+    );
 
     const clustered = computeAngles(clusteredInput, {
       nowMs,

@@ -1,24 +1,23 @@
 import {
   createViewportState,
   DEFAULT_THEME,
-} from "../../../features/rehoboam/engine/defaults";
-import { createInitialInteractionState } from "../../../features/rehoboam/engine/input";
+} from "~/features/rehoboam/engine/defaults";
+import { createInitialInteractionState } from "~/features/rehoboam/engine/input";
 import type {
   RehoboamRendererFrame,
   WorldEvent,
-} from "../../../features/rehoboam/engine/types";
-import { createRenderer2D } from "../../../features/rehoboam/render/canvas2d/renderer-2d";
+} from "~/features/rehoboam/engine/types";
+import { createRenderer2D } from "~/features/rehoboam/render/canvas2d/renderer-2d";
+
 import { createMockCanvasContext } from "./mock-canvas-context";
 
-const createEvent = (): WorldEvent => {
-  return {
-    id: "event-1",
-    title: "Event 1",
-    timestampMs: 1_770_500_000_000,
-    severity: "critical",
-    category: "system",
-  };
-};
+const createEvent = (): WorldEvent => ({
+  id: "event-1",
+  title: "Event 1",
+  timestampMs: 1_770_500_000_000,
+  severity: "critical",
+  category: "system",
+});
 
 const createFrame = (
   elapsedMs: number,
@@ -48,7 +47,7 @@ const createFrame = (
 
 describe("createRenderer2D", () => {
   it("produces deterministic draw commands for fixed seed and time", () => {
-    const frame = createFrame(1_000);
+    const frame = createFrame(1000);
 
     const first = createMockCanvasContext();
     const second = createMockCanvasContext();
@@ -73,7 +72,7 @@ describe("createRenderer2D", () => {
 
   it("animates ring dash offsets over time", () => {
     const initialFrame = createFrame(0);
-    const laterFrame = createFrame(1_200);
+    const laterFrame = createFrame(1200);
     const mock = createMockCanvasContext();
 
     const renderer = createRenderer2D({
@@ -83,16 +82,16 @@ describe("createRenderer2D", () => {
     });
 
     renderer.render(initialFrame);
-    const firstDashOffsets = mock.commands.filter((command) => {
-      return command.startsWith("lineDashOffset(");
-    });
+    const firstDashOffsets = mock.commands.filter((command) =>
+      command.startsWith("lineDashOffset(")
+    );
 
     mock.commands.length = 0;
 
     renderer.render(laterFrame);
-    const secondDashOffsets = mock.commands.filter((command) => {
-      return command.startsWith("lineDashOffset(");
-    });
+    const secondDashOffsets = mock.commands.filter((command) =>
+      command.startsWith("lineDashOffset(")
+    );
 
     expect(
       mock.commands.some((command) => command.startsWith("setLineDash("))
@@ -101,7 +100,7 @@ describe("createRenderer2D", () => {
   });
 
   it("returns diagnostics while keeping the contour layer inactive", () => {
-    const frame = createFrame(1_000, [createEvent()]);
+    const frame = createFrame(1000, [createEvent()]);
     const mock = createMockCanvasContext();
 
     const renderer = createRenderer2D({

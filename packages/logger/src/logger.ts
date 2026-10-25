@@ -1,7 +1,5 @@
 import type { LogEntry, LoggerConfig, LogLevel, LogMetadata } from "./types";
 
-export type { LogEntry, LoggerConfig, LogLevel, LogMetadata } from "./types";
-
 const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
   debug: 0,
   info: 1,
@@ -16,7 +14,7 @@ const CONSOLE_METHOD: Record<LogLevel, "debug" | "log" | "warn" | "error"> = {
   error: "error",
 };
 
-export class Logger {
+class Logger {
   private readonly context: string;
   private readonly minLevel: LogLevel;
 
@@ -41,9 +39,8 @@ export class Logger {
     this.log("error", message, metadata);
   };
 
-  private readonly isEnabled = (level: LogLevel): boolean => {
-    return LOG_LEVEL_PRIORITY[level] >= LOG_LEVEL_PRIORITY[this.minLevel];
-  };
+  private readonly isEnabled = (level: LogLevel): boolean =>
+    LOG_LEVEL_PRIORITY[level] >= LOG_LEVEL_PRIORITY[this.minLevel];
 
   private readonly log = (
     level: LogLevel,
@@ -66,3 +63,6 @@ export class Logger {
     console[method](JSON.stringify(entry));
   };
 }
+
+export { Logger };
+export type { LogEntry, LoggerConfig, LogLevel, LogMetadata } from "./types";

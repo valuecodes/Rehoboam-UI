@@ -1,5 +1,6 @@
 import react from "@vitejs/plugin-react";
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig } from "vite";
+import type { Plugin } from "vite";
 
 const cloudflareAnalytics = (): Plugin => ({
   name: "cloudflare-analytics",
@@ -25,6 +26,7 @@ const cloudflareAnalytics = (): Plugin => ({
 
 export default defineConfig({
   plugins: [react(), cloudflareAnalytics()],
+  resolve: { tsconfigPaths: true },
   server: {
     proxy: {
       "/api": {

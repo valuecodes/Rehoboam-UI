@@ -1,7 +1,10 @@
-import { createSeededRng } from "../../../../../shared/utils/seeded-rng";
-import type { SeedInput } from "../../../../../shared/utils/seeded-rng";
-import type { RehoboamTheme, ViewportState } from "../../../engine/types";
-import { TAU } from "../../../layout/polar";
+import type {
+  RehoboamTheme,
+  ViewportState,
+} from "~/features/rehoboam/engine/types";
+import { TAU } from "~/features/rehoboam/layout/polar";
+import { createSeededRng } from "~/shared/utils/seeded-rng";
+import type { SeedInput } from "~/shared/utils/seeded-rng";
 
 const LINE_WIDTHS = [0.28, 0.36, 0.48, 0.62, 0.8] as const;
 const DASH_TEMPLATES = [
@@ -12,7 +15,7 @@ const DASH_TEMPLATES = [
   [7, 12],
 ] as const;
 
-export type RingSpec = Readonly<{
+type RingSpec = Readonly<{
   radiusFactor: number;
   lineWidth: number;
   alpha: number;
@@ -22,12 +25,12 @@ export type RingSpec = Readonly<{
   pulsePhaseOffset: number;
 }>;
 
-export type CreateRingSpecsInput = Readonly<{
+type CreateRingSpecsInput = Readonly<{
   seed: SeedInput;
   ringCount: number;
 }>;
 
-export type RingsPassInput = Readonly<{
+type RingsPassInput = Readonly<{
   context: CanvasRenderingContext2D;
   viewport: ViewportState;
   theme: RehoboamTheme;
@@ -35,9 +38,7 @@ export type RingsPassInput = Readonly<{
   rings: readonly RingSpec[];
 }>;
 
-const degreesToRadians = (degrees: number): number => {
-  return (degrees * Math.PI) / 180;
-};
+const degreesToRadians = (degrees: number): number => (degrees * Math.PI) / 180;
 
 const pickSpeedRangeByDepth = (
   normalizedRingDepth: number
@@ -53,9 +54,7 @@ const pickSpeedRangeByDepth = (
   return [10, 22] as const;
 };
 
-export const createRingSpecs = (
-  input: CreateRingSpecsInput
-): readonly RingSpec[] => {
+const createRingSpecs = (input: CreateRingSpecsInput): readonly RingSpec[] => {
   const ringCount = Math.max(1, Math.floor(input.ringCount));
   const random = createSeededRng(input.seed);
 
@@ -86,7 +85,7 @@ export const createRingSpecs = (
   });
 };
 
-export const drawRingsPass = (input: RingsPassInput): void => {
+const drawRingsPass = (input: RingsPassInput): void => {
   const { context, viewport, theme, elapsedMs, rings } = input;
   const elapsedSeconds = elapsedMs / 1000;
 
@@ -115,3 +114,6 @@ export const drawRingsPass = (input: RingsPassInput): void => {
     context.restore();
   }
 };
+
+export { createRingSpecs, drawRingsPass };
+export type { RingSpec, RingsPassInput };

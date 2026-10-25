@@ -5,7 +5,7 @@ import {
   sanitizeText,
   stripDangerousHtml,
   stripHtml,
-} from "../sanitize";
+} from "~/lib/sanitize";
 
 describe("stripHtml", () => {
   it("removes HTML tags", () => {
