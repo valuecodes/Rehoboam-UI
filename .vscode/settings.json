@@ -3,6 +3,8 @@
     "wrangler.json": "jsonc"
   },
   "oxc.enable": true,
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "editor.formatOnSave": true,
   "github.copilot.chat.commitMessageGeneration.instructions": [
     {
       "file": ".github/commit-message-instructions.md"

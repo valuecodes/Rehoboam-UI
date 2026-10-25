@@ -14,18 +14,14 @@
     "typecheck": "turbo run typecheck",
     "lint": "oxlint --type-aware --report-unused-disable-directives",
     "test": "turbo run test",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
     "clean": "turbo run clean"
   },
   "devDependencies": {
-    "@ianvs/prettier-plugin-sort-imports": "catalog:",
-    "@repo/prettier": "workspace:*",
+    "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
-    "prettier": "catalog:",
-    "prettier-plugin-tailwindcss": "catalog:",
     "turbo": "catalog:"
-  },
-  "prettier": "@repo/prettier"
+  }
 }

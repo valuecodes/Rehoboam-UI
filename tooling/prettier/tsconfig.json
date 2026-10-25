@@ -1,5 +1,0 @@
-{
-  "extends": "@repo/typescript/base.json",
-  "include": ["prettier.config.ts"],
-  "exclude": ["node_modules"]
-}
