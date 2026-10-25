@@ -2,9 +2,9 @@ import type { CartesianCoordinate } from "../layout/polar";
 import type { InteractionState } from "./types";
 
 export const DEFAULT_HOVER_DWELL_MS = 120;
-export const MIN_MARKER_HIT_RADIUS_PX = 24;
+const MIN_MARKER_HIT_RADIUS_PX = 24;
 
-export type PointerInput = Readonly<{
+type PointerInput = Readonly<{
   position: CartesianCoordinate;
   isPrimary: boolean;
 }>;
@@ -28,11 +28,6 @@ export type HoverDwellTickInput = Readonly<{
   interaction: InteractionState;
   timeMs: number;
   hoverDwellMs?: number;
-}>;
-
-export type PointerPressUpdateInput = Readonly<{
-  interaction: InteractionState;
-  pointer: PointerInput;
 }>;
 
 export type PointerClickUpdateInput = Readonly<{
@@ -217,26 +212,6 @@ export const applyHoverDwellTick = (
   return {
     ...input.interaction,
     ...hoverState,
-  };
-};
-
-export const updateInteractionForPointerDown = (
-  input: PointerPressUpdateInput
-): InteractionState => {
-  return {
-    ...withPointerState(input.interaction, input.pointer),
-    isPointerDown: true,
-    isDragging: false,
-  };
-};
-
-export const updateInteractionForPointerUp = (
-  input: PointerPressUpdateInput
-): InteractionState => {
-  return {
-    ...withPointerState(input.interaction, input.pointer),
-    isPointerDown: false,
-    isDragging: false,
   };
 };
 

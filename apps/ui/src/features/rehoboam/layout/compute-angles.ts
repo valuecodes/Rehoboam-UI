@@ -4,7 +4,7 @@ import { normalizeAngle, TAU } from "./polar";
 
 export const DEFAULT_LAYOUT_WINDOW_MS = 24 * 60 * 60 * 1000;
 export const DEFAULT_MAX_VISIBLE_EVENT_COUNT = 48;
-export const DEFAULT_MIN_TIME_SPAN_RATIO_FOR_TIME_MAPPING = 0.35;
+const DEFAULT_MIN_TIME_SPAN_RATIO_FOR_TIME_MAPPING = 0.35;
 
 export const SEVERITY_MARKER_HEIGHT: Readonly<
   Record<WorldEventSeverity, number>
@@ -20,7 +20,7 @@ export type TimeWindowAngleOptions = Readonly<{
   windowMs?: number;
 }>;
 
-export type EventAngleDistributionMode = "adaptive" | "time-window" | "ordered";
+type EventAngleDistributionMode = "adaptive" | "time-window" | "ordered";
 
 export type ComputeAnglesOptions = TimeWindowAngleOptions &
   Readonly<{

@@ -70,12 +70,6 @@ export const createStaticEventSource = (
   };
 };
 
-export const createMockEventSource = (
-  options: EventPipelineOptions = {}
-): RehoboamEventSource => {
-  return createStaticEventSource(mockEventsFixture, options);
-};
-
 export const loadEventsFromSource = async (
   source: RehoboamEventSource,
   options: EventPipelineOptions = {}

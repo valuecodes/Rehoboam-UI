@@ -25,6 +25,7 @@ catalog:
   fast-xml-parser: 5.11.1
   hono: 4.13.7
   jsdom: 30.0.1
+  knip: 6.41.0
   motion: 13.2.0
   oxfmt: 0.72.0
   oxlint: 1.82.0

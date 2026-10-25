@@ -3,7 +3,7 @@ import type { CartesianCoordinate } from "../layout/polar";
 
 export type WorldEventSeverity = "low" | "medium" | "high" | "critical";
 
-export type WorldEventCategory = string;
+type WorldEventCategory = string;
 
 export type WorldEventLocation = Readonly<{
   label: string;
@@ -34,16 +34,7 @@ export type ViewportState = Readonly<{
   outerRadius: number;
 }>;
 
-export type CameraState = Readonly<{
-  zoom: number;
-  minZoom: number;
-  maxZoom: number;
-  rotationRad: number;
-  targetZoom: number;
-  targetRotationRad: number;
-}>;
-
-export type PointerState = Readonly<{
+type PointerState = Readonly<{
   position: CartesianCoordinate;
   isPrimary: boolean;
 }>;

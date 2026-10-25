@@ -88,7 +88,7 @@ const CLUSTER_ARCHETYPES: readonly ClusterArchetype[] = [
   },
 ] as const;
 
-export type DivergenceClusterSpike = Readonly<{
+type DivergenceClusterSpike = Readonly<{
   angleOffsetRad: number;
   widthRad: number;
   strengthScale: number;
