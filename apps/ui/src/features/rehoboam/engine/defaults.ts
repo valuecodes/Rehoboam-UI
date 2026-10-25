@@ -29,7 +29,7 @@ const clampPositiveNumber = (value: number): number => {
   return Math.max(0, value);
 };
 
-export const clampDpr = (dpr: number, dprCap: number): number => {
+const clampDpr = (dpr: number, dprCap: number): number => {
   const sanitizedCap = Math.max(1, clampPositiveNumber(dprCap));
   const sanitizedDpr = Math.max(1, clampPositiveNumber(dpr));
 

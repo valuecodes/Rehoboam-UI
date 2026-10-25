@@ -16,9 +16,11 @@
     "test": "turbo run test",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
+    "knip": "knip",
     "clean": "turbo run clean"
   },
   "devDependencies": {
+    "knip": "catalog:",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",

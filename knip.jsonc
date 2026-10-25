@@ -1,0 +1,15 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  // Kept on purpose although nothing renders them yet: the event contour pass
+  // is a dormant render pass and the event list panel is not mounted in the
+  // scene (see docs/architecture.md).
+  "ignoreFiles": [
+    "apps/ui/src/features/rehoboam/render/canvas2d/passes/event-contour-pass.ts",
+  ],
+  "ignoreIssues": {
+    "apps/ui/src/features/rehoboam/overlay/event-list-panel.tsx": [
+      "exports",
+      "types",
+    ],
+  },
+}
