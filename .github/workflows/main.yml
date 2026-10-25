@@ -8,87 +8,23 @@ permissions: {}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # A *running* main run (which may be deploying) is never cancelled; a
+  # *pending* one is still replaced by a newer push.
+  cancel-in-progress: false
 
 jobs:
-  typecheck:
-    name: typecheck
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+  checks:
     permissions:
+      actions: read
       contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 1
+      security-events: write
+    uses: ./.github/workflows/checks.yml # zizmor: ignore[self-repository]
 
-      - name: Setup
-        uses: ./.github/actions/setup
-
-      - name: Generate Cloudflare Worker types
-        run: pnpm --filter rehoboam-api cf-typegen && pnpm --filter rehoboam-jobs cf-typegen
-
-      - name: Typecheck
-        run: pnpm typecheck
-
-  lint:
-    name: lint
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 1
-
-      - name: Setup
-        uses: ./.github/actions/setup
-
-      - name: Lint
-        run: pnpm lint
-
-  format-check:
-    name: format-check
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 1
-
-      - name: Setup
-        uses: ./.github/actions/setup
-
-      - name: Format check
-        run: pnpm format:check
-
-  test:
-    name: test
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 1
-
-      - name: Setup
-        uses: ./.github/actions/setup
-
-      - name: Test
-        run: pnpm test
-
+  # Deploys run once every check passed. The real security boundary is the
+  # `production` environment's deployment-branch rule (main only).
   migrate-jobs-d1:
     name: migrate-jobs-d1
-    needs: [typecheck, lint, format-check, test]
+    needs: [checks]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: production
@@ -101,7 +37,7 @@ jobs:
           fetch-depth: 1
 
       - name: Setup
-        uses: ./.github/actions/setup
+        uses: ./.github/actions/setup # zizmor: ignore[self-repository]
 
       - name: Run D1 remote migrations for Jobs
         run: pnpm --filter rehoboam-jobs db:migrate:remote
@@ -125,7 +61,7 @@ jobs:
           fetch-depth: 1
 
       - name: Setup
-        uses: ./.github/actions/setup
+        uses: ./.github/actions/setup # zizmor: ignore[self-repository]
 
       - name: Deploy Rehoboam API to Cloudflare Workers
         run: pnpm --filter rehoboam-api run deploy
@@ -149,7 +85,7 @@ jobs:
           fetch-depth: 1
 
       - name: Setup
-        uses: ./.github/actions/setup
+        uses: ./.github/actions/setup # zizmor: ignore[self-repository]
 
       - name: Deploy Rehoboam Jobs to Cloudflare Workers
         run: pnpm --filter rehoboam-jobs run deploy
@@ -159,7 +95,7 @@ jobs:
 
   deploy-ui:
     name: deploy-ui
-    needs: [typecheck, lint, format-check, test]
+    needs: [checks]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: production
@@ -173,7 +109,7 @@ jobs:
           fetch-depth: 1
 
       - name: Setup
-        uses: ./.github/actions/setup
+        uses: ./.github/actions/setup # zizmor: ignore[self-repository]
 
       - name: Build
         run: pnpm --filter rehoboam-ui build

@@ -8,102 +8,29 @@ permissions: {}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
+  # A newer push to the PR supersedes the running checks.
   cancel-in-progress: true
 
 jobs:
-  typecheck:
-    name: typecheck
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+  checks:
     permissions:
+      actions: read
       contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 1
+      security-events: write
+    uses: ./.github/workflows/checks.yml # zizmor: ignore[self-repository]
 
-      - name: Setup
-        uses: ./.github/actions/setup
-
-      - name: Generate Cloudflare Worker types
-        run: pnpm --filter rehoboam-api cf-typegen && pnpm --filter rehoboam-jobs cf-typegen
-
-      - name: Typecheck
-        run: pnpm typecheck
-
-  lint:
-    name: lint
+  # The one check to require in branch protection. `if: always()` makes it run
+  # even when a check failed, so it reports a failure instead of skipping.
+  all-passed:
+    name: all-passed
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
+    timeout-minutes: 1
+    if: always()
+    needs: [checks]
+    permissions: {}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 1
-
-      - name: Setup
-        uses: ./.github/actions/setup
-
-      - name: Lint
-        run: pnpm lint
-
-  format-check:
-    name: format-check
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 1
-
-      - name: Setup
-        uses: ./.github/actions/setup
-
-      - name: Format check
-        run: pnpm format:check
-
-  test:
-    name: test
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 1
-
-      - name: Setup
-        uses: ./.github/actions/setup
-
-      - name: Test
-        run: pnpm test
-
-  e2e:
-    name: e2e
-    needs: [typecheck, lint, format-check, test]
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 1
-
-      - name: Setup
-        uses: ./.github/actions/setup
-
-      - name: Install Playwright browsers
-        run: pnpm --filter rehoboam-ui e2e:install
-
-      - name: Run e2e tests
-        run: pnpm --filter rehoboam-ui e2e
+      - name: Check results
+        env:
+          RESULT: ${{ needs.checks.result }}
+        run: |
+          [ "$RESULT" = success ] || { echo "checks ended with: $RESULT"; exit 1; }

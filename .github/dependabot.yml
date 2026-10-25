@@ -1,8 +1,19 @@
 version: 2
-
 updates:
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: github-actions
+    # The default "/" covers only .github/workflows (and a root action.yml). The
+    # composite setup action pins pnpm/action-setup and actions/setup-node, so
+    # its directory is listed too.
+    directories:
+      - /
+      - /.github/actions/setup
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 0
+      interval: monthly
+    # Waits like pnpm's minimumReleaseAge before proposing a new action release.
+    cooldown:
+      default-days: 14
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: chore

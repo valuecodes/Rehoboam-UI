@@ -1,0 +1,135 @@
+name: Checks
+
+# Every check, defined once. `feature.yml` (PRs) and `main.yml` (push to main)
+# call it; a called workflow cannot raise the caller's token, so each caller job
+# grants the permissions the jobs below ask for.
+on:
+  workflow_call:
+
+permissions: {}
+
+jobs:
+  check:
+    name: ${{ matrix.task }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # Root package.json script names.
+        task: [typecheck, lint, knip, "format:check", test, build]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      # zizmor prefers the `$/` self-repository syntax, but actionlint 1.7.12
+      # rejects it; switch once actionlint accepts `$/`.
+      - name: Setup
+        uses: ./.github/actions/setup # zizmor: ignore[self-repository]
+
+      # apps/api and apps/jobs read the gitignored `worker-configuration.d.ts`
+      # that `wrangler types` generates from `wrangler.jsonc`.
+      - name: Generate Cloudflare Worker types
+        if: contains(fromJSON('["typecheck", "lint", "knip", "build"]'), matrix.task)
+        run: pnpm --filter rehoboam-api cf-typegen && pnpm --filter rehoboam-jobs cf-typegen
+
+      # Turbo's local cache, restored from the latest run of the same task so an
+      # unchanged package replays instead of rerunning. Only typecheck, test and
+      # build go through Turbo; lint, knip and format:check have no `.turbo`.
+      - name: Turbo cache
+        if: contains(fromJSON('["typecheck", "test", "build"]'), matrix.task)
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ matrix.task }}-${{ github.sha }}
+          restore-keys: turbo-${{ runner.os }}-${{ matrix.task }}-
+
+      # The task name goes through `env`, never straight into `run`.
+      - name: Run ${{ matrix.task }}
+        env:
+          TASK: ${{ matrix.task }}
+        run: pnpm "$TASK"
+
+  e2e:
+    name: e2e
+    needs: [check]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Setup
+        uses: ./.github/actions/setup # zizmor: ignore[self-repository]
+
+      - name: Install Playwright browsers
+        run: pnpm --filter rehoboam-ui e2e:install
+
+      - name: Run e2e tests
+        run: pnpm --filter rehoboam-ui e2e
+
+  secrets-scan:
+    name: secrets-scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      # Full history: gitleaks scans every commit, not just the checked-out tree.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      # Same script as `pnpm secrets:scan`; runs the pinned gitleaks Docker
+      # image, so no pnpm/Node setup is needed.
+      - name: Scan for secrets
+        run: sh .github/scripts/secrets-scan.sh
+
+  codeql:
+    name: codeql (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        # The workflow files are checked by the `workflow-lint` job instead.
+        language: [javascript-typescript]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      # Advanced setup: turn OFF "default setup" under Settings → Code security,
+      # or GitHub rejects these uploads. No build step is needed.
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          queries: security-extended
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          category: "/language:${{ matrix.language }}"
+
+  # actionlint (with shellcheck on `run:` scripts) and zizmor over the workflow
+  # and action files.
+  workflow-lint:
+    permissions:
+      contents: read
+    uses: valuecodes/automation/.github/workflows/workflow-lint.yml@faff74cb5d78478b0bd271db840916706dc2cce0 # v0.3.1
