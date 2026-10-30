@@ -1,0 +1,17 @@
+#!/bin/sh
+# Fast checks before every commit; the heavier ones run in pre-push, and CI runs
+# all of them again. Enabled by `pnpm install` (the root `prepare` script) or
+# `git config core.hooksPath .githooks`. Never bypass with --no-verify: fix the
+# failure instead.
+#
+# format:check and lint read the working tree, not the staged snapshot, so
+# unstaged edits can make them pass or fail. Stage everything you mean to commit.
+set -eu
+
+pnpm format:check
+pnpm lint
+
+# Scan only what is staged. This fails closed: when neither gitleaks nor Docker
+# is available, secrets:scan exits 2 and the commit is refused, since the point
+# of this hook is to stop a secret before it reaches the remote.
+pnpm secrets:scan --staged

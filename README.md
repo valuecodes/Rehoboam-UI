@@ -19,8 +19,15 @@ A pnpm monorepo with a Rehoboam-style React UI, a Cloudflare Worker API, and a s
 
 ## Requirements
 
-- Node.js 24 (exact version in `.nvmrc`)
-- pnpm `12+` (pinned via `packageManager`; `corepack enable` picks it up)
+- Node.js 26 (exact version in `.nvmrc`)
+- pnpm `12+` (pinned via `packageManager`; `corepack enable` picks it up).
+  Node.js 26 no longer bundles Corepack, so install it once with
+  `npm install -g corepack && corepack enable`.
+
+`pnpm install` also points git at the hooks in `.githooks/`: `pre-commit` runs
+`format:check`, `lint` and a staged secrets scan, and `pre-push` runs
+`typecheck`, `test` and `knip`. In a checkout installed before the hooks
+existed, run `git config core.hooksPath .githooks` once.
 
 ## Local Development
 
@@ -118,7 +125,9 @@ provenance than an earlier one. `@types/node` is skipped by `pnpm up --latest`
 The **Maintenance dashboard** issue (updated daily by
 `.github/workflows/maintenance-dashboard.yml`) lists due catalog, pnpm,
 gitleaks, Node.js and `pnpm audit` updates. For a Node.js bump, change
-`.nvmrc`.
+`.nvmrc`. `.github/workflows/maintenance-updates.yml` runs weekly and keeps
+one PR per kind (Node.js, pnpm, gitleaks, catalog) open for updates on the
+current major; majors stay manual and nothing auto-merges.
 
 ## Scripts
 
@@ -157,6 +166,7 @@ Other workflows:
 
 - `.github/workflows/migrations.yml`: manually applies Jobs D1 migrations to production for retries/backfills (`workflow_dispatch`, environment-gated)
 - `.github/workflows/maintenance-dashboard.yml`: daily, keeps the **Maintenance dashboard** issue up to date
+- `.github/workflows/maintenance-updates.yml`: weekly, keeps one update PR per kind open. Its PRs are opened with `GITHUB_TOKEN`, so approve their workflow runs in the PR. Needs **Allow GitHub Actions to create and approve pull requests** (Settings → Actions → General)
 
 CodeQL uses advanced setup, so GitHub's CodeQL "default setup" must stay off
 (Settings → Code security). Dependabot (`.github/dependabot.yml`) bumps the

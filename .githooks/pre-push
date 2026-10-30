@@ -1,0 +1,9 @@
+#!/bin/sh
+# Slower checks before every push; pre-commit already ran format, lint and the
+# staged secrets scan. Turbo's cache replays unchanged packages. Build is left
+# to CI. Never bypass with --no-verify: fix the failure instead.
+set -eu
+
+pnpm typecheck
+pnpm test
+pnpm knip

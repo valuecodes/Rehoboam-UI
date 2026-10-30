@@ -17,7 +17,7 @@ Use it for monorepo orientation, shared quality gates, and safe editing workflow
 - App workspaces: Rehoboam UI in `apps/ui`, Cloudflare Worker API in `apps/api`, and Cloudflare Worker Jobs in `apps/jobs`
 - Package manager: `pnpm` 12 (pinned by `packageManager`; lockfile: `pnpm-lock.yaml`), tasks run through Turborepo (`turbo.json`)
 - Dependency versions: `catalog:` in `pnpm-workspace.yaml` (`catalogMode: strict`)
-- Required Node version: Node 24, exact version in `.nvmrc`
+- Required Node version: Node 26, exact version in `.nvmrc`
 
 ## Workspace Map
 
@@ -59,8 +59,18 @@ Run from repo root unless noted.
 
 `lint` and `knip` do not go through Turbo; each is one process over the whole
 repo. oxlint prints nothing when there are no findings, so silent output means
-clean. There is no post-edit formatting hook: run `pnpm format` yourself before
-committing.
+clean. Nothing formats on edit, and the pre-commit hook only checks formatting:
+run `pnpm format` yourself before committing.
+
+Git hooks live in `.githooks/` and are plain shell scripts, with no hook
+manager. `pnpm install` enables them through the root `prepare` script. In a
+checkout that was installed before the hooks existed, run
+`git config core.hooksPath .githooks` once. `pre-commit` runs `format:check`,
+`lint` and `secrets:scan --staged`. The secrets scan fails closed, so the commit
+is refused when neither gitleaks nor Docker is available. `pre-push` runs
+`typecheck`, `test` and `knip`. CI still runs every check. `format:check` and
+`lint` read the working tree, not the staged snapshot, so stage everything you
+mean to commit.
 
 `secrets:scan` runs gitleaks (`.github/scripts/secrets-scan.sh`, version pinned
 there) using a local `gitleaks` v8.19+ if one is on PATH, otherwise the pinned
@@ -81,8 +91,18 @@ Dependabot (`.github/dependabot.yml`) bumps the SHA-pinned actions monthly in
 one grouped PR; npm dependencies are updated by hand.
 `maintenance-dashboard.yml` keeps one issue, **Maintenance dashboard**, listing
 due `catalog:`, pnpm, gitleaks, Node.js and `pnpm audit` updates. It never opens
-PRs. For a Node.js bump, change only `.nvmrc`. The dashboard and workflow-lint
-pin the same `valuecodes/automation` commit, so bump them together.
+PRs. For a Node.js bump, change only `.nvmrc`.
+
+`maintenance-updates.yml` runs weekly and keeps one PR per kind open (Node.js,
+pnpm, gitleaks, `catalog:`) on a `maintenance-updates/<kind>` branch, for
+updates on the current major only; majors stay manual. Those PRs are opened
+with `GITHUB_TOKEN`, so their `pull_request` checks wait until someone with
+write access clicks **Approve workflows to run** in the PR. It needs **Allow
+GitHub Actions to create and approve pull requests** turned on under Settings →
+Actions → General. Nothing auto-merges. If `GITLEAKS_VERSION` moves out of
+`.github/scripts/secrets-scan.sh`, pass the new path as the `gitleaks-script`
+input to both maintenance callers. The dashboard, updates and workflow-lint
+callers pin the same `valuecodes/automation` commit, so bump them together.
 
 ## Repo Standards
 
@@ -90,7 +110,8 @@ pin the same `valuecodes/automation` commit, so bump them together.
 - oxlint rules via root `.oxlintrc.json` (type-aware; suppress with `oxlint-disable-next-line <rule> -- <reason>`). Notable rules: named exports only, declared first with one export list at the bottom of each file, arrow functions, no `../` imports, max 400 code lines per file, kebab-case filenames.
 - Formatting via oxfmt (`.oxfmtrc.jsonc`), which also sorts imports
 - Dependencies: exact versions only. Every external version lives in the `catalog:` of `pnpm-workspace.yaml` and manifests reference it as `"catalog:"`; `@repo/*` deps stay `workspace:*`. Add with `pnpm --filter <workspace> add <dep>`, update with `pnpm up --latest -r`. `updateConfig.ignoreDependencies` holds `@types/node` to the `.nvmrc` major, so bump it by hand.
-- Every install enforces the supply-chain settings in `pnpm-workspace.yaml` (`minimumReleaseAge`, `trustPolicy: no-downgrade`). When one fails, investigate: never disable it, and never exclude a whole package to get past it.
+- Every install enforces the supply-chain settings in `pnpm-workspace.yaml` (`minimumReleaseAge`, `trustPolicy: no-downgrade`, `engineStrict`). When one fails, investigate: never disable it, and never exclude a whole package to get past it.
+- Never bypass the git hooks with `--no-verify`; fix the failure instead.
 - Prefer minimal, targeted edits and preserve existing architecture patterns
 - Keep docs in `docs/` aligned with behavior and architecture changes
 
