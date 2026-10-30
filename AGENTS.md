@@ -73,7 +73,7 @@ is refused when neither gitleaks nor Docker is available. `pre-push` runs
 mean to commit.
 
 `secrets:scan` runs gitleaks (`.github/scripts/secrets-scan.sh`, version pinned
-there) using a local `gitleaks` v8.19+ if one is on PATH, otherwise the pinned
+there) using a local `gitleaks` v8.20+ if one is on PATH, otherwise the pinned
 Docker image. Known false positives are allowlisted in `.gitleaks.toml`.
 
 ## Quality Gates

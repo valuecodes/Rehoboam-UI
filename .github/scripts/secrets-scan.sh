@@ -3,8 +3,9 @@
 #
 # Used by `pnpm secrets:scan` and by the `secrets-scan` CI job, so the pinned
 # version below is the single source of truth for both. A local `gitleaks`
-# binary is preferred when it is on PATH and new enough to have the `git`
-# subcommand (v8.19+); otherwise the pinned Docker image runs instead. Extra
+# binary is preferred when it is on PATH and new enough (v8.20+: `git` arrived
+# in v8.19, but its `--staged` flag is ignored before v8.20, so it would scan
+# history instead of the index); otherwise the pinned Docker image runs. Extra
 # arguments are passed through to `gitleaks git`, e.g.
 # `pnpm secrets:scan --log-opts="origin/main..HEAD"`.
 #
@@ -19,7 +20,22 @@ GITLEAKS_DIGEST="sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6b
 
 repo_root=$(git rev-parse --show-toplevel)
 
-if command -v gitleaks >/dev/null 2>&1 && gitleaks git --help >/dev/null 2>&1; then
+# True when a local gitleaks is v8.20 or newer. An unparsable version counts
+# as too old, so the pinned image runs instead.
+local_gitleaks_ok() {
+  command -v gitleaks >/dev/null 2>&1 || return 1
+  version=$(gitleaks version 2>/dev/null) || return 1
+  version=${version#v}
+  major=${version%%.*}
+  rest=${version#*.}
+  minor=${rest%%.*}
+  case "$major:$minor" in
+    *[!0-9:]* | :* | *:) return 1 ;;
+  esac
+  [ "$major" -gt 8 ] || { [ "$major" -eq 8 ] && [ "$minor" -ge 20 ]; }
+}
+
+if local_gitleaks_ok; then
   exec gitleaks git --redact --verbose "$@" "$repo_root"
 fi
 
@@ -56,7 +72,7 @@ if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
 fi
 
 cat >&2 <<EOF
-secrets:scan needs gitleaks v8.19+ or a running Docker daemon.
+secrets:scan needs gitleaks v8.20+ or a running Docker daemon.
 Install gitleaks v$GITLEAKS_VERSION: https://github.com/gitleaks/gitleaks#installing
   (e.g. \`brew install gitleaks\` or \`go install github.com/zricethezav/gitleaks/v8@v$GITLEAKS_VERSION\`)
 EOF
