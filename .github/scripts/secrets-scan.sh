@@ -35,6 +35,23 @@ if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
     "$repo_root"/*) ;;
     *) set -- -v "$git_common_dir:$git_common_dir:ro" "$@" ;;
   esac
+  # Inside a commit hook, `git commit -a` and `git commit <path>` stage the
+  # commit in a temporary index named by GIT_INDEX_FILE. A local gitleaks
+  # inherits it but the container does not, so forward it as an absolute path,
+  # or `--staged` scans the ordinary index instead. It normally lives in the git
+  # dir, which the mounts above cover; mount its directory when it does not.
+  if [ -n "${GIT_INDEX_FILE:-}" ]; then
+    case "$GIT_INDEX_FILE" in
+      /*) index_file=$GIT_INDEX_FILE ;;
+      *) index_file=$PWD/$GIT_INDEX_FILE ;;
+    esac
+    index_dir=$(dirname "$index_file")
+    case "$index_dir" in
+      "$repo_root" | "$repo_root"/* | "$git_common_dir" | "$git_common_dir"/*) ;;
+      *) set -- -v "$index_dir:$index_dir:ro" "$@" ;;
+    esac
+    set -- -e "GIT_INDEX_FILE=$index_file" "$@"
+  fi
   exec docker run --rm "$@"
 fi
 

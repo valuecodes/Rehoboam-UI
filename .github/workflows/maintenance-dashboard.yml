@@ -16,4 +16,4 @@ jobs:
     permissions:
       contents: read
       issues: write
-    uses: valuecodes/automation/.github/workflows/maintenance-dashboard.yml@faff74cb5d78478b0bd271db840916706dc2cce0 # v0.3.1
+    uses: valuecodes/automation/.github/workflows/maintenance-dashboard.yml@27353e6fad6ba1f837490d0daab7c7cc7112d7ca # v0.8.0

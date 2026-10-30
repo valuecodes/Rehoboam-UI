@@ -12,8 +12,8 @@ packages:
 catalog:
   "@fontsource/barlow-condensed": 5.3.0
   "@playwright/test": 1.64.0
-  # Held on the Node 24 line to match `.nvmrc` (see `updateConfig` below).
-  "@types/node": 24.19.2
+  # Held on the Node 26 line to match `.nvmrc` (see `updateConfig` below).
+  "@types/node": 26.6.5
   "@types/react": 19.3.0
   "@types/react-dom": 19.3.0
   "@types/service-worker-mock": 2.0.4
@@ -85,6 +85,11 @@ allowBuilds:
   # The workerd runtime behind `wrangler dev` and miniflare. Its install script
   # verifies the platform binary that `wrangler dev` executes.
   workerd: true
+
+# pnpm already fails the install when the root `engines.node` doesn't match.
+# This also refuses any non-optional dependency whose own `engines` excludes
+# the running Node.js, instead of only warning.
+engineStrict: true
 
 # 14 days, in minutes. A newly published version is not resolvable until it has
 # been on the registry this long, which blunts the compromised-release window.
