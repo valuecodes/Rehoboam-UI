@@ -76,23 +76,12 @@ jobs:
       - name: Run e2e tests
         run: pnpm --filter rehoboam-ui e2e
 
-  secrets-scan:
-    name: secrets-scan
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+  # gitleaks over the full git history, at the version pinned in the reusable
+  # workflow. It reads `.gitleaks.toml` here.
+  secret-scan:
     permissions:
       contents: read
-    steps:
-      # Full history: gitleaks scans every commit, not just the checked-out tree.
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-
-      # Same script as `pnpm secrets:scan`; runs the pinned gitleaks Docker
-      # image, so no pnpm/Node setup is needed.
-      - name: Scan for secrets
-        run: sh .github/scripts/secrets-scan.sh
+    uses: valuecodes/maintain-kit/.github/workflows/secret-scan.yml@e5bf1d24a413d9312cd2051c39ef44ddd9358be5 # v1.0.0
 
   codeql:
     name: codeql (${{ matrix.language }})
@@ -132,4 +121,4 @@ jobs:
   workflow-lint:
     permissions:
       contents: read
-    uses: valuecodes/automation/.github/workflows/workflow-lint.yml@27353e6fad6ba1f837490d0daab7c7cc7112d7ca # v0.8.0
+    uses: valuecodes/maintain-kit/.github/workflows/workflow-lint.yml@e5bf1d24a413d9312cd2051c39ef44ddd9358be5 # v1.0.0

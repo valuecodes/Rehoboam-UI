@@ -27,7 +27,11 @@ A pnpm monorepo with a Rehoboam-style React UI, a Cloudflare Worker API, and a s
 `pnpm install` also points git at the hooks in `.githooks/`: `pre-commit` runs
 `format:check`, `lint` and a staged secrets scan, and `pre-push` runs
 `typecheck`, `test` and `knip`. In a checkout installed before the hooks
-existed, run `git config core.hooksPath .githooks` once.
+existed, run `git config core.hooksPath .githooks` once. Committing needs
+`gitleaks` v8.19+ on PATH for the staged secrets scan: `brew install gitleaks`
+(macOS, Linux and WSL), or unpack the `linux_x64` tarball from the
+[releases page](https://github.com/gitleaks/gitleaks/releases) into a directory
+on PATH such as `~/.local/bin`.
 
 ## Local Development
 
@@ -69,7 +73,6 @@ pnpm lint
 pnpm knip
 pnpm format:check
 pnpm test
-pnpm secrets:scan
 ```
 
 ## Playwright Screenshots
@@ -123,10 +126,10 @@ provenance than an earlier one. `@types/node` is skipped by `pnpm up --latest`
 (`updateConfig`) and bumped by hand within the `.nvmrc` major.
 
 The **Maintenance dashboard** issue (updated daily by
-`.github/workflows/maintenance-dashboard.yml`) lists due catalog, pnpm,
-gitleaks, Node.js and `pnpm audit` updates. For a Node.js bump, change
-`.nvmrc`. `.github/workflows/maintenance-updates.yml` runs weekly and keeps
-one PR per kind (Node.js, pnpm, gitleaks, catalog) open for updates on the
+`.github/workflows/maintain-kit-dashboard.yml`) lists due catalog, pnpm,
+Node.js and `pnpm audit` updates. For a Node.js bump, change `.nvmrc`.
+`.github/workflows/maintain-kit-updates.yml` runs weekly and keeps one PR per
+kind (Node.js, pnpm, catalog) open for updates on the
 current major; majors stay manual and nothing auto-merges.
 
 ## Scripts
@@ -138,7 +141,6 @@ current major; majors stay manual and nothing auto-merges.
 - `pnpm knip` - report unused files, exports and dependencies (`knip.jsonc`)
 - `pnpm format` - auto-format files with oxfmt (`.oxfmtrc.jsonc`)
 - `pnpm format:check` - verify formatting
-- `pnpm secrets:scan` - scan the full git history for secrets with gitleaks (local binary or pinned Docker image)
 - `pnpm test` - run tests in all workspaces (cached by Turborepo)
 - `pnpm clean` - remove each workspace's `.turbo`, caches, build output and `node_modules` (the root `node_modules` is kept)
 - `pnpm --filter rehoboam-ui dev` - run only the web dev server (`http://localhost:3000`)
@@ -153,8 +155,9 @@ current major; majors stay manual and nothing auto-merges.
 
 Every check is defined once in the reusable `.github/workflows/checks.yml`:
 typecheck, lint, knip, `format:check`, test, build, e2e (Playwright smoke),
-secrets-scan (gitleaks), CodeQL and workflow-lint (actionlint + zizmor). Two
-workflows call it:
+CodeQL, secret-scan (gitleaks over the full git history) and workflow-lint
+(actionlint + zizmor); secret-scan and workflow-lint call the reusable
+workflows from `valuecodes/maintain-kit`. Two workflows call it:
 
 - `.github/workflows/feature.yml`: on pull requests to `main`. Its `all-passed`
   job is the one check to require in branch protection.
@@ -165,8 +168,8 @@ workflows call it:
 Other workflows:
 
 - `.github/workflows/migrations.yml`: manually applies Jobs D1 migrations to production for retries/backfills (`workflow_dispatch`, environment-gated)
-- `.github/workflows/maintenance-dashboard.yml`: daily, keeps the **Maintenance dashboard** issue up to date
-- `.github/workflows/maintenance-updates.yml`: weekly, keeps one update PR per kind open. Its PRs are opened with `GITHUB_TOKEN`, so approve their workflow runs in the PR. Needs **Allow GitHub Actions to create and approve pull requests** (Settings → Actions → General)
+- `.github/workflows/maintain-kit-dashboard.yml`: daily, keeps the **Maintenance dashboard** issue up to date
+- `.github/workflows/maintain-kit-updates.yml`: weekly, keeps one update PR per kind open. Its PRs are opened with `GITHUB_TOKEN`, so approve their workflow runs in the PR. Needs **Allow GitHub Actions to create and approve pull requests** (Settings → Actions → General)
 
 CodeQL uses advanced setup, so GitHub's CodeQL "default setup" must stay off
 (Settings → Code security). Dependabot (`.github/dependabot.yml`) bumps the
