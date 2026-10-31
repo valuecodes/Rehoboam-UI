@@ -1,0 +1,19 @@
+name: Maintain-kit dashboard
+
+on:
+  schedule:
+    # Daily. An off-peak minute avoids the top-of-the-hour queue.
+    - cron: "41 5 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  # Keeps one issue listing due catalog, pnpm, Node.js and audit updates. It
+  # never changes code. A called workflow cannot raise the caller's token, so
+  # the job grants it here.
+  maintain-kit-dashboard:
+    permissions:
+      contents: read
+      issues: write
+    uses: valuecodes/maintain-kit/.github/workflows/dashboard.yml@e5bf1d24a413d9312cd2051c39ef44ddd9358be5 # v1.0.0

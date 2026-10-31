@@ -8,7 +8,6 @@
       "Bash(pnpm format:*)",
       "Bash(pnpm format:check:*)",
       "Bash(pnpm test:*)",
-      "Bash(pnpm secrets:scan:*)",
       "Bash(pnpm knip:*)",
       "Bash(pnpm --filter * test*)",
       "Bash(pnpm --filter * lint*)",

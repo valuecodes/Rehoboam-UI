@@ -24,7 +24,7 @@ Use it for monorepo orientation, shared quality gates, and safe editing workflow
 - App workspaces: `apps/ui`, `apps/api`, `apps/jobs`
 - Shared packages: `packages/*`, including the tsconfig presets in `packages/typescript` (`@repo/typescript`)
 - Root tool configs: `.oxlintrc.json` (oxlint), `.oxfmtrc.jsonc` (oxfmt), `knip.jsonc` (knip), `.gitleaks.toml` (gitleaks)
-- CI helpers (not workspaces): the composite setup action in `.github/actions/setup/` and the gitleaks script in `.github/scripts/`
+- CI helpers (not workspaces): the composite setup action in `.github/actions/setup/`
 - Architecture and project docs: `docs/`
 
 Apps may import packages; packages must never import apps. oxlint bans `../`
@@ -53,7 +53,6 @@ Run from repo root unless noted.
 - Test (all workspaces): `pnpm test`
 - Format all files: `pnpm format`
 - Format check: `pnpm format:check`
-- Secrets scan over the full git history: `pnpm secrets:scan`
 - Clean per-workspace caches, build output and `node_modules`: `pnpm clean`
 - Run one workspace command: `pnpm --filter <workspace> <script>`
 
@@ -66,43 +65,46 @@ Git hooks live in `.githooks/` and are plain shell scripts, with no hook
 manager. `pnpm install` enables them through the root `prepare` script. In a
 checkout that was installed before the hooks existed, run
 `git config core.hooksPath .githooks` once. `pre-commit` runs `format:check`,
-`lint` and `secrets:scan --staged`. The secrets scan fails closed, so the commit
-is refused when neither gitleaks nor Docker is available. `pre-push` runs
-`typecheck`, `test` and `knip`. CI still runs every check. `format:check` and
-`lint` read the working tree, not the staged snapshot, so stage everything you
-mean to commit.
+`lint` and `gitleaks git --staged` with the local gitleaks (v8.19+). The secrets
+scan fails closed, so the commit is refused when gitleaks is not installed.
+`pre-push` runs `typecheck`, `test` and `knip`. CI still runs every check.
+`format:check` and `lint` read the working tree, not the staged snapshot, so
+stage everything you mean to commit.
 
-`secrets:scan` runs gitleaks (`.github/scripts/secrets-scan.sh`, version pinned
-there) using a local `gitleaks` v8.20+ if one is on PATH, otherwise the pinned
-Docker image. Known false positives are allowlisted in `.gitleaks.toml`.
+The hook runs whatever gitleaks is installed; CI scans the full git history
+with the version pinned in `secret-scan.yml` from `valuecodes/maintain-kit`, so
+this repo holds no gitleaks pin. Both read `.gitleaks.toml`, where known false
+positives are allowlisted.
 
 ## Quality Gates
 
 CI checks are defined once in the reusable `.github/workflows/checks.yml`:
 `typecheck`, `lint`, `knip`, `format:check`, `test`, `build`, `e2e`
-(Playwright smoke), `secrets-scan`, CodeQL code scanning
-(`javascript-typescript`) and workflow-lint (actionlint + zizmor, from
-`valuecodes/automation`). `feature.yml` calls it on PRs and `main.yml` on push
-to `main`, where the D1 migration and deploy jobs run after it. `all-passed` in
-`feature.yml` is the one check to require in branch protection. The typecheck,
-test and build jobs restore Turbo's `.turbo` cache from the previous run.
+(Playwright smoke), CodeQL code scanning (`javascript-typescript`),
+secret-scan (gitleaks over the full git history) and workflow-lint
+(actionlint + zizmor); secret-scan and workflow-lint call the reusable
+workflows from `valuecodes/maintain-kit`. `feature.yml` calls it on PRs and
+`main.yml` on push to `main`, where the D1 migration and deploy jobs run after
+it. `all-passed` in `feature.yml` is the one check to require in branch
+protection. The typecheck, test and build jobs restore Turbo's `.turbo` cache
+from the previous run.
 
 Dependabot (`.github/dependabot.yml`) bumps the SHA-pinned actions monthly in
 one grouped PR; npm dependencies are updated by hand.
-`maintenance-dashboard.yml` keeps one issue, **Maintenance dashboard**, listing
-due `catalog:`, pnpm, gitleaks, Node.js and `pnpm audit` updates. It never opens
-PRs. For a Node.js bump, change only `.nvmrc`.
+`maintain-kit-dashboard.yml` keeps one issue, **Maintenance dashboard** (label
+`maintain-kit-dashboard`), listing due `catalog:`, pnpm, Node.js and
+`pnpm audit` updates. It never opens PRs. For a Node.js bump, change only
+`.nvmrc`.
 
-`maintenance-updates.yml` runs weekly and keeps one PR per kind open (Node.js,
-pnpm, gitleaks, `catalog:`) on a `maintenance-updates/<kind>` branch, for
+`maintain-kit-updates.yml` runs weekly and keeps one PR per kind open (Node.js,
+pnpm, `catalog:`) on a `maintain-kit/<kind>` branch, for
 updates on the current major only; majors stay manual. Those PRs are opened
 with `GITHUB_TOKEN`, so their `pull_request` checks wait until someone with
 write access clicks **Approve workflows to run** in the PR. It needs **Allow
 GitHub Actions to create and approve pull requests** turned on under Settings →
-Actions → General. Nothing auto-merges. If `GITLEAKS_VERSION` moves out of
-`.github/scripts/secrets-scan.sh`, pass the new path as the `gitleaks-script`
-input to both maintenance callers. The dashboard, updates and workflow-lint
-callers pin the same `valuecodes/automation` commit, so bump them together.
+Actions → General. Nothing auto-merges. The dashboard, updates, secret-scan
+and workflow-lint callers pin the same `valuecodes/maintain-kit` commit, so
+bump them together.
 
 ## Repo Standards
 
